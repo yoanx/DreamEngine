@@ -301,6 +301,83 @@ var AEV_PreviewGen = (function () {
         return '{"removed":' + removed + ',"failed":' + failed + "}";
     }
 
+    function traceOverride(text) {
+        try {
+            if (typeof AEV_Recipe !== "undefined" && AEV_Recipe.trace) {
+                AEV_Recipe.trace(text);
+            }
+        } catch (e) {}
+    }
+
+    function findEffectByMatchName(layer, matchName) {
+        var target = matchName;
+        try {
+            if (typeof AEV_Recipe !== "undefined" && AEV_Recipe.effectNameFor) {
+                target = AEV_Recipe.effectNameFor(matchName);
+            }
+        } catch (eName) {}
+
+        var parade = null;
+        try { parade = layer.property("ADBE Effect Parade"); } catch (eParade) { return null; }
+        var count = 0;
+        try { count = parade.numProperties; } catch (eCount) { return null; }
+        for (var i = 1; i <= count; i++) {
+            var effect = null;
+            try { effect = parade.property(i); } catch (eProp) { continue; }
+            if (!effect) continue;
+            var mn = "";
+            try { mn = String(effect.matchName); } catch (eMatch) { mn = ""; }
+            if (mn === matchName || mn === target) return effect;
+        }
+        return null;
+    }
+
+    function removeEffectsFrom(layer, countBefore) {
+        var parade = null;
+        try { parade = layer.property("ADBE Effect Parade"); } catch (e) { return; }
+        var count = 0;
+        try { count = parade.numProperties; } catch (e2) { return; }
+        while (count > countBefore) {
+            try { parade.property(count).remove(); } catch (e3) {}
+            count--;
+        }
+    }
+
+    /**
+     * 把 .ffx 预设套到临时层，并确认目标效果确实出现了。
+     * applyPreset 在图层类型不匹配时会静默无效，所以不能只看有没有报错。
+     */
+    function applyPresetToLayer(layer, cell, matchName, presetPath) {
+        var before = 0;
+        try {
+            before = layer.property("ADBE Effect Parade").numProperties;
+        } catch (eCount) {
+            before = 0;
+        }
+        if (!presetPath) return { effect: null, before: before, reason: "empty_path" };
+
+        var file = new File(presetPath);
+        if (!file.exists) return { effect: null, before: before, reason: "preset_missing" };
+
+        // applyPreset 会把关键帧落在当前时间；临时合成从 0 开始最稳。
+        try { cell.time = 0; } catch (eTime) {}
+        try { layer.selected = true; } catch (eSel) {}
+        try {
+            layer.applyPreset(file);
+        } catch (eApply) {
+            removeEffectsFrom(layer, before);
+            traceOverride("preset|apply_failed|" + matchName + "|" + eApply);
+            return { effect: null, before: before, reason: "apply_failed" };
+        }
+
+        var found = findEffectByMatchName(layer, matchName);
+        if (found) return { effect: found, before: before, reason: "ok" };
+
+        removeEffectsFrom(layer, before);
+        traceOverride("preset|no_target_effect|" + matchName);
+        return { effect: null, before: before, reason: "no_target_effect" };
+    }
+
     /**
      * 批量渲染一张 contact sheet。
      * matchNames：本次要渲的 matchName 数组（不超过每网格数）
@@ -314,6 +391,11 @@ var AEV_PreviewGen = (function () {
     function renderBatch(matchNames, sheetIndex, options) {
         if (!matchNames || matchNames.length === 0) {
             return result("error", [["reason", "empty_batch"]]);
+        }
+
+        // 每批开始时重读覆盖表，Hub 改完参数后下一次批量渲染立即生效。
+        if (typeof AEV_Recipe !== "undefined" && AEV_Recipe.resetOverrides) {
+            AEV_Recipe.resetOverrides();
         }
 
         var conf = config();
@@ -450,40 +532,100 @@ var AEV_PreviewGen = (function () {
                 // 这样"效果加不上"或"参数设不上"能定位到具体 matchName，
                 // 而不是整批失败只回一条 AE 错误。
                 var effectGroup = null;
+                var overrideInfo = (typeof AEV_Recipe !== "undefined" && AEV_Recipe.overrideFor)
+                    ? AEV_Recipe.overrideFor(matchName)
+                    : null;
+                var presetApplied = false;
                 // noEffect：只放素材、不加效果，渲出「素材原样」当对照图。
                 // 插件预览首轮就栽在这里——渲出来的图与素材逐像素相同，
                 // 必须能区分「效果没生效」和「效果生效但看不出差别」。
                 var bareScene = !!(options && options.noEffect);
                 if (!bareScene) {
-                    try {
-                        // 有替代方案时挂替代效果（Lumetri 渲染会挂死，用饱和度调整代表）
-                        var effectName = (typeof AEV_Recipe !== "undefined")
-                            ? AEV_Recipe.effectNameFor(matchName)
-                            : matchName;
-                        effectGroup = layer.property("ADBE Effect Parade").addProperty(effectName);
-                    } catch (eAdd) {
-                        cellErrors.push(matchName + "|addProperty|" + eAdd);
-                        try { cell.remove(); } catch (eRm) {}
-                        continue;
+                    // 有 .ffx 的手动覆盖优先：先把预设套到临时层上。
+                    if (overrideInfo && overrideInfo.preset && overrideInfo.presetExists &&
+                        (overrideInfo.verified === false || !overrideInfo.params.length)) {
+                        var presetResult = applyPresetToLayer(
+                            layer, cell, matchName,
+                            (typeof AEV_Recipe.presetPathFor === "function")
+                                ? AEV_Recipe.presetPathFor(matchName) : ""
+                        );
+                        if (presetResult.effect) {
+                            effectGroup = presetResult.effect;
+                            presetApplied = true;
+                        } else {
+                            traceOverride("preset|fallback_default|" + matchName + "|" + presetResult.reason);
+                        }
+                    }
+                    if (!effectGroup) {
+                        try {
+                            // 有替代方案时挂替代效果（Lumetri 渲染会挂死，用饱和度调整代表）
+                            var effectName = (typeof AEV_Recipe !== "undefined")
+                                ? AEV_Recipe.effectNameFor(matchName)
+                                : matchName;
+                            effectGroup = layer.property("ADBE Effect Parade").addProperty(effectName);
+                        } catch (eAdd) {
+                            cellErrors.push(matchName + "|addProperty|" + eAdd);
+                            try { cell.remove(); } catch (eRm) {}
+                            continue;
+                        }
                     }
                 }
                 try {
                     if (effectGroup && typeof AEV_Recipe !== "undefined") {
-                        var applied = AEV_Recipe.apply(effectGroup, matchName, cellSize);
-                        // 两层输入类：把「图层」选择器接到第 2 层（图案层），
-                        // 默认值是「无」，不接的话效果等于没加。
-                        if (layout.needSource) {
-                            AEV_Recipe.bindLayers(effectGroup, 2);
+                        var applied = presetApplied
+                            ? { mode: "override-preset", writes: 0 }
+                            : AEV_Recipe.apply(effectGroup, matchName, cellSize);
+
+                        // 覆盖参数写入失败：先按同效果的重渲规则回退到 .ffx，
+                        // 没有 .ffx 就回退到效果默认参数，避免留下半写坏的效果。
+                        if (!presetApplied && applied && applied.failed) {
+                            traceOverride("override|fallback|" + matchName + "|" +
+                                (applied.errors ? applied.errors.join(",") : "failed"));
+                            try { effectGroup.remove(); } catch (eRemove) {}
+                            removeEffectsFrom(layer, 0);
+                            effectGroup = null;
+
+                            if (overrideInfo && overrideInfo.preset && overrideInfo.presetExists) {
+                                var fallbackPreset = applyPresetToLayer(
+                                    layer, cell, matchName,
+                                    (typeof AEV_Recipe.presetPathFor === "function")
+                                        ? AEV_Recipe.presetPathFor(matchName) : ""
+                                );
+                                if (fallbackPreset.effect) {
+                                    effectGroup = fallbackPreset.effect;
+                                    presetApplied = true;
+                                    applied = { mode: "override-preset", writes: 0 };
+                                }
+                            }
+                            if (!effectGroup) {
+                                try {
+                                    effectGroup = layer.property("ADBE Effect Parade")
+                                        .addProperty(effectName || matchName);
+                                    applied = { mode: "default-fallback", writes: 0 };
+                                } catch (eFallbackAdd) {
+                                    cellErrors.push(matchName + "|fallback|" + eFallbackAdd);
+                                }
+                            }
                         }
-                        // 给主参数打关键帧，让 6 帧真正有差异。
-                        // AE 效果默认不随时间变化，不打关键帧的话 6 帧逐像素相同，
-                        // 缩略图轮播就是静止画面（实测 60 条里 59 条如此）。
-                        if (applied && applied.mode === "recipe") {
-                            AEV_Recipe.animate(effectGroup, matchName, durationSeconds);
-                        } else {
-                            // 走启发式的效果同样要动起来，否则大半缩略图是静止的；
-                            // 插件效果不打关键帧（animateAny 内部会自己跳过）
-                            AEV_Recipe.animateAny(effectGroup, durationSeconds, matchName);
+
+                        if (effectGroup) {
+                            // 两层输入类：把「图层」选择器接到第 2 层（图案层），
+                            // 默认值是「无」，不接的话效果等于没加。
+                            if (layout.needSource) {
+                                AEV_Recipe.bindLayers(effectGroup, 2);
+                            }
+                            // 手动覆盖/预设保持静态；只有显式配方才做自动关键帧。
+                            if (applied && applied.mode === "recipe") {
+                                AEV_Recipe.animate(effectGroup, matchName, durationSeconds);
+                            } else if (!applied || (applied.mode !== "override" &&
+                                       applied.mode !== "recipe+override" &&
+                                       applied.mode !== "override-preset" &&
+                                       applied.mode !== "default-fallback" &&
+                                       applied.mode !== "override-blocked")) {
+                                // 走启发式的效果同样要动起来，否则大半缩略图是静止的；
+                                // 插件效果不打关键帧（animateAny 内部会自己跳过）
+                                AEV_Recipe.animateAny(effectGroup, durationSeconds, matchName);
+                            }
                         }
                     }
                 } catch (eRecipe) {
@@ -608,7 +750,10 @@ var AEV_PreviewGen = (function () {
         if (kind === "photo" && bg) {
             source += "@background-" + backgroundFingerprint(bg);
         }
-        return AEV_Recipe.cacheKey(matchName, source, cellSize, frames);
+        var overrideSignature = AEV_Recipe.overrideSignatureFor
+            ? AEV_Recipe.overrideSignatureFor(matchName)
+            : "";
+        return AEV_Recipe.cacheKey(matchName, source, cellSize, frames, overrideSignature);
     }
 
     /**

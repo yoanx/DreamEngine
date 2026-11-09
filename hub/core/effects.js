@@ -29,6 +29,7 @@ const path = require("node:path");
 
 const catalog = require("./catalog");
 const effectFavorites = require("./effect_favorites");
+const effectOverrides = require("./effect_overrides");
 
 const FPS = 12;
 
@@ -339,6 +340,22 @@ function list(paths) {
   }
 
   const items = [...builtinItems, ...builtinExtra, ...pluginItems];
+
+  /* 手动调参标记：有覆盖行 = “手动”，全部验证过 = 已验证。 */
+  const overrideDoc = effectOverrides.read(paths);
+  const overridesByMatch = new Map();
+  for (const override of overrideDoc.items || []) {
+    if (!override || !override.matchName) continue;
+    if (!overridesByMatch.has(override.matchName)) overridesByMatch.set(override.matchName, []);
+    overridesByMatch.get(override.matchName).push(override);
+  }
+  for (const item of items) {
+    const rows = overridesByMatch.get(item.matchName) || [];
+    item.manual = rows.length > 0;
+    item.manualVerified = rows.length > 0 && rows.every((row) => row.verified === true);
+    item.manualUnverified = rows.some((row) => row.verified === false);
+    item.manualPreset = rows.find((row) => row.preset)?.preset || "";
+  }
 
   const categorySet = new Set();
   const pluginSet = new Set();

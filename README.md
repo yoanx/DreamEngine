@@ -206,18 +206,19 @@ DreamEngine 不上传工程、素材或预设。
 - 使用 [Bug 模板](https://github.com/yoanx/DreamEngine/issues/new?template=bug_report.yml) 报告可复现问题。
 - 使用 [功能建议模板](https://github.com/yoanx/DreamEngine/issues/new?template=feature_request.yml) 提议新工作流。
 - 提交问题时请附上 DreamEngine、Windows、After Effects 和 CEP 版本，以及 `文档/DreamEngineProbe/` 中的相关日志。
-- 提交代码前请阅读 PR 模板，并确保公开仓库不包含内部工具、探针、开发笔记、工程素材或密钥。
+- 提交代码前请阅读 PR 模板，并确保公开内容不包含密钥、个人路径或隐私信息。
 
 ## 仓库结构
 
 ```text
 cep/com.dreamengine.panel/   After Effects CEP 面板
 hub/                         Electron 管理程序
+tools/                       Hub 与面板调用的 PowerShell、ExtendScript 和模板
 dist/L1/                     内置效果预览资源
 assets/screenshots/          README 截图
 ```
 
-开发探针、内部测试工具和进度笔记不进入公开仓库。
+提交 `tools/` 前请检查脚本中不包含密钥、个人路径或隐私数据。
 
 ## 许可证
 

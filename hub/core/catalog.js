@@ -101,6 +101,22 @@ function countStatuses(items) {
 }
 
 /**
+ * 只读扫描元信息（AE 版本 / 扫描时间 / 条数），供属性获取等旁路流程使用。
+ * @param {ReturnType<import("./paths").createPaths>} paths
+ */
+function readCatalogMeta(paths) {
+  const meta = readJson(paths.pluginCatalogMeta) || {};
+  return {
+    ok: Object.keys(meta).length > 0,
+    aeExe: String(meta.aeExe || ""),
+    aeVersion: String(meta.aeVersion || ""),
+    aeMajor: Number(meta.aeMajor) || 0,
+    scannedAt: String(meta.scannedAt || ""),
+    count: Number(meta.count) || 0,
+  };
+}
+
+/**
  * 只读 catalog TSV 的原始行（保持文件行序）与扫描元信息。
  * readCatalog 与效果库共用这一份解析，避免两处各写一遍、顺序悄悄漂移。
  * @param {ReturnType<import("./paths").createPaths>} paths
@@ -259,6 +275,18 @@ function filterSelection(catalog, matchNames, force) {
   return { selected, skipped };
 }
 
+/**
+ * 运行计划的选择模式：undefined 才是全量；显式空数组仍然是一次选集，
+ * 只是这次没有可渲染目标，不能悄悄退化成全量。
+ */
+function planSelection(catalog, matchNames, force) {
+  if (!Array.isArray(matchNames)) {
+    return { mode: "all", selected: [], skipped: [] };
+  }
+  const result = filterSelection(catalog, matchNames, force);
+  return { mode: "selection", selected: result.selected, skipped: result.skipped };
+}
+
 /** 写选择文件（无表头，格式与 run_plugin_preview.jsx 的 legacy 模式一致） */
 function writeSelection(paths, items) {
   const rows = [];
@@ -282,7 +310,9 @@ module.exports = {
   CATALOG_HEADER,
   readCatalog,
   readCatalogRows,
+  readCatalogMeta,
   filterSelection,
+  planSelection,
   writeSelection,
   readNames,
   readRendered,

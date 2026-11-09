@@ -106,6 +106,20 @@ test("filterSelection: 默认跳过已生成/黑名单，force 时放行", () =>
   assert.equal(forced.skipped[0].matchName, "D");
 });
 
+test("planSelection: 显式空选集仍是选集模式，不能退化成全量", () => {
+  const cat = {
+    items: [{ matchName: "A", status: "pending", selectable: true }],
+  };
+
+  const empty = catalog.planSelection(cat, [], false);
+  assert.equal(empty.mode, "selection");
+  assert.deepEqual(empty.selected, []);
+  assert.deepEqual(empty.skipped, []);
+
+  const all = catalog.planSelection(cat, undefined, false);
+  assert.equal(all.mode, "all");
+});
+
 test("writeSelection: 无表头、tab 分隔、CRLF", () => {
   const { paths } = makeWorkspace();
   const count = catalog.writeSelection(paths, [

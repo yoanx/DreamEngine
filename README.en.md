@@ -206,18 +206,19 @@ Upgrades preserve presets and caches. Uninstalling DreamEngine from Windows Sett
 - Use the [Bug report form](https://github.com/yoanx/DreamEngine/issues/new?template=bug_report.yml) for reproducible problems.
 - Use the [Feature request form](https://github.com/yoanx/DreamEngine/issues/new?template=feature_request.yml) for workflow proposals.
 - Include DreamEngine, Windows, After Effects, and CEP versions, plus relevant logs from `Documents/DreamEngineProbe/`.
-- Before opening a PR, follow the PR template and keep internal tools, probes, development notes, project media, and secrets out of the public repository.
+- Before opening a PR, follow the PR template and keep secrets, personal paths, and private data out of public content.
 
 ## Repository layout
 
 ```text
 cep/com.dreamengine.panel/   After Effects CEP panel
 hub/                         Electron manager
+tools/                       PowerShell, ExtendScript, and templates used by Hub and the panel
 dist/L1/                     Built-in effect preview resources
 assets/screenshots/          README screenshots
 ```
 
-Development probes, internal test tooling, and progress notes are not included in the public repository.
+Before committing `tools/`, check scripts for secrets, personal paths, and private data.
 
 ## License
 

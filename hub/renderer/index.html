@@ -27,7 +27,7 @@
 <nav class="tabs" id="tabs">
   <button class="tab active" data-view="presets">预设库<span class="tab-count" id="tabPresetCount">0</span></button>
   <button class="tab" data-view="effects">效果库<span class="tab-count" id="tabEffectCount">0</span></button>
-  <button class="tab" data-view="render">渲染</button>
+  <button class="tab" data-view="render">预览渲染<span class="tab-dot" id="tabRenderDot" hidden></span></button>
   <button class="tab" data-view="settings">设置</button>
 </nav>
 
@@ -129,111 +129,271 @@
 
   <!-- ========== 渲染 ========== -->
   <section class="view" id="viewRender" hidden>
-    <div class="render-mode-switch" id="renderModeSwitch" role="tablist" aria-label="渲染类型">
-      <button class="render-mode-button active" type="button"
-              data-render-mode="preset" role="tab" aria-selected="true">预设预览</button>
-      <button class="render-mode-button" type="button"
-              data-render-mode="plugin" role="tab" aria-selected="false">插件效果</button>
+    <!-- ========== 预览渲染：引导式流程（步骤条 + 横向轨道） ========== -->
+    <div class="preview-flow" id="previewFlow">
+      <div class="flow-head">
+        <button class="btn ghost flow-lib-back" id="flowLibBack" type="button" hidden>← 返回</button>
+        <ol class="flow-steps" id="flowSteps">
+          <li class="flow-step-item" data-flow-step="type"><span class="flow-step-no">1</span><span class="flow-step-label">选择类型</span></li>
+          <li class="flow-step-item" data-flow-step="select"><span class="flow-step-no">2</span><span class="flow-step-label">选择目标</span></li>
+          <li class="flow-step-item" data-flow-step="confirm"><span class="flow-step-no">3</span><span class="flow-step-label">确认配置</span></li>
+          <li class="flow-step-item" data-flow-step="run"><span class="flow-step-no">4</span><span class="flow-step-label">渲染</span></li>
+          <li class="flow-step-item" data-flow-step="result"><span class="flow-step-no">5</span><span class="flow-step-label">结果</span></li>
+        </ol>
+        <div class="flow-substeps" id="flowSubsteps" hidden>
+          <span class="flow-substep-parent">③ 确认配置 ›</span>
+          <strong class="flow-substep-label" id="flowSubstepLabel">人工调参</strong>
+        </div>
+      </div>
+
+      <div class="flow-viewport">
+        <div class="flow-track" id="flowTrack">
+
+          <!-- ① 选择渲染目标类型 -->
+          <section class="flow-step" data-flow-step="type">
+            <div class="flow-kind-grid">
+              <button class="flow-kind-card" id="flowKindPreset" type="button">
+                <div class="flow-kind-icon">
+                  <svg viewBox="0 0 24 24"><path d="M4 5h16v10H4zM9 19h6M12 15v4"/></svg>
+                </div>
+                <div class="flow-kind-name">预设</div>
+                <div class="flow-kind-desc">把 .ffx 预设套到示例图层上，渲染成预览拼图</div>
+                <div class="flow-kind-meta" id="flowKindPresetMeta">读取中…</div>
+              </button>
+              <button class="flow-kind-card" id="flowKindEffect" type="button">
+                <div class="flow-kind-icon">
+                  <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4zM4 12h16M12 4v16"/></svg>
+                </div>
+                <div class="flow-kind-name">效果</div>
+                <div class="flow-kind-desc">把插件效果加到测试图层上，逐条渲染预览</div>
+                <div class="flow-kind-meta" id="flowKindEffectMeta">读取中…</div>
+              </button>
+            </div>
+            <p class="flow-hint">一次预览渲染只处理一类目标（预设或效果）；第 2 步可以多选，选错的条目可以随时移除。</p>
+          </section>
+
+          <!-- ② 选择渲染目标 -->
+          <section class="flow-step" data-flow-step="select">
+            <div class="flow-pane">
+              <div class="flow-pane-head">
+                <h2 class="flow-pane-title" id="flowSelectTitle">选择目标</h2>
+                <span class="flow-pane-sub" id="flowSelectSub"></span>
+                <span class="spacer"></span>
+                <span class="flow-pane-count" id="flowSelectCount">已选 0 项</span>
+              </div>
+              <div class="flow-toolbar">
+                <input class="input" id="flowSelectSearch" type="search" placeholder="搜索名称…">
+                <select class="input" id="flowSelectFilterA"></select>
+                <select class="input" id="flowSelectFilterB"></select>
+                <label class="check" id="flowSelectHideWrap"><input type="checkbox" id="flowSelectHide"> 隐藏已生成</label>
+                <span class="spacer"></span>
+                <button class="btn ghost" id="flowSelectAll" type="button">全选当前筛选</button>
+                <button class="btn ghost" id="flowSelectClear" type="button">清空</button>
+              </div>
+              <div class="flow-select-list" id="flowSelectList"></div>
+              <div class="flow-pane-foot">
+                <button class="btn ghost" id="flowSelectBack" type="button">上一步</button>
+                <span class="spacer"></span>
+                <button class="btn primary" id="flowSelectNext" type="button">下一步</button>
+              </div>
+            </div>
+          </section>
+
+          <!-- ③ 确认渲染配置 -->
+          <section class="flow-step" data-flow-step="confirm">
+            <div class="flow-confirm">
+              <div class="flow-confirm-list">
+                <div class="flow-pane-head">
+                  <h2 class="flow-pane-title">运行计划</h2>
+                  <span class="flow-pane-sub" id="flowPlanSub"></span>
+                  <span class="spacer"></span>
+                  <span class="flow-pane-count" id="flowPlanCount"></span>
+                </div>
+                <div class="flow-plan-list" id="flowPlanList"></div>
+              </div>
+              <aside class="flow-confirm-side">
+                <div class="panel flow-config">
+                  <div class="panel-title">渲染配置</div>
+                  <label class="field">
+                    <span class="field-label">渲染 AE 版本</span>
+                    <select id="flowAeVersion" class="input ae-version-select"></select>
+                  </label>
+                  <label class="field">
+                    <span class="field-label">预览背景</span>
+                    <select id="flowBackground" class="input"></select>
+                  </label>
+                  <div class="field-row">
+                    <label class="field narrow">
+                      <span class="field-label" id="flowLimitLabel">每批条数</span>
+                      <input id="flowLimit" class="input" type="number" min="1" max="64" value="40">
+                    </label>
+                    <label class="field narrow">
+                      <span class="field-label">重启上限</span>
+                      <input id="flowRounds" class="input" type="number" min="1" max="200" value="40">
+                    </label>
+                  </div>
+                  <label class="check" id="flowForceWrap">
+                    <input type="checkbox" id="flowForce"> 强制重渲（忽略已生成与黑名单）
+                  </label>
+                  <label class="check" id="flowGuardWrap">
+                    <input type="checkbox" id="flowAeGuard"> 自动处理 AE 崩溃修复提示
+                  </label>
+                </div>
+                <div class="flow-tune-note" id="flowTuneNote" hidden></div>
+                <div class="flow-confirm-actions">
+                  <button class="btn ghost" id="flowConfirmBack" type="button">上一步</button>
+                  <span class="spacer"></span>
+                  <button class="btn ghost" id="flowConfirmRetune" type="button" hidden>继续调参</button>
+                  <button class="btn primary" id="flowConfirmNext" type="button">开始渲染</button>
+                </div>
+              </aside>
+            </div>
+          </section>
+
+          <!-- ③a 属性获取 -->
+          <section class="flow-step" data-flow-step="acquire">
+            <div class="flow-pane">
+              <div class="flow-pane-head">
+                <h2 class="flow-pane-title">获取效果属性</h2>
+                <span class="flow-pane-sub" id="flowAcquireAe"></span>
+              </div>
+              <p class="flow-hint">需要启动一个独立的 After Effects 来读取参数树，这一步不会修改任何参数值。</p>
+              <div class="flow-toolbar">
+                <span class="flow-hint" id="flowAcquirePlan"></span>
+                <span class="spacer"></span>
+                <label class="field narrow">
+                  <span class="field-label">每批条数</span>
+                  <input id="flowAcquireLimit" class="input" type="number" min="1" max="64" value="20">
+                </label>
+                <label class="field narrow">
+                  <span class="field-label">重启上限</span>
+                  <input id="flowAcquireRounds" class="input" type="number" min="1" max="200" value="50">
+                </label>
+                <label class="check"><input type="checkbox" id="flowAcquireGuard"> 自动处理崩溃提示</label>
+              </div>
+              <div class="flow-acquire-tabs" id="flowAcquireTabs">
+                <button class="seg active" type="button" data-acq-tab="todo">待获取 <span id="flowAcquireTodoCount">0</span></button>
+                <button class="seg" type="button" data-acq-tab="cached">已缓存 <span id="flowAcquireCachedCount">0</span></button>
+                <button class="seg" type="button" data-acq-tab="failed">上次失败 <span id="flowAcquireFailedCount">0</span></button>
+              </div>
+              <div class="flow-acquire-list" id="flowAcquireList"></div>
+              <div class="flow-progress" id="flowAcquireProgress" hidden>
+                <div class="progress-head">
+                  <span id="flowAcquirePhase">准备中…</span>
+                  <span id="flowAcquireCount"></span>
+                </div>
+                <div class="progress"><div class="progress-bar" id="flowAcquireBar"></div></div>
+                <div class="progress-msg" id="flowAcquireMessage"></div>
+              </div>
+              <div class="flow-pane-foot">
+                <button class="btn ghost" id="flowAcquireLog" type="button">展开日志</button>
+                <button class="btn ghost" id="flowAcquireSkip" type="button">跳过获取，直接调参</button>
+                <span class="spacer"></span>
+                <button class="btn danger" id="flowAcquireStop" type="button" hidden>停止获取</button>
+                <button class="btn primary" id="flowAcquireStart" type="button">开始获取</button>
+                <button class="btn primary" id="flowAcquireContinue" type="button" hidden>继续调参</button>
+              </div>
+            </div>
+          </section>
+
+          <!-- ③b 人工调参 -->
+          <section class="flow-step" data-flow-step="tuning">
+            <div class="flow-tuning">
+              <aside class="flow-tune-side">
+                <div class="flow-tune-side-head">
+                  <input class="input" id="flowTuneSearch" type="search" placeholder="搜索效果…">
+                </div>
+                <div class="flow-tune-effects" id="flowTuneEffects"></div>
+                <div class="flow-tune-side-foot">
+                  <button class="btn ghost" id="flowTuneAcquireAll" type="button">获取全部待获取</button>
+                </div>
+              </aside>
+              <div class="flow-tune-main">
+                <div class="flow-tune-head">
+                  <div class="flow-tune-heading">
+                    <h2 class="flow-tune-title" id="flowTuneName">选择一个效果开始调参</h2>
+                    <div class="flow-tune-sub" id="flowTuneSub"></div>
+                  </div>
+                  <span class="spacer"></span>
+                  <span class="flow-tune-source" id="flowTuneSource"></span>
+                  <button class="btn ghost" id="flowTuneRefetch" type="button" hidden>重新获取</button>
+                  <button class="btn ghost" id="flowTuneMore" type="button" hidden>⋯</button>
+                </div>
+                <div class="flow-tune-toolbar">
+                  <input class="input" id="flowTuneParamSearch" type="search" placeholder="搜索参数…">
+                  <label class="check"><input type="checkbox" id="flowTuneOnlyChanged"> 只看已改动</label>
+                  <span class="spacer"></span>
+                  <button class="btn ghost" id="flowTuneExpandAll" type="button">展开全部</button>
+                  <button class="btn ghost" id="flowTuneResetEffect" type="button">重置本条</button>
+                </div>
+                <p class="flow-hint">改动会立即写入覆盖表并自动保存（右下角显示保存时间），不需要手动保存。</p>
+                <div class="flow-tune-params" id="flowTuneParams"></div>
+                <div class="flow-tune-foot">
+                  <button class="btn ghost" id="flowTuneVerify" type="button">验证写入</button>
+                  <div class="flow-tune-diff" id="flowTuneDiff" hidden>
+                    <img id="flowTuneBaseImg" alt="基线">
+                    <img id="flowTuneVerifyImg" alt="验证">
+                    <span id="flowTuneDiffText"></span>
+                  </div>
+                  <span class="spacer"></span>
+                  <span class="flow-tune-saved" id="flowTuneSaved"></span>
+                  <button class="btn primary" id="flowTuneDone" type="button">完成调参</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ④ 渲染 -->
+          <section class="flow-step" data-flow-step="run">
+            <div class="flow-pane">
+              <div class="flow-run-summary" id="flowRunSummary"></div>
+              <p class="flow-hint">渲染会在后台启动 After Effects，期间不要手动操作 AE 窗口；可以切到别的页签，渲染会继续。</p>
+              <div class="flow-run-progress">
+                <div class="flow-run-phase" id="flowRunPhase">准备中…</div>
+                <div class="flow-run-current" id="flowRunCurrent"></div>
+                <div class="progress"><div class="progress-bar" id="flowRunBar"></div></div>
+                <div class="flow-run-counts">
+                  <span id="flowRunCount"></span>
+                  <span id="flowRunOk"></span>
+                  <span id="flowRunFail"></span>
+                  <span id="flowRunRemain"></span>
+                </div>
+              </div>
+              <div class="flow-run-log">
+                <div class="flow-run-log-head">
+                  <span>日志</span>
+                  <span class="spacer"></span>
+                  <button class="btn ghost" id="flowRunLogOpen" type="button">打开完整日志</button>
+                </div>
+                <pre class="flow-run-log-body" id="flowRunLogBody"></pre>
+              </div>
+              <div class="flow-pane-foot">
+                <span class="flow-hint" id="flowRunHint"></span>
+                <span class="spacer"></span>
+                <button class="btn danger" id="flowRunStop" type="button">停止渲染</button>
+              </div>
+            </div>
+          </section>
+
+          <!-- ⑤ 结果 -->
+          <section class="flow-step" data-flow-step="result">
+            <div class="flow-pane">
+              <div class="flow-result-counts" id="flowResultCounts"></div>
+              <p class="flow-hint">「跳过」是本次没有真正渲染的条目（已经生成过、或不可渲染），不计入成功或失败。</p>
+              <div class="flow-result-table" id="flowResultTable"></div>
+              <div class="flow-pane-foot">
+                <button class="btn ghost" id="flowResultExit" type="button">返回库</button>
+                <span class="spacer"></span>
+                <button class="btn ghost" id="flowResultBack" type="button">返回第 3 步</button>
+                <button class="btn primary" id="flowResultRetry" type="button" hidden>重试失败项</button>
+              </div>
+            </div>
+          </section>
+
+        </div>
+      </div>
     </div>
 
-    <div class="render-mode" id="presetRenderMode">
-      <div class="notice" id="aeNotice">
-        <div class="notice-title">正在检测 After Effects…</div>
-      </div>
-
-      <div class="panel">
-        <div class="panel-row">
-          <label class="field">
-            <span class="field-label">预览背景</span>
-            <select id="background" class="input"></select>
-          </label>
-          <label class="field">
-            <span class="field-label">渲染 AE 版本</span>
-            <select id="renderAeVersion" class="input ae-version-select"></select>
-          </label>
-          <label class="field narrow">
-            <span class="field-label">每实例最多</span>
-            <input id="limit" class="input" type="number" min="1" max="64" value="40">
-          </label>
-          <label class="field narrow">
-            <span class="field-label">崩溃恢复上限</span>
-            <input id="rounds" class="input" type="number" min="1" max="200" value="40">
-          </label>
-        </div>
-        <div class="panel-row actions">
-          <button class="btn primary" id="btnStart">开始渲染</button>
-          <button class="btn danger" id="btnStop" disabled>停止</button>
-          <span class="spacer"></span>
-          <button class="btn ghost" id="btnOpenLog">打开日志</button>
-        </div>
-      </div>
-
-      <div class="progress-wrap">
-        <div class="progress-head">
-          <span id="renderPhase">空闲</span>
-          <span id="renderCount"></span>
-        </div>
-        <div class="progress"><div class="progress-bar" id="progressBar"></div></div>
-        <div class="progress-msg" id="renderMessage">还没有开始渲染。</div>
-      </div>
-    </div>
-
-    <div class="render-mode" id="pluginRenderMode" hidden>
-      <div class="notice" id="pluginEffectAeNotice">
-        <div class="notice-title">正在检测 After Effects…</div>
-      </div>
-
-      <div class="panel plugin-catalog-panel">
-        <div class="panel-title">插件目录</div>
-        <div class="plugin-catalog-row">
-          <div class="plugin-catalog-info">
-            <div class="plugin-catalog-summary" id="pluginCatalogSummary">未扫描插件目录</div>
-            <div class="plugin-catalog-status" id="pluginCatalogStatus" hidden></div>
-          </div>
-          <span class="spacer"></span>
-          <button class="btn" id="btnScanPluginCatalog" type="button">扫描插件目录</button>
-          <button class="btn primary" id="btnPickPluginEffects" type="button" disabled>选择效果…</button>
-        </div>
-      </div>
-
-      <div class="panel">
-        <div class="panel-row">
-          <label class="field">
-            <span class="field-label">预览背景</span>
-            <select id="pluginEffectBackground" class="input"></select>
-          </label>
-          <label class="field">
-            <span class="field-label">渲染 AE 版本</span>
-            <select id="pluginEffectAeVersion" class="input ae-version-select"></select>
-          </label>
-          <label class="field narrow">
-            <span class="field-label">每批条数</span>
-            <input id="pluginEffectLimit" class="input" type="number" min="1" max="64" value="8">
-          </label>
-          <label class="field narrow">
-            <span class="field-label">重启上限</span>
-            <input id="pluginEffectRounds" class="input" type="number" min="1" max="200" value="200">
-          </label>
-        </div>
-        <div class="panel-row actions">
-          <button class="btn primary" id="btnPluginEffectStart">开始生成</button>
-          <button class="btn danger" id="btnPluginEffectStop" disabled>停止</button>
-          <span class="spacer"></span>
-          <button class="btn ghost" id="btnPluginEffectLog">打开日志</button>
-        </div>
-      </div>
-
-      <div class="progress-wrap">
-        <div class="progress-head">
-          <span id="pluginEffectPhase">空闲</span>
-          <span id="pluginEffectCount"></span>
-        </div>
-        <div class="progress"><div class="progress-bar" id="pluginEffectBar"></div></div>
-        <div class="progress-msg" id="pluginEffectMessage">
-          插件效果会使用独立 AE 实例逐条渲染，崩溃条目会自动跳过。
-        </div>
-      </div>
-    </div>
   </section>
 
   <!-- ========== 设置 ========== -->
@@ -264,6 +424,28 @@
         <button class="btn ghost" id="btnOpenPresets">打开预设库</button>
         <button class="btn ghost" id="btnOpenProbe">打开日志目录</button>
       </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">人工调参</div>
+      <div class="kv"><span>属性缓存</span><code id="setParamsCache">—</code></div>
+      <div class="panel-row actions">
+        <button class="btn ghost" id="btnOpenParamsCache">打开属性缓存目录</button>
+      </div>
+      <p class="footnote">
+        属性缓存是启动 After Effects 读取插件参数树后的结果（只读记录，不含你写入的覆盖值）。
+        删掉某个文件后，下次做人工调参时该效果会被重新读取。
+      </p>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">自动化</div>
+      <label class="check"><input type="checkbox" id="setAeGuard"> 自动处理 AE 崩溃修复提示</label>
+      <p class="footnote">
+        After Effects 上次异常退出后，下次启动有概率弹出「崩溃修复选项」对话框，把渲染或取参卡住。
+        打开后，Hub 在调起 AE 期间会启动看守：识别到该对话框就替你按「继续」——
+        不会点其它按钮，也不会改 AE 的首选项或脚本权限。
+      </p>
     </div>
 
     <p class="footnote">
@@ -301,49 +483,6 @@
   </form>
 </div>
 
-<div class="modal-mask" id="pluginEffectPicker" hidden>
-  <section class="modal-card effect-picker" role="dialog" aria-modal="true" aria-labelledby="effectPickerTitle">
-    <header class="effect-picker-head">
-      <div class="effect-picker-heading">
-        <h3 id="effectPickerTitle">选择效果</h3>
-        <span class="effect-picker-sub" id="effectPickerSub">—</span>
-      </div>
-      <button class="icon-btn effect-picker-close" id="effectPickerClose" type="button"
-              aria-label="关闭" title="关闭">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M6 6l12 12M18 6L6 18"/>
-        </svg>
-      </button>
-    </header>
-
-    <div class="effect-picker-toolbar">
-      <input class="search effect-picker-search" id="effectPickerSearch" type="search"
-             placeholder="搜索效果 / 插件 / 分类…" spellcheck="false">
-      <select class="input" id="effectPickerPluginFilter" aria-label="按插件筛选"></select>
-      <label class="check">
-        <input id="effectHideRendered" type="checkbox" checked>
-        <span>隐藏已生成</span>
-      </label>
-      <label class="check">
-        <input id="effectForce" type="checkbox">
-        <span>强制重渲</span>
-      </label>
-    </div>
-
-    <div class="effect-picker-note">勾选强制重渲后，已生成或已跳过的条目会被重新渲染。</div>
-    <div class="effect-picker-list" id="effectPickerList"></div>
-
-    <footer class="effect-picker-actions">
-      <button class="btn ghost" id="effectSelectAll" type="button">全选当前筛选</button>
-      <button class="btn ghost" id="effectClearAll" type="button">清空</button>
-      <span class="effect-picker-count" id="effectSelectedCount">已选 0 项</span>
-      <span class="spacer"></span>
-      <span class="effect-picker-status" id="effectPickerStatus"></span>
-      <button class="btn" id="effectPickerCancel" type="button">取消</button>
-      <button class="btn primary" id="effectRenderSelected" type="button" disabled>渲染所选</button>
-    </footer>
-  </section>
-</div>
 
 <div class="modal-mask" id="renderLogDialog" hidden>
   <section class="log-dialog" role="dialog" aria-modal="true" aria-labelledby="renderLogTitle">
@@ -367,6 +506,7 @@
     </footer>
   </section>
 </div>
+
 
 <div class="modal-mask about-mask" id="aboutDialog" hidden>
   <section class="about-card" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
@@ -445,5 +585,6 @@
 
 <script src="about.js"></script>
 <script src="app.js"></script>
+<script src="flow.js"></script>
 </body>
 </html>

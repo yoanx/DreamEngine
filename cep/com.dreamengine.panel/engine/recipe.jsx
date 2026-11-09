@@ -184,8 +184,27 @@ var AEV_Recipe = (function () {
             { names: ["不透明度"], value: 70 },
             { names: ["颜色 1"], value: [0.1, 0.3, 0.6] },
             { names: ["颜色 2"], value: [0.9, 0.4, 0.2] }
-        ]
+        ],
+
+        // ---- 第三方：P0 实机验证 ----
+        // Twitch 默认所有 Enable 开关都是 0，预览就是空素材；Blur 是 Enable
+        // 组后的第一个 0/1 开关，置 1 后画面才有 Twitch 效果（P0: 66.86% 像素变化）。
+        // 只做静态写入，不打关键帧（见 STATIC_RECIPES）。
+        "Videocopilot Twitch": [{ names: ["Blur"], value: 1 }]
     };
+
+    /**
+     * 只写值、不打关键帧的配方。
+     * Twitch 的 Enable 开关是 0/1，P0 只验证了静态写入；给它打关键帧
+     * 没有实机验证过，保持静态最稳，也避免 6 帧里开关反复闪。
+     */
+    var STATIC_RECIPES = {
+        "Videocopilot Twitch": true
+    };
+
+    function isStaticRecipe(matchName) {
+        return STATIC_RECIPES[matchName] === true;
+    }
 
     /**
      * 替代方案：某些效果不能真渲（AE 会挂死），但用户仍希望预览墙上有一张
@@ -254,6 +273,9 @@ var AEV_Recipe = (function () {
      * 所以判断规则必须能在没有分类信息时也站得住。
      */
     function sceneFor(matchName, category) {
+        // 手动覆盖表里的 scene 优先（用户明确指定了场景搭法）
+        var override = overrideFor(matchName);
+        if (override && override.scene) return override.scene;
         if (isNoPreview(category)) return "no-preview";
         var cat = lower(category);
         var mn = lower(matchName);
@@ -320,14 +342,18 @@ var AEV_Recipe = (function () {
      *   hash(matchName + recipeVersion + assetFingerprint + tileSize + frameCount)
      * AE 版本号刻意不参与——否则每次升级都会触发全量重渲。
      */
-    function cacheKey(matchName, assetFingerprint, tileSize, frameCount) {
-        return hashString([
+    function cacheKey(matchName, assetFingerprint, tileSize, frameCount, overrideSignature) {
+        var parts = [
             matchName,
             RECIPE_VERSION,
             assetFingerprint || "na",
             tileSize || 0,
             frameCount || 0
-        ].join("|"));
+        ];
+        // 无覆盖时不追加任何字段，保证旧缓存键完全不变；
+        // 有覆盖时把来源/参数签名并进哈希，改覆盖会自动失效。
+        if (overrideSignature) parts.push(overrideSignature);
+        return hashString(parts.join("|"));
     }
 
     /** 展示时点：取合成中点，避开首帧尚未成形的效果 */
@@ -411,6 +437,402 @@ var AEV_Recipe = (function () {
         return null;
     }
 
+    /* ---------- 手动覆盖表：effect_overrides.tsv ---------- */
+    // 文件在 <我的文档>/DreamEngine/effect_overrides.tsv，由 Hub 写入。
+    // 读不到 / 坏行 / 坏值一律跳过，不让覆盖表阻塞自动渲染。
+    var OVERRIDE_ROOT_NAME = "DreamEngine";
+    var OVERRIDE_FILE_NAME = "effect_overrides.tsv";
+    var OVERRIDE_PRESET_DIR = "effect_presets";
+    var OVERRIDE_SCENES = [
+        "footage-2d", "solid-2d", "text", "shape-mask",
+        "adjustment", "two-layer-input", "3d-camera"
+    ];
+    var overrideCache = null;
+
+    function trimOverrideText(value) {
+        return String(value === undefined || value === null ? "" : value)
+            .replace(/^\s+|\s+$/g, "");
+    }
+
+    function isAllowedOverrideScene(scene) {
+        for (var i = 0; i < OVERRIDE_SCENES.length; i++) {
+            if (scene === OVERRIDE_SCENES[i]) return true;
+        }
+        return false;
+    }
+
+    function overrideRootPath() {
+        try {
+            if (typeof Folder === "undefined" || !Folder.myDocuments) return "";
+            return String(Folder.myDocuments.fsName) + "/" + OVERRIDE_ROOT_NAME;
+        } catch (e) {
+            return "";
+        }
+    }
+
+    function readOverrideText(path) {
+        try {
+            if (typeof File === "undefined") return "";
+            var f = new File(path);
+            if (!f.exists) return "";
+            f.encoding = "UTF-8";
+            if (!f.open("r")) return "";
+            var text = String(f.read());
+            f.close();
+            return text.replace(/^\uFEFF/, "");
+        } catch (e2) {
+            return "";
+        }
+    }
+
+    function overrideFileExists(path) {
+        try {
+            if (typeof File === "undefined") return false;
+            var f = new File(path);
+            return !!f.exists;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function normalizePresetPath(value) {
+        var raw = String(value === undefined || value === null ? "" : value)
+            .replace(/\\/g, "/")
+            .replace(/^\s+|\s+$/g, "");
+        if (!raw) return "";
+        if (raw.charAt(0) === "/" || /^[A-Za-z]:/.test(raw)) return null;
+        var parts = raw.split("/");
+        for (var i = 0; i < parts.length; i++) {
+            if (!parts[i] || parts[i] === "." || parts[i] === "..") return null;
+        }
+        var prefixed = lower(raw).indexOf(OVERRIDE_PRESET_DIR + "/") === 0
+            ? raw
+            : OVERRIDE_PRESET_DIR + "/" + raw;
+        if (!/\.ffx$/i.test(prefixed)) return null;
+        return prefixed;
+    }
+
+    function parseOverrideArray(raw) {
+        var text = trimOverrideText(raw);
+        if (text.charAt(0) === "[") text = text.substring(1);
+        if (text.length && text.charAt(text.length - 1) === "]") {
+            text = text.substring(0, text.length - 1);
+        }
+        if (!trimOverrideText(text)) return null;
+        var parts = text.split(",");
+        var values = [];
+        for (var i = 0; i < parts.length; i++) {
+            var number = Number(trimOverrideText(parts[i]));
+            if (isNaN(number)) return null;
+            values.push(number);
+        }
+        return values.length ? values : null;
+    }
+
+    function parseOverrideValue(valueType, raw) {
+        var type = lower(trimOverrideText(valueType));
+        var text = trimOverrideText(raw);
+        if (!text) return null;
+        if (!type) {
+            if (/^(true|false)$/i.test(text)) return lower(text) === "true";
+            if (text.charAt(0) === "[") return parseOverrideArray(text);
+            var inferred = Number(text);
+            return isNaN(inferred) ? null : inferred;
+        }
+        if (type === "number") {
+            var number = Number(text);
+            return isNaN(number) ? null : number;
+        }
+        if (type === "boolean") {
+            if (/^(true|1)$/i.test(text)) return true;
+            if (/^(false|0)$/i.test(text)) return false;
+            return null;
+        }
+        if (type === "array") return parseOverrideArray(text);
+        return null;
+    }
+
+    function parseOverrideEnabled(value) {
+        var text = lower(trimOverrideText(value));
+        if (!text) return true;
+        if (text === "1" || text === "true" || text === "yes" || text === "on") return true;
+        if (text === "0" || text === "false" || text === "no" || text === "off") return false;
+        return null;
+    }
+
+    function parseOverrideVerified(value) {
+        var text = lower(trimOverrideText(value));
+        if (!text) return null;
+        if (text === "1" || text === "true") return true;
+        if (text === "0" || text === "false") return false;
+        return undefined;
+    }
+
+    function overrideHeaderIndex(cells) {
+        var index = {};
+        for (var i = 0; i < cells.length; i++) {
+            var name = trimOverrideText(cells[i]);
+            if (name) index[name] = i;
+        }
+        return index["matchName"] === undefined ? null : index;
+    }
+
+    function parseOverrideRow(cells, index) {
+        function get(name) {
+            var column = index[name];
+            return column === undefined
+                ? ""
+                : String(cells[column] === undefined || cells[column] === null ? "" : cells[column]);
+        }
+
+        var matchName = trimOverrideText(get("matchName"));
+        if (!matchName) return null;
+
+        var preset = normalizePresetPath(get("preset"));
+        if (preset === null) return null;
+
+        var scene = trimOverrideText(get("scene"));
+        if (scene && !isAllowedOverrideScene(scene)) return null;
+
+        var enabled = parseOverrideEnabled(get("enabled"));
+        if (enabled === null || !enabled) return null;
+
+        var paramIndex = trimOverrideText(get("paramIndex"));
+        if (paramIndex && !/^\d+(?:\.\d+)*$/.test(paramIndex)) return null;
+        if (!preset && !paramIndex) return null;
+
+        var valueType = lower(trimOverrideText(get("valueType")));
+        var value = parseOverrideValue(valueType, get("value"));
+        if (paramIndex && value === null) return null;
+
+        var verified = parseOverrideVerified(get("verified"));
+        if (verified === undefined) return null;
+
+        return {
+            matchName: matchName,
+            preset: preset,
+            scene: scene,
+            paramIndex: paramIndex,
+            paramPath: trimOverrideText(get("paramPath")),
+            value: value,
+            valueType: valueType,
+            verified: verified,
+            note: trimOverrideText(get("note"))
+        };
+    }
+
+    function parseOverrideText(text) {
+        var lines = String(text === undefined || text === null ? "" : text).split(/\r\n|\r|\n/);
+        var headerLine = -1;
+        var index = null;
+        for (var i = 0; i < lines.length; i++) {
+            if (!lines[i] || lines[i].charAt(0) === "#") continue;
+            index = overrideHeaderIndex(lines[i].split("\t"));
+            headerLine = i;
+            break;
+        }
+        if (!index || headerLine < 0) return { items: [], errors: ["bad_header"] };
+
+        var items = [];
+        var errors = [];
+        for (var j = headerLine + 1; j < lines.length; j++) {
+            if (!lines[j] || lines[j].charAt(0) === "#") continue;
+            var row = null;
+            try {
+                row = parseOverrideRow(lines[j].split("\t"), index);
+            } catch (e) {
+                row = null;
+            }
+            if (row) items.push(row);
+            else errors.push("bad_row:" + (j + 1));
+        }
+        return { items: items, errors: errors };
+    }
+
+    function loadOverrides() {
+        if (overrideCache) return overrideCache;
+        overrideCache = { items: [], byMatch: {}, errors: [] };
+
+        var root = overrideRootPath();
+        if (!root) return overrideCache;
+        var text = readOverrideText(root + "/" + OVERRIDE_FILE_NAME);
+        if (!text) return overrideCache;
+
+        var parsed = parseOverrideText(text);
+        overrideCache.errors = parsed.errors;
+        for (var i = 0; i < parsed.items.length; i++) {
+            var row = parsed.items[i];
+            var group = overrideCache.byMatch[row.matchName];
+            if (!group) {
+                group = {
+                    matchName: row.matchName,
+                    scene: "",
+                    preset: "",
+                    presetExists: false,
+                    params: [],
+                    verified: null
+                };
+                overrideCache.byMatch[row.matchName] = group;
+            }
+            if (row.scene && !group.scene) group.scene = row.scene;
+            if (row.preset && !group.preset) {
+                group.preset = row.preset;
+                group.presetExists = overrideFileExists(root + "/" + row.preset);
+            }
+            if (row.paramIndex) {
+                group.params.push({
+                    paramIndex: row.paramIndex,
+                    value: row.value,
+                    valueType: row.valueType,
+                    verified: row.verified,
+                    paramPath: row.paramPath
+                });
+                if (row.verified === false) group.verified = false;
+                else if (row.verified === true && group.verified !== false) group.verified = true;
+            }
+        }
+        overrideCache.items = parsed.items;
+        return overrideCache;
+    }
+
+    function overrideFor(matchName) {
+        var cache = loadOverrides();
+        return cache.byMatch[matchName] || null;
+    }
+
+    function resetOverrides() {
+        overrideCache = null;
+        return true;
+    }
+
+    function overrideSignatureFor(matchName) {
+        var ov = overrideFor(matchName);
+        if (!ov) return "";
+        var parts = [];
+        if (ov.scene) parts.push("scene=" + ov.scene);
+        if (ov.preset) parts.push("preset=" + ov.preset);
+        for (var i = 0; i < ov.params.length; i++) {
+            var p = ov.params[i];
+            parts.push(
+                p.paramIndex + "=" + p.valueType + ":" + String(p.value) +
+                ":" + (p.verified === null ? "" : p.verified ? "1" : "0")
+            );
+        }
+        if (!parts.length) return "";
+        return "ov:" + hashString(parts.join("|"));
+    }
+
+    function presetPathFor(matchName) {
+        var ov = overrideFor(matchName);
+        if (!ov || !ov.preset) return "";
+        var root = overrideRootPath();
+        return root ? root + "/" + ov.preset : "";
+    }
+
+    function resolveIndexPath(effectGroup, indexPath) {
+        var parts = String(indexPath).split(".");
+        var current = effectGroup;
+        for (var i = 0; i < parts.length; i++) {
+            var index = parseInt(parts[i], 10);
+            if (isNaN(index) || index < 1) return null;
+            try {
+                current = current.property(index);
+            } catch (e) {
+                return null;
+            }
+            if (!current) return null;
+        }
+        return current;
+    }
+
+    function readPropertyValue(prop) {
+        try {
+            return prop.value;
+        } catch (e) {
+            return undefined;
+        }
+    }
+
+    function sameArrayValue(a, b) {
+        if (!a || !b || typeof a.length !== "number" || typeof b.length !== "number") return false;
+        if (a.length !== b.length) return false;
+        for (var i = 0; i < a.length; i++) {
+            if (Math.abs(Number(a[i]) - Number(b[i])) > 1e-6) return false;
+        }
+        return true;
+    }
+
+    function setOverrideValue(prop, value, valueType) {
+        var type = lower(valueType);
+        if (!type) {
+            if (typeof value === "boolean") type = "boolean";
+            else if (value && typeof value.length === "number") type = "array";
+            else type = "number";
+        }
+
+        if (type === "number") {
+            return setNumberSafely(prop, Number(value));
+        }
+
+        var oldValue = readPropertyValue(prop);
+        if (!setIfWritable(prop, value)) return false;
+        var now = readPropertyValue(prop);
+
+        if (type === "boolean") {
+            var wanted = value ? true : false;
+            var ok = false;
+            if (typeof now === "boolean") ok = now === wanted;
+            else if (typeof now === "number") ok = (now !== 0) === wanted;
+            else if (now !== undefined && now !== null) ok = String(now) === String(wanted);
+            if (!ok) {
+                try { setIfWritable(prop, oldValue); } catch (e) {}
+            }
+            return ok;
+        }
+
+        if (type === "array") {
+            if (sameArrayValue(now, value)) return true;
+            try { setIfWritable(prop, oldValue); } catch (e2) {}
+            return false;
+        }
+
+        return now === value;
+    }
+
+    function applyParamOverrides(effectGroup, matchName) {
+        var ov = overrideFor(matchName);
+        if (!ov || !ov.params.length) {
+            return { ok: true, applied: 0, failed: false, errors: [] };
+        }
+
+        var applied = 0;
+        var failed = false;
+        var errors = [];
+        for (var i = 0; i < ov.params.length; i++) {
+            var p = ov.params[i];
+            var prop = resolveIndexPath(effectGroup, p.paramIndex);
+            if (!prop) {
+                failed = true;
+                errors.push(p.paramIndex + ":missing");
+                trace("override|" + matchName + "|" + p.paramIndex + "|missing");
+                continue;
+            }
+            var ok = false;
+            try {
+                ok = setOverrideValue(prop, p.value, p.valueType);
+            } catch (e) {
+                ok = false;
+            }
+            if (ok) applied++;
+            else {
+                failed = true;
+                errors.push(p.paramIndex + ":write_failed");
+            }
+            trace("override|" + matchName + "|" + p.paramIndex + "|" + (ok ? "ok" : "fail") + "|" + String(p.value));
+        }
+        return { ok: !failed, applied: applied, failed: failed, errors: errors };
+    }
+
     /** 套显式配方；返回写入次数，0 表示该效果没有配方 */
     function applyRecipe(effectGroup, matchName) {
         var steps = stepsFor(matchName);
@@ -487,6 +909,7 @@ var AEV_Recipe = (function () {
      * 返回是否成功打上关键帧。
      */
     function animate(effectGroup, matchName, durationSeconds) {
+        if (isStaticRecipe(matchName)) return false;
         var steps = stepsFor(matchName);
         if (!steps || !steps.length) return false;
 
@@ -966,9 +1389,46 @@ var AEV_Recipe = (function () {
         return false;
     }
 
-    /** 统一入口：有配方走配方，内置无配方走启发式，插件只微调一个强度参数 */
+    /** 统一入口：有覆盖走覆盖；有配方走配方；内置无配方走启发式；插件只微调一个强度参数 */
     function apply(effectGroup, matchName, cellSize) {
+        var ov = overrideFor(matchName);
+
+        // 明确标记「写入无效」且没有 .ffx：保持效果默认参数，不要再让启发式乱写。
+        if (ov && ov.params.length && ov.verified === false) {
+            if (ov.preset && ov.presetExists) {
+                return { mode: "override-preset", writes: 0, override: true, preset: ov.preset };
+            }
+            trace("override|blocked|" + matchName);
+            return { mode: "override-blocked", writes: 0, override: true };
+        }
+
+        // 只有 .ffx、没有逐参数覆盖 → 由 previewgen 应用预设。
+        if (ov && ov.preset && ov.presetExists && !ov.params.length) {
+            return { mode: "override-preset", writes: 0, override: true, preset: ov.preset };
+        }
+
         var explicitWrites = applyRecipe(effectGroup, matchName);
+        if (ov && ov.params.length) {
+            var overrideResult = applyParamOverrides(effectGroup, matchName);
+            if (overrideResult.failed) {
+                trace("override|failed|" + matchName + "|" + overrideResult.errors.join(","));
+                return {
+                    mode: "override-failed",
+                    writes: explicitWrites + overrideResult.applied,
+                    failed: true,
+                    override: true,
+                    errors: overrideResult.errors
+                };
+            }
+            if (overrideResult.applied > 0) {
+                return {
+                    mode: explicitWrites > 0 ? "recipe+override" : "override",
+                    writes: explicitWrites + overrideResult.applied,
+                    override: true
+                };
+            }
+        }
+
         if (explicitWrites > 0) {
             return { mode: "recipe", writes: explicitWrites };
         }
@@ -1062,6 +1522,13 @@ var AEV_Recipe = (function () {
         animate: animate,
         animateAny: animateAny,
         apply: apply,
+        applyParamOverrides: applyParamOverrides,
+        overrideFor: overrideFor,
+        resetOverrides: resetOverrides,
+        overrideSignatureFor: overrideSignatureFor,
+        presetPathFor: presetPathFor,
+        parseOverrideText: parseOverrideText,
+        trace: trace,
         setTuning: setTuning,
         tuningEnabled: tuningEnabled,
         setTrace: setTrace,
@@ -1069,6 +1536,8 @@ var AEV_Recipe = (function () {
         isIntensityName: isIntensityName,
         isBuiltinMatch: isBuiltinMatch,
         recipes: RECIPES,
+        staticRecipes: STATIC_RECIPES,
+        isStaticRecipe: isStaticRecipe,
         effectNameFor: effectNameFor,
         stepsFor: stepsFor,
         isSurrogate: isSurrogate

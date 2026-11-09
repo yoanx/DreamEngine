@@ -39,6 +39,13 @@ function createPaths(opts = {}) {
     /* 效果库收藏：按 matchName 持久化，升级安装同样不能清空 */
     effectFavorites: path.join(userRoot, "effect_favorites.json"),
 
+    /* 效果手动调参：用户覆盖表与 .ffx 兜底预设（升级安装不得清空） */
+    effectOverrides: path.join(userRoot, "effect_overrides.tsv"),
+    effectPresets: path.join(userRoot, "effect_presets"),
+
+    /* 属性缓存：按 插件+分类 分组的 TSV 与 index.json（人工调参的参数树来源，升级安装不得清空） */
+    effectParamsRoot: path.join(userRoot, "effect_params"),
+
     /* 离线渲染的约定目录 */
     probe,
     hubState: path.join(probe, "hub_state.json"),
@@ -47,6 +54,19 @@ function createPaths(opts = {}) {
     todo: path.join(probe, "next_preset_plugin_batch.tsv"),
     pluginEffectState: path.join(probe, "plugin_effect_state.json"),
     pluginEffectLog: path.join(probe, "plugin_run.log"),
+
+    /* 预览渲染：逐条结果（一次运行一份，Hub 启动时清空并写入 skip 行） */
+    previewResults: path.join(probe, "preview_run_results.tsv"),
+
+    /* 批量取参：目标清单、状态、黑名单与原始 dump（与 tools/dump_plugin_effect_params.ps1 一致） */
+    effectDumpTargets: path.join(probe, "next_effect_dump.tsv"),
+    effectDumpState: path.join(probe, "effect_dump_state.json"),
+    effectDumpLog: path.join(probe, "effect_dump.log"),
+    effectDumpBlacklist: path.join(probe, "effect_dump_blacklist.tsv"),
+    effectParamsRaw: path.join(probe, "effect_params_raw"),
+
+    /* AE 崩溃修复对话框看守日志（Hub 调起 AE 时由 tools/ae_crash_guard.ps1 追加写） */
+    aeGuardLog: path.join(probe, "ae_guard.log"),
 
     /* 选择性渲染：目录扫描与选择文件（与 tools/*.ps1、*.jsx 保持一致） */
     pluginCatalog: path.join(probe, "plugin_effect_catalog.tsv"),
