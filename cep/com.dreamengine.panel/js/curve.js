@@ -93,6 +93,7 @@ var AEV_CurveUI = (function () {
   var DEFAULT_CURVE = { x1: 0.33, y1: 0, x2: 0.67, y2: 1 };
   var CUSTOM_PRESET_KEY = "dreamengine.curve.customPresets.v1";
   var DELETED_PRESET_KEY = "dreamengine.curve.deletedPresets.v1";
+  var VIEW_KEY = "dreamengine.curve.view.v1";
   var memoryStorage = {};
 
   var deps = { engine: null, parse: null, status: null, lang: null };
@@ -109,6 +110,8 @@ var AEV_CurveUI = (function () {
     graph: null,
     selectedNodeId: "",
     snapEnabled: false,
+    /* 绘图区比例：fill = 铺满画布；square = 居中正方形 */
+    view: "fill",
     /* 正在编辑的模板曲线 */
     curve: { x1: DEFAULT_CURVE.x1, y1: DEFAULT_CURVE.y1, x2: DEFAULT_CURVE.x2, y2: DEFAULT_CURVE.y2 },
     preset: "ease",
@@ -190,6 +193,29 @@ var AEV_CurveUI = (function () {
       }
     } catch (e) {}
     memoryStorage[key] = value;
+  }
+
+  function loadViewMode() {
+    var value = storageGet(VIEW_KEY);
+    if (value === "fill" || value === "square") st.view = value;
+  }
+
+  function renderViewToggle() {
+    if (!el.viewToggle) return;
+    var square = st.view === "square";
+    el.viewToggle.setAttribute("aria-pressed", square ? "true" : "false");
+    var label = square
+      ? t("当前为正方形视图，点击切换为填充", "Square view - click for fill")
+      : t("当前为填充视图，点击切换为正方形", "Fill view - click for square");
+    el.viewToggle.setAttribute("aria-label", label);
+    el.viewToggle.title = label;
+  }
+
+  function toggleViewMode() {
+    st.view = st.view === "square" ? "fill" : "square";
+    storageSet(VIEW_KEY, st.view);
+    renderViewToggle();
+    draw();
   }
 
   function loadCustomPresets() {
@@ -432,6 +458,15 @@ var AEV_CurveUI = (function () {
     var padTop = 12;
     var padBottom = 14;
     var padSide = 14;
+    if (st.view === "square") {
+      var size = Math.max(40, Math.min(w - padSide * 2, h - padTop - padBottom));
+      return {
+        x: (w - size) / 2,
+        y: (h - size) / 2,
+        w: size,
+        h: size
+      };
+    }
     return {
       x: padSide,
       y: padTop,
@@ -492,7 +527,15 @@ var AEV_CurveUI = (function () {
   }
 
   function plotRect(w, h) {
-    return { x: 42, y: 14, w: Math.max(20, w - 56), h: Math.max(20, h - 36) };
+    var rect = { x: 42, y: 14, w: Math.max(20, w - 56), h: Math.max(20, h - 36) };
+    if (st.view === "square") {
+      var size = Math.max(20, Math.min(rect.w, rect.h));
+      rect.x += (rect.w - size) / 2;
+      rect.y += (rect.h - size) / 2;
+      rect.w = size;
+      rect.h = size;
+    }
+    return rect;
   }
 
   function draw() {
@@ -1967,6 +2010,7 @@ var AEV_CurveUI = (function () {
 
     el.canvas = byId("curveCanvas");
     el.stage = byId("curveStage");
+    el.viewToggle = byId("curveViewToggle");
     el.hint = byId("curveHint");
     el.readout = byId("curveReadout");
     el.apply = byId("curveApply");
@@ -1989,11 +2033,13 @@ var AEV_CurveUI = (function () {
     el.deleteCancel = byId("curvePresetDeleteCancel");
 
     setBusy(false);
+    loadViewMode();
     st.customPresets = loadCustomPresets();
     st.deletedPresets = loadDeletedPresetIds();
 
     if (el.apply) el.apply.addEventListener("click", apply);
     if (el.saveOpen) el.saveOpen.addEventListener("click", openSavePreset);
+    if (el.viewToggle) el.viewToggle.addEventListener("click", toggleViewMode);
 
     if (el.modeBtn) {
       el.modeBtn.addEventListener("click", function (event) {
@@ -2097,6 +2143,7 @@ var AEV_CurveUI = (function () {
 
     renderPresets();
     renderMode();
+    renderViewToggle();
     draw();
     updateHint();
 
@@ -2149,6 +2196,7 @@ var AEV_CurveUI = (function () {
     renderPresets();
     setBusy(st.busy);
     renderMode();
+    renderViewToggle();
     st.msg = "";
     st.msgError = false;
     draw();
@@ -2165,6 +2213,7 @@ var AEV_CurveUI = (function () {
     }
     return {
       mode: st.mode,
+      view: st.view,
       graphMode: st.graphMode,
       graph: (st.graph && AEV_CurveGraph) ? AEV_CurveGraph.clone(st.graph) : null,
       selectedNodeId: st.selectedNodeId,
@@ -2182,7 +2231,13 @@ var AEV_CurveUI = (function () {
       activeChip: el.presets ? activeChipId() : "",
       message: st.msg,
       msgError: st.msgError,
-      size: el.stage ? { w: el.stage.clientWidth, h: el.stage.clientHeight } : null
+      size: el.stage ? { w: el.stage.clientWidth, h: el.stage.clientHeight } : null,
+      mapRect: st.map && st.map.rect ? {
+        x: st.map.rect.x,
+        y: st.map.rect.y,
+        w: st.map.rect.w,
+        h: st.map.rect.h
+      } : null
     };
   }
 

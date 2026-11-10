@@ -1,0 +1,46 @@
+// DreamEngine render parameters finalized by M0 (2026-11-03).
+// ExtendScript-compatible: ES3 only.
+
+var DREAM_ENGINE_RENDER_CONFIG = {
+    version: 1,
+    contactSheet: {
+        columns: 8,
+        cellSize: 128,
+        width: 1024,
+        height: 1024,
+        effectsPerSheet: 64
+    },
+    animatedPreview: {
+        frameCount: 6,
+        fps: 12
+    },
+    l1: {
+        totalEffects: 80,
+        staticEffects: 60,
+        animatedEffects: 20
+    },
+    render: {
+        aerenderConcurrency: 1,
+        skipExistingFiles: true,
+        pngOutputTemplate: "DreamEngine PNG Sequence"
+    },
+    cef: {
+        webglMaxTextureSize: 16384,
+        canvasTestedMax: 8192,
+        png: true,
+        gif: true,
+        webp: true,
+        mp4Likely: true
+    },
+    legacyAE: {
+        dropdownTextApi: false,
+        minMaxReadable: true,
+        unitsReadable: true
+    },
+    presetLibrary: {
+        fileMultiSelect: true,
+        dragPath: true,
+        recursiveScan: true,
+        recursiveScanSampleMs: 742
+    }
+};

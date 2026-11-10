@@ -140,9 +140,9 @@ Preset categories and preset favorites are shared between the panel and Hub.
 - Browse by folder: open subfolders and step back through the breadcrumb at the top; folder cards show how many materials they contain.
 - Category counts and search cover only the folder you are in; empty folders are hidden.
 - Refresh and change-root sit in the top-right corner; refreshing keeps your current folder, and if it was deleted the view falls back to the nearest existing parent.
-- Automatically classify video, images, audio, and `.aep` projects.
+- Automatically classify video, images, audio, `.aep` projects, and `.jsx/.jsxbin` scripts.
 - Click video to preview up to two seconds.
-- Audio displays a waveform and can be played or stopped with a click.
+- Audio displays a waveform generated inside the panel and can be played or stopped with a click; waveform generation does not require FFmpeg.
 - Double-click video, images, or audio to import and place it at the current composition time.
 - `.aep` files are imported as projects only; their contents are not parsed or added as media layers.
 - Favorite media and combine favorites with category filters.
@@ -151,9 +151,9 @@ Preset categories and preset favorites are shared between the panel and Hub.
 
 - Windows 10 or Windows 11
 - After Effects 2021 (18.0) or later
-- `ffmpeg` is recommended for audio waveforms and cached previews of some video formats
+- `ffmpeg` is recommended for cached thumbnails and previews of some video formats
 
-Without `ffmpeg`, core AE workflows still work, but some media previews may be blank.
+Without `ffmpeg`, audio waveforms, playback, and import still work; thumbnails and previews for some incompatible video formats may be blank.
 
 ## Screenshots
 
@@ -174,7 +174,7 @@ DreamEngine does not upload projects, media, or presets.
 | `Documents/DreamEngine/presets/` | User `.ffx` presets |
 | `Documents/DreamEngine/backgrounds/` | Custom preview backgrounds |
 | `Documents/DreamEngine/preset_categories.json` | Preset categories and preset favorites |
-| `Documents/DreamEngine/materials/` | Media index, waveform, and video preview cache |
+| `Documents/DreamEngine/materials/` | Media index and video preview cache |
 | `Documents/DreamEngineProbe/` | Hub render state and logs |
 | `%APPDATA%/Adobe/CEP/extensions/com.dreamengine.panel/` | Installed panel and built-in preview indexes |
 

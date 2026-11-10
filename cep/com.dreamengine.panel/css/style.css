@@ -1925,12 +1925,12 @@ main {
 
 /* ---------- 素材库 ---------- */
 .materials-view {
-  --category-width: 180px;
+  --material-rail-width: 64px;
   display: flex;
   min-height: 0;
   flex: 1;
   overflow: hidden;
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--border);
 }
 
 .materials-view[hidden] {
@@ -1938,12 +1938,104 @@ main {
 }
 
 .materials-sidebar {
-  width: var(--category-width, 180px);
-  min-width: 140px;
-  max-width: calc(100% - 132px);
-  flex: 0 0 var(--category-width, 180px);
-  padding: 16px 12px;
+  width: var(--material-rail-width, 64px);
+  min-width: var(--material-rail-width, 64px);
+  max-width: var(--material-rail-width, 64px);
+  flex: 0 0 var(--material-rail-width, 64px);
+  padding: 8px 7px;
+  overflow-x: hidden;
   overflow-y: auto;
+  border-right: 1px solid var(--border);
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+
+.materials-sidebar::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+/* 素材分类固定为图标轨道：图标承载类别，计数作为补充信息。 */
+.materials-sidebar .category-list {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 0;
+}
+
+.materials-sidebar .material-category {
+  width: 42px;
+  height: 42px;
+  list-style: none;
+}
+
+.material-category-button {
+  position: relative;
+  display: grid;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition:
+    background-color 0.3s ease-out,
+    border-color 0.3s ease-out,
+    color 0.3s ease-out,
+    transform 0.3s ease-out;
+}
+
+.material-category-button:hover {
+  border-color: #111a4d;
+  background: #111a4d;
+  color: #fff;
+  transform: translate(1px, -1px);
+}
+
+.material-category-button:active {
+  background: #111a4d;
+  transform: scale(0.99);
+}
+
+.material-category-button.active {
+  border-color: #111a4d;
+  background: #111a4d;
+  color: #fff;
+}
+
+.material-category-icon {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+
+.material-category-button.favorite-category.active .material-category-icon {
+  fill: currentColor;
+}
+
+.material-category-count {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  min-width: 12px;
+  color: var(--faint);
+  font-size: 8px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  text-align: right;
+}
+
+.material-category-button.active .material-category-count,
+.material-category-button:hover .material-category-count {
+  color: rgba(255, 255, 255, 0.85);
 }
 
 .materials-main {
@@ -2031,6 +2123,54 @@ main {
   align-content: start;
 }
 
+/* 返回上一级：占据首格，但保持为无边框的大箭头，不伪装成素材卡片。 */
+.material-parent {
+  display: flex;
+  width: 100%;
+  min-height: 72px;
+  aspect-ratio: 16 / 10;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition:
+    background-color 140ms ease,
+    color 140ms ease;
+}
+
+.material-parent:hover {
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--text);
+}
+
+.material-parent:active {
+  background: var(--accent-soft);
+}
+
+.material-parent svg {
+  width: 72%;
+  max-width: 104px;
+  min-width: 42px;
+  height: 72%;
+  max-height: 76px;
+  min-height: 30px;
+  fill: currentColor;
+  stroke: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .material-category-button,
+  .material-parent {
+    transition: none;
+  }
+}
+
 /* 文件夹卡片复用 .material-card 骨架：与素材卡片同宽、同网格、同尺寸滑杆。
    --view-size 由底栏滑块写到 documentElement，.grid 已经消费它。 */
 .material-card.folder {
@@ -2038,33 +2178,165 @@ main {
 }
 
 .material-card.folder .material-preview {
-  background: var(--surface-2);
+  background:
+    radial-gradient(circle at 50% 38%, rgba(134, 174, 178, 0.08), transparent 62%),
+    var(--surface-2);
+  perspective: 900px;
 }
 
-.material-folder-icon {
-  width: 40%;
-  max-width: 48px;
-  height: auto;
-  fill: none;
-  stroke: var(--accent);
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 1.5;
+/* Adapted from Uiverse "mighty-pig-13" by Cobp (MIT):
+   https://uiverse.io/Cobp/mighty-pig-13 */
+.material-folder-art {
+  position: relative;
+  width: 64%;
+  max-width: 80px;
+  height: 62%;
+  transform-style: preserve-3d;
 }
 
-.material-card.folder:hover .material-folder-icon {
-  stroke: var(--text);
+.material-folder-back,
+.material-folder-front,
+.material-folder-sheet {
+  position: absolute;
+  display: block;
+  transform-origin: bottom center;
+  transition: transform 300ms cubic-bezier(0.2, 0.72, 0.28, 1), box-shadow 300ms ease;
 }
 
-.material-card.folder .material-meta {
+.material-folder-back {
+  inset: 0;
+  z-index: 0;
+  border-radius: 9px;
+  background: #34383b;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.3);
+}
+
+.material-folder-back::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 99%;
+  width: 38%;
+  height: 18%;
+  border-radius: 8px 8px 0 0;
+  background: #34383b;
+}
+
+.material-folder-sheet {
+  left: 5%;
+  right: 5%;
+  top: 22%;
+  height: 52%;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+}
+
+.material-folder-sheet-3 {
+  z-index: 1;
+  background: #8e9699;
+  transform: translateY(0);
+}
+
+.material-folder-sheet-2 {
+  z-index: 2;
+  background: #aab1b3;
+  transform: translateY(-1px);
+}
+
+.material-folder-sheet-1 {
+  z-index: 3;
+  background: #c8cccd;
+  transform: translateY(-2px);
+}
+
+.material-folder-front {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 4;
+  height: 64%;
+  border-radius: 9px;
+  background: linear-gradient(180deg, #575d61 0%, #3d4245 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.13),
+    0 5px 12px rgba(0, 0, 0, 0.22);
+}
+
+.material-folder-front::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 99%;
+  width: 74%;
+  height: 20%;
+  border-radius: 8px 8px 0 0;
+  background: #4b5054;
+}
+
+.material-card.folder:hover .material-folder-back {
+  transform: translateY(1px);
+}
+
+.material-card.folder:hover .material-folder-sheet-3 {
+  transform: translateY(-5px) rotateX(-18deg);
+}
+
+.material-card.folder:hover .material-folder-sheet-2 {
+  transform: translateY(-8px) rotateX(-26deg);
+}
+
+.material-card.folder:hover .material-folder-sheet-1 {
+  transform: translateY(-11px) rotateX(-34deg);
+}
+
+.material-card.folder:hover .material-folder-front {
+  transform: rotateX(-24deg) translateY(1px);
+  box-shadow:
+    inset 0 14px 24px rgba(255, 238, 205, 0.16),
+    inset 0 -14px 24px rgba(66, 47, 25, 0.2),
+    0 9px 18px rgba(0, 0, 0, 0.28);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .material-folder-back,
+  .material-folder-front,
+  .material-folder-sheet {
+    transition: none;
+  }
+}
+
+.material-card.folder .material-card-body {
+  padding: 7px 9px 8px;
+}
+
+.material-folder-row {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+}
+
+.material-card.folder .material-name {
+  min-width: 0;
+  flex: 1 1 auto;
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.material-folder-count {
+  flex: 0 0 auto;
+  margin-left: auto;
   color: var(--accent);
+  font-size: 9px;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 .material-card {
   position: relative;
   min-width: 0;
   overflow: hidden;
-  border: 1px solid var(--line);
+  border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--surface);
   transition: border-color 0.12s ease;
@@ -2088,23 +2360,6 @@ main {
   border: 1px solid transparent;
   pointer-events: none;
   transition: border-color 0.12s ease;
-}
-
-/* 选中态：白框跟着整张卡片（含名称）走，半径与卡片自身边框一致。
-   不能只用 inset box-shadow：inset 阴影画在背景层，会被铺满卡片的缩略图盖住（实测“框被挡在后面”）。
-   用一个覆盖在子元素之上的伪元素画边框，z-index 低于收藏星标（5），pointer-events: none 不影响点击。 */
-.material-card.selected {
-  border-color: rgba(255, 255, 255, 0.94);
-}
-
-.material-card.selected::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 4;
-  border: 1px solid rgba(255, 255, 255, 0.94);
-  border-radius: inherit;
-  pointer-events: none;
 }
 
 .material-preview img,
@@ -2143,6 +2398,19 @@ main {
   background-size: 100% 52%;
 }
 
+.material-waveform-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease-out;
+}
+
+.material-waveform.is-ready .material-waveform-canvas {
+  opacity: 1;
+}
+
 .material-card.project .material-preview {
   background: #171a1d;
 }
@@ -2152,7 +2420,38 @@ main {
 }
 
 .material-card-body {
-  padding: 9px 10px 10px;
+  padding: 7px 9px 8px;
+}
+
+.material-file-row {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.material-file-stem {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.material-file-ext {
+  flex: 0 0 auto;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: rgba(56, 125, 222, 0.28);
+  color: #b7d5ff;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.4;
 }
 
 .material-name {
@@ -2165,19 +2464,8 @@ main {
   white-space: nowrap;
 }
 
-.material-meta {
-  margin-top: 4px;
-  color: var(--muted);
-  font-size: 10px;
-  line-height: 1.3;
-}
-
 .material-card.missing {
   opacity: 0.52;
-}
-
-.material-card.missing .material-meta {
-  color: var(--danger);
 }
 
 @media (max-width: 760px) {
@@ -2185,10 +2473,11 @@ main {
     --category-width: 138px;
   }
   .materials-view {
-    --category-width: 138px;
+    --material-rail-width: 56px;
   }
   .materials-sidebar {
-    min-width: 118px;
+    padding-right: 4px;
+    padding-left: 4px;
   }
   .materials-main {
     padding: 12px;
@@ -2286,8 +2575,9 @@ main {
   background: var(--accent);
 }
 
-/* 宽屏：改成左右分栏（判据是宽高比，不是单纯宽度） */
-@media (min-width: 360px) and (min-aspect-ratio: 4/5) {
+/* 宽屏：改成左右分栏。除宽高比外还要有足够宽度，
+   避免窄高面板把预设挤成一条只占空间的侧栏。 */
+@media (min-width: 640px) and (min-aspect-ratio: 6/5) {
   .curve-split {
     flex-direction: row;
   }
@@ -2325,6 +2615,48 @@ main {
   display: block;
   width: 100%;
   height: 100%;
+}
+
+/* 曲线画布比例：填充 / 正方形。按钮只改绘图区，不改变编辑栏布局。 */
+.curve-view-toggle {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 3;
+  width: 28px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-2);
+  color: var(--muted);
+  cursor: pointer;
+  opacity: 0.85;
+}
+
+.curve-view-toggle svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.35;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.curve-view-toggle .curve-view-icon-square {
+  display: none;
+}
+
+.curve-view-toggle[aria-pressed="true"] .curve-view-icon-fill {
+  display: none;
+}
+
+.curve-view-toggle[aria-pressed="true"] .curve-view-icon-square {
+  display: block;
 }
 
 /* 工具栏：左右箭头 + 可翻页的轨道。按钮定宽，翻页靠 transform。 */
@@ -2796,6 +3128,83 @@ main {
   color: var(--text);
 }
 
+/* Curve page buttons: same interaction as material categories. */
+.curve-view .mode-box-btn,
+.curve-view .curve-view-toggle,
+.curve-view .mode-item,
+.curve-view .curve-action-btn,
+.curve-view .curve-tool-button,
+.curve-view .curve-toolbar-arrow,
+.curve-view .preset-chip,
+.curve-view .action-button {
+  transition:
+    background-color 0.3s ease-out,
+    border-color 0.3s ease-out,
+    color 0.3s ease-out,
+    opacity 0.3s ease-out,
+    transform 0.3s ease-out;
+}
+
+.curve-view .mode-box-btn:hover:not(:disabled),
+.curve-view .curve-view-toggle:hover:not(:disabled),
+.curve-view .mode-item:hover:not(:disabled),
+.curve-view .curve-action-btn:hover:not(:disabled),
+.curve-view .curve-tool-button:hover:not(:disabled),
+.curve-view .curve-toolbar-arrow:hover:not(:disabled),
+.curve-view .preset-chip:hover,
+.curve-view .action-button:hover:not(:disabled) {
+  background: #111a4d;
+  border-color: #111a4d;
+  color: #fff;
+  opacity: 1;
+  transform: translate(1px, -1px);
+}
+
+.curve-view .mode-box-btn:active:not(:disabled),
+.curve-view .curve-view-toggle:active:not(:disabled),
+.curve-view .mode-item:active:not(:disabled),
+.curve-view .curve-action-btn:active:not(:disabled),
+.curve-view .curve-tool-button:active:not(:disabled),
+.curve-view .curve-toolbar-arrow:active:not(:disabled),
+.curve-view .preset-chip:active,
+.curve-view .action-button:active:not(:disabled) {
+  background: #111a4d;
+  border-color: #111a4d;
+  color: #fff;
+  transform: scale(0.99);
+}
+
+.curve-view .curve-tool-button.active:not(:disabled),
+.curve-view .curve-view-toggle[aria-pressed="true"],
+.curve-view .mode-item.active:not(:disabled),
+.curve-view .preset-chip.active,
+.curve-view .mode-box-btn[aria-expanded="true"] {
+  background: #111a4d;
+  border-color: #111a4d;
+  color: #fff;
+  opacity: 1;
+  box-shadow: none;
+}
+
+.curve-view .preset-chip:hover .preset-name,
+.curve-view .preset-chip.active .preset-name {
+  color: #fff;
+}
+
+#curveConflict .curve-conflict-actions .action-button:first-child:hover:not(:disabled),
+#curveConflict .curve-conflict-actions .action-button:first-child:active:not(:disabled) {
+  border-color: #111a4d;
+  color: #fff;
+}
+
+.curve-view .curve-tool-button:disabled,
+.curve-view .curve-toolbar-arrow:disabled,
+.curve-view .curve-action-btn:disabled,
+.curve-view .mode-item:disabled,
+.curve-view .action-button:disabled {
+  transform: none;
+}
+
 @media (max-width: 620px) {
   .curve-view {
     padding: 8px 8px 8px;
@@ -2873,11 +3282,6 @@ main {
   pointer-events: none;
   opacity: 0;
   transition: opacity 240ms ease;
-}
-
-/* 素材卡保留常驻细白框 */
-.material-card::before {
-  opacity: 0.34;
 }
 
 .effect-card:hover .thumb::before,

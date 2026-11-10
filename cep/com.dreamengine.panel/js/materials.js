@@ -13,6 +13,11 @@
  * ============================================================ */
 
 var AEV_MaterialsUI = (function () {
+  var AUDIO_PREVIEW_VOLUME = 0.35;
+  var AUDIO_FADE_IN_MS = 250;
+  var AUDIO_FADE_OUT_MS = 200;
+  var AUDIO_FADE_STEP_MS = 20;
+
   var state = {
     lang: "zh",
     items: [],
@@ -26,7 +31,11 @@ var AEV_MaterialsUI = (function () {
     activeMedia: null,
     videoTimer: null,
     clickTimer: null,
-    selectedPath: ""
+    selectedPath: "",
+    waveformCache: {},
+    waveformPending: {},
+    waveformQueue: [],
+    waveformBusy: false
   };
 
   function byId(id) { return document.getElementById(id); }
@@ -50,6 +59,24 @@ var AEV_MaterialsUI = (function () {
   }
 
   function joinPath(dir, name) { return normPath(dir) + "/" + name; }
+
+  function isInsideFolder() {
+    var root = normPath(state.root);
+    var dir = normPath(state.dir) || root;
+    return !!root && pathKey(dir) !== pathKey(root) && isUnder(dir, root);
+  }
+
+  function goUp() {
+    if (!isInsideFolder()) return;
+    var root = normPath(state.root);
+    var dir = normPath(state.dir);
+    var at = dir.lastIndexOf("/");
+    var parent = at > 0 ? dir.substring(0, at) : root;
+    if (pathKey(parent) !== pathKey(root) && !isUnder(parent, root)) parent = root;
+    state.dir = parent;
+    state.selectedPath = "";
+    render();
+  }
 
   /* ---------- 从扁平 items 派生目录树 ----------
    * dirs        : 所有「有素材后代」的目录（含 root），刷新后用来校验当前目录
@@ -189,7 +216,8 @@ var AEV_MaterialsUI = (function () {
       video: 0,
       image: 0,
       audio: 0,
-      project: 0
+      project: 0,
+      script: 0
     };
     for (var i = 0; i < tree.direct.length; i++) {
       var type = tree.direct[i].type;
@@ -202,7 +230,8 @@ var AEV_MaterialsUI = (function () {
       { id: "video", label: L("materials.video"), count: counts.video },
       { id: "image", label: L("materials.image"), count: counts.image },
       { id: "audio", label: L("materials.audio"), count: counts.audio },
-      { id: "project", label: L("materials.project"), count: counts.project }
+      { id: "project", label: L("materials.project"), count: counts.project },
+      { id: "script", label: L("materials.script"), count: counts.script }
     ];
   }
 
@@ -213,23 +242,62 @@ var AEV_MaterialsUI = (function () {
     var rows = categoryRows(tree);
     for (var i = 0; i < rows.length; i++) {
       (function (row) {
+        var active = row.id === "__favorites__" ? state.favoritesOnly : state.category === row.id;
         var li = document.createElement("li");
-        li.className = "category-item material-category" +
+        li.className = "material-category" +
+          (row.id === "__favorites__" ? " favorite-category" : "");
+
+        var button = document.createElement("button");
+        button.type = "button";
+        button.className = "category-item material-category-button" +
           (row.id === "__favorites__" ? " favorite-category" : "") +
-          ((row.id === "__favorites__" ? state.favoritesOnly : state.category === row.id)
-            ? " active"
-            : "");
-        li.setAttribute("role", "button");
-        li.appendChild(textNode("span", "category-label", row.label));
-        li.appendChild(textNode("span", "category-count", String(row.count)));
-        li.addEventListener("click", function () {
+          (active ? " active" : "");
+        button.setAttribute("data-category-id", row.id);
+        button.setAttribute("aria-pressed", active ? "true" : "false");
+        var accessibleLabel = row.label + " (" + row.count + ")";
+        button.setAttribute("aria-label", accessibleLabel);
+        button.title = accessibleLabel;
+        appendCategoryIcon(button, row.id);
+        button.appendChild(textNode("span", "material-category-count", String(row.count)));
+        button.addEventListener("click", function () {
           if (row.id === "__favorites__") state.favoritesOnly = !state.favoritesOnly;
           else state.category = row.id;
           render();
         });
+        li.appendChild(button);
         list.appendChild(li);
       })(rows[i]);
     }
+  }
+
+  function appendIconPath(svg, d) {
+    var path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", d);
+    svg.appendChild(path);
+  }
+
+  /** 固定图标轨道使用同一套 24px 描边图标，不依赖字体或 emoji。 */
+  function appendCategoryIcon(button, id) {
+    var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("class", "material-category-icon");
+    svg.setAttribute("aria-hidden", "true");
+    if (id === "__favorites__") {
+      appendIconPath(svg, "M12 3.5l2.6 5.3 5.9.9-4.2 4.1 1 5.8-5.3-2.8-5.3 2.8 1-5.8-4.2-4.1 5.9-.9z");
+    } else if (id === "all") {
+      appendIconPath(svg, "M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z");
+    } else if (id === "video") {
+      appendIconPath(svg, "M4 6h16v12H4zM10 9l5 3-5 3z");
+    } else if (id === "image") {
+      appendIconPath(svg, "M4 5h16v14H4zM7 16l3.5-4 2.5 3 2-2.5 3 3.5M9 9.5h.01");
+    } else if (id === "audio") {
+      appendIconPath(svg, "M4 14v-4M8 17V7M12 15V9M16 18V6M20 14v-4");
+    } else if (id === "project") {
+      appendIconPath(svg, "M4 7h16v13H4zM8 7L6 3M14 7l-2-4M20 7l-2-4M10 12l5 3-5 3z");
+    } else if (id === "script") {
+      appendIconPath(svg, "M4 5h16v14H4zM8 9l3 3-3 3M13 15h3");
+    }
+    button.appendChild(svg);
   }
 
   function textNode(tag, className, text) {
@@ -336,6 +404,8 @@ var AEV_MaterialsUI = (function () {
     var items = visibleItems(tree);
     var searching = !!state.query;
     var i;
+    var hasParent = isInsideFolder();
+    if (hasParent) grid.appendChild(makeParentButton());
     if (!searching) {
       for (i = 0; i < tree.folders.length; i++) {
         grid.appendChild(makeFolderCard(tree.folders[i]));
@@ -344,8 +414,8 @@ var AEV_MaterialsUI = (function () {
     for (i = 0; i < items.length; i++) {
       grid.appendChild(makeCard(items[i]));
     }
-    var total = grid.children.length;
-    grid.hidden = total === 0;
+    var total = (searching ? 0 : tree.folders.length) + items.length;
+    grid.hidden = total === 0 && !hasParent;
     if (empty) {
       empty.hidden = total !== 0;
       if (total === 0) {
@@ -361,6 +431,35 @@ var AEV_MaterialsUI = (function () {
     }
   }
 
+  /** 返回控件占网格首格，但不套卡片外框或预览底色。 */
+  function makeParentButton() {
+    var button = document.createElement("button");
+    button.type = "button";
+    button.className = "material-parent";
+    button.setAttribute("data-material-parent", "true");
+    button.setAttribute("aria-label", L("materials.back"));
+    button.title = L("materials.backHint");
+
+    var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("aria-hidden", "true");
+    appendIconPath(svg, "M12 2.5 2.5 12h6v9.5h7V12h6z");
+    button.appendChild(svg);
+
+    button.addEventListener("dblclick", function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      goUp();
+    });
+    button.addEventListener("keydown", function (event) {
+      if (event.key === "Enter" || event.key === " " || event.key === "Spacebar") {
+        event.preventDefault();
+        goUp();
+      }
+    });
+    return button;
+  }
+
   /** 文件夹卡片复用 .material-card 骨架，因此天然遵循 --view-size 与网格布局。 */
   function makeFolderCard(folder) {
     var card = document.createElement("article");
@@ -373,20 +472,30 @@ var AEV_MaterialsUI = (function () {
 
     var preview = document.createElement("div");
     preview.className = "material-preview";
-    var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    svg.setAttribute("viewBox", "0 0 24 24");
-    svg.setAttribute("class", "material-folder-icon");
-    svg.setAttribute("aria-hidden", "true");
-    var shape = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    shape.setAttribute("d", "M3 6.5A1.5 1.5 0 0 1 4.5 5h4l2 2h9A1.5 1.5 0 0 1 21 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z");
-    svg.appendChild(shape);
-    preview.appendChild(svg);
+    var folderArt = document.createElement("div");
+    folderArt.className = "material-folder-art";
+    folderArt.setAttribute("aria-hidden", "true");
+    folderArt.appendChild(textNode("span", "material-folder-back", ""));
+    folderArt.appendChild(textNode("span", "material-folder-sheet material-folder-sheet-3", ""));
+    folderArt.appendChild(textNode("span", "material-folder-sheet material-folder-sheet-2", ""));
+    folderArt.appendChild(textNode("span", "material-folder-sheet material-folder-sheet-1", ""));
+    folderArt.appendChild(textNode("span", "material-folder-front", ""));
+    preview.appendChild(folderArt);
     card.appendChild(preview);
 
     var body = document.createElement("div");
     body.className = "material-card-body";
-    body.appendChild(textNode("div", "material-name", folder.name));
-    body.appendChild(textNode("div", "material-meta", L("materials.folderItems", [folder.count])));
+    var folderRow = document.createElement("div");
+    folderRow.className = "material-folder-row";
+    var folderName = textNode("span", "material-name", folder.name);
+    folderName.title = folder.name;
+    folderRow.appendChild(folderName);
+    folderRow.appendChild(textNode(
+      "span",
+      "material-folder-count",
+      L("materials.folderItems", [folder.count])
+    ));
+    body.appendChild(folderRow);
     card.appendChild(body);
 
     card.addEventListener("click", function () {
@@ -427,27 +536,47 @@ var AEV_MaterialsUI = (function () {
     } else if (item.type === "audio") {
       var waveform = document.createElement("div");
       waveform.className = "material-waveform";
-      if (item.waveform) waveform.style.backgroundImage = "url(" + fileUrl(item.waveform) + ")";
+      var waveformCanvas = document.createElement("canvas");
+      waveformCanvas.className = "material-waveform-canvas";
+      waveformCanvas.width = 320;
+      waveformCanvas.height = 120;
+      waveformCanvas.setAttribute("aria-hidden", "true");
+      waveform.appendChild(waveformCanvas);
       preview.appendChild(waveform);
+      queueWaveform(item, waveformCanvas);
       var audio = document.createElement("audio");
       audio.hidden = true;
       audio.preload = "metadata";
       audio.src = fileUrl(item.path);
       card.appendChild(audio);
-    } else {
+    } else if (item.type === "project") {
       preview.appendChild(textNode("span", "material-kind", L("materials.project")));
+    } else if (item.type === "script") {
+      preview.appendChild(textNode("span", "material-kind", L("materials.script")));
+    } else {
+      preview.appendChild(textNode("span", "material-kind", item.type));
     }
     card.appendChild(preview);
     card.appendChild(makeFavoriteButton(item.path));
 
     var body = document.createElement("div");
     body.className = "material-card-body";
-    body.appendChild(textNode("div", "material-name", item.name));
-    body.appendChild(textNode(
-      "div",
-      "material-meta",
-      item.type + " · " + formatSize(item.size)
-    ));
+    var fileName = String(item.name || "");
+    var extensionAt = fileName.lastIndexOf(".");
+    var fileStem = extensionAt > 0 ? fileName.substring(0, extensionAt) : fileName;
+    var fileExtension = extensionAt > 0 ? fileName.substring(extensionAt + 1) : "";
+    var fileRow = document.createElement("div");
+    fileRow.className = "material-file-row";
+    var stem = textNode("span", "material-file-stem", fileStem);
+    stem.title = fileName;
+    fileRow.appendChild(stem);
+    if (fileExtension) {
+      var extension = textNode("span", "material-file-ext", fileExtension.toUpperCase());
+      extension.title = "." + fileExtension;
+      extension.setAttribute("aria-label", "." + fileExtension);
+      fileRow.appendChild(extension);
+    }
+    body.appendChild(fileRow);
     card.appendChild(body);
     bindMaterialCard(card, item);
     return card;
@@ -486,6 +615,62 @@ var AEV_MaterialsUI = (function () {
   function fileUrl(path) {
     var normalized = String(path || "").replace(/\\/g, "/");
     return "file:///" + encodeURI(normalized).replace(/#/g, "%23");
+  }
+
+  function waveformKey(item) {
+    return pathKey(item.path) + "|" + Number(item.size || 0) + "|" +
+      Number(item.modifiedAt || 0);
+  }
+
+  function drawWaveform(canvas, peaks) {
+    if (!canvas || !canvas.parentNode || !AEV_AudioWaveform.draw(canvas, peaks)) return;
+    canvas.parentNode.className = "material-waveform is-ready";
+  }
+
+  /** Decode one audio file at a time so a folder full of sounds cannot block the panel. */
+  function queueWaveform(item, canvas) {
+    var key = waveformKey(item);
+    var cached = state.waveformCache[key];
+    if (cached) {
+      drawWaveform(canvas, cached);
+      return;
+    }
+    if (cached === false) return;
+    if (state.waveformPending[key]) {
+      state.waveformPending[key].push(canvas);
+      return;
+    }
+    state.waveformPending[key] = [canvas];
+    state.waveformQueue.push({ key: key, path: item.path });
+    pumpWaveformQueue();
+  }
+
+  function pumpWaveformQueue() {
+    if (state.waveformBusy || !state.waveformQueue.length) return;
+    var task = state.waveformQueue.shift();
+    state.waveformBusy = true;
+
+    function finish(error, peaks) {
+      var valid = !error && peaks && peaks.length;
+      state.waveformCache[task.key] = valid ? peaks : false;
+      var canvases = state.waveformPending[task.key] || [];
+      delete state.waveformPending[task.key];
+      for (var i = 0; i < canvases.length; i++) {
+        if (valid) drawWaveform(canvases[i], peaks);
+      }
+      state.waveformBusy = false;
+      pumpWaveformQueue();
+    }
+
+    if (!window.AEV_AudioWaveform) {
+      finish("waveform_module_unavailable");
+      return;
+    }
+    try {
+      AEV_AudioWaveform.load(task.path, 256, finish);
+    } catch (e) {
+      finish(String(e && e.message || e));
+    }
   }
 
   function bindMaterialCard(card, item) {
@@ -550,12 +735,15 @@ var AEV_MaterialsUI = (function () {
     pauseAll();
     state.activeMedia = audio;
     audio.addEventListener("ended", function () {
-      if (state.activeMedia === audio) pauseAll();
+      if (state.activeMedia === audio) pauseAll(true);
     }, { once: true });
+    clearAudioFade(audio);
+    setAudioVolume(audio, 0);
     try {
       var promise = audio.play();
       if (promise && promise.catch) promise.catch(function () {});
     } catch (e) {}
+    fadeAudio(audio, AUDIO_PREVIEW_VOLUME, AUDIO_FADE_IN_MS);
   }
 
   function importItem(item) {
@@ -583,13 +771,6 @@ var AEV_MaterialsUI = (function () {
     );
   }
 
-  function formatSize(bytes) {
-    var size = Number(bytes) || 0;
-    if (size < 1024) return size + " B";
-    if (size < 1024 * 1024) return Math.round(size / 1024) + " KB";
-    return (size / 1024 / 1024).toFixed(1) + " MB";
-  }
-
   function render() {
     var tree = buildTree();
     if (resolveDir(tree.dirs)) tree = buildTree();
@@ -598,7 +779,53 @@ var AEV_MaterialsUI = (function () {
     renderCards(tree);
   }
 
-  function pauseAll() {
+  function clearAudioFade(audio) {
+    if (!audio) return;
+    if (audio.__deFadeTimer) {
+      clearInterval(audio.__deFadeTimer);
+      audio.__deFadeTimer = null;
+    }
+    if (audio.__deStopTimer) {
+      clearTimeout(audio.__deStopTimer);
+      audio.__deStopTimer = null;
+    }
+  }
+
+  function setAudioVolume(audio, value) {
+    var next = Math.max(0, Math.min(1, Number(value) || 0));
+    try { audio.volume = next; } catch (e) {}
+  }
+
+  function fadeAudio(audio, target, duration, callback) {
+    clearAudioFade(audio);
+    var from = Number(audio.volume);
+    if (!isFinite(from)) from = 0;
+    var steps = Math.max(1, Math.round(duration / AUDIO_FADE_STEP_MS));
+    var current = 0;
+    audio.__deFadeTimer = setInterval(function () {
+      current++;
+      var progress = current / steps;
+      setAudioVolume(audio, from + (target - from) * progress);
+      if (current < steps) return;
+      clearInterval(audio.__deFadeTimer);
+      audio.__deFadeTimer = null;
+      setAudioVolume(audio, target);
+      if (callback) callback();
+    }, Math.max(1, Math.round(duration / steps)));
+  }
+
+  function stopAudio(audio, immediate) {
+    clearAudioFade(audio);
+    function finish() {
+      try { audio.pause(); } catch (e) {}
+      try { audio.currentTime = 0; } catch (e2) {}
+      setAudioVolume(audio, 0);
+    }
+    if (immediate) finish();
+    else fadeAudio(audio, 0, AUDIO_FADE_OUT_MS, finish);
+  }
+
+  function pauseAll(immediate) {
     if (state.clickTimer) {
       clearTimeout(state.clickTimer);
       state.clickTimer = null;
@@ -607,11 +834,14 @@ var AEV_MaterialsUI = (function () {
       clearTimeout(state.videoTimer);
       state.videoTimer = null;
     }
-    if (state.activeMedia) {
-      try { state.activeMedia.pause(); } catch (e) {}
-      try { state.activeMedia.currentTime = 0; } catch (e2) {}
-    }
+    var active = state.activeMedia;
     state.activeMedia = null;
+    if (!active) return;
+    if (!immediate && active.tagName && active.tagName.toLowerCase() === "audio") {
+      stopAudio(active, false);
+      return;
+    }
+    stopAudio(active, true);
   }
 
   function loadIndex() {

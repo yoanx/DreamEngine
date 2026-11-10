@@ -2,9 +2,9 @@
  * materials.jsx —— 素材目录索引与导入
  *
  * 职责：
- *   · 分类视频 / 图片 / 音频 / 工程
+ *   · 分类视频 / 图片 / 音频 / 工程 / 脚本
  *   · 扫描唯一素材根目录，生成 TSV（ExtendScript 权威）和 JSON（CEP）
- *   · 生成音频波形及不兼容媒体的一次性预览
+ *   · 生成不兼容媒体的一次性预览（音频波形由 CEP 面板用 Web Audio 生成）
  *   · 双击卡片时导入素材，并把媒体添加到当前合成的时间指示器位置
  *
  * 语法：ES3 only。
@@ -17,6 +17,7 @@ var AEV_Materials = (function () {
     var VIDEO_EXT = ".mp4 .mov .avi .mkv .webm .m4v .mxf";
     var IMAGE_EXT = ".png .jpg .jpeg .webp .gif .bmp .tif .tiff";
     var AUDIO_EXT = ".wav .mp3 .aac .m4a .flac .ogg";
+    var SCRIPT_EXT = ".jsx .jsxbin";
 
     function extensionOf(name) {
         var value = String(name || "").toLowerCase();
@@ -40,6 +41,7 @@ var AEV_Materials = (function () {
         if ((" " + IMAGE_EXT + " ").indexOf(" " + ext + " ") >= 0) return "image";
         if ((" " + AUDIO_EXT + " ").indexOf(" " + ext + " ") >= 0) return "audio";
         if (ext === ".aep") return "project";
+        if ((" " + SCRIPT_EXT + " ").indexOf(" " + ext + " ") >= 0) return "script";
         return "";
     }
 
@@ -189,10 +191,7 @@ var AEV_Materials = (function () {
 
     function enrichPreview(item, ffmpeg) {
         var ext = item.extension;
-        if (item.type === "audio") {
-            item.waveform = makePreview(item, "waveforms", ".png",
-                '-filter_complex "showwavespic=s=320x120:colors=0x8fa3ad" -frames:v 1', ffmpeg);
-        } else if (item.type === "video" &&
+        if (item.type === "video" &&
                    (" .mp4 .webm .m4v ").indexOf(" " + ext + " ") < 0) {
             item.videoPreview = makePreview(item, "video-previews", ".mp4",
                 '-t 2 -vf "scale=480:-2" -an -c:v libx264 -pix_fmt yuv420p', ffmpeg);
@@ -201,7 +200,7 @@ var AEV_Materials = (function () {
             item.imageThumb = makePreview(item, "image-thumbs", ".png",
                 '-vf "scale=480:-1" -frames:v 1', ffmpeg);
         }
-        if (item.waveform || item.videoPreview || item.imageThumb) {
+        if (item.videoPreview || item.imageThumb) {
             item.previewKey = cacheKey(item.path, item.size, item.modifiedAt, "preview");
         }
     }

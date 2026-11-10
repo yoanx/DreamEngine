@@ -1,6 +1,6 @@
-/* Resizable category columns for effects, presets, and materials. */
+/* Resizable category columns for effects and presets. */
 var AEV_SidebarResize = (function () {
-  var MIN_WIDTH = { effects: 104, presets: 112, materials: 118 };
+  var MIN_WIDTH = { effects: 104, presets: 112 };
   var MAIN_MIN_WIDTH = 120;
   var active = null;
 
@@ -14,8 +14,7 @@ var AEV_SidebarResize = (function () {
 
   function asideOf(view, kind) {
     if (kind === "effects") return view.querySelector(".sidebar");
-    if (kind === "presets") return view.querySelector(".preset-sidebar");
-    return view.querySelector(".materials-sidebar");
+    return view.querySelector(".preset-sidebar");
   }
 
   function maxWidth(handle) {

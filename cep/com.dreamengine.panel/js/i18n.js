@@ -85,6 +85,7 @@ var AEV_I18N = {
   /* ---------- 素材视图 ---------- */
   "materials.aria": ["素材库", "Materials"],
   "materials.title": ["素材库", "Materials"],
+  "materials.categories": ["素材分类", "Material categories"],
   "materials.chooseRoot": ["选择素材目录", "Choose media folder"],
   "materials.refresh": ["刷新", "Refresh"],
   "materials.search": ["搜索素材", "Search materials"],
@@ -95,6 +96,7 @@ var AEV_I18N = {
   "materials.image": ["图片", "Image"],
   "materials.audio": ["音频", "Audio"],
   "materials.project": ["工程", "Projects"],
+  "materials.script": ["脚本", "Scripts"],
   "materials.missing": ["文件缺失", "Missing file"],
   "materials.summary": ["共 {0} 个素材 · 当前显示 {1} 个", "{0} materials · {1} shown"],
   "materials.scanned": ["已索引 {0} 个素材", "Indexed {0} materials"],
@@ -108,6 +110,8 @@ var AEV_I18N = {
   "materials.refreshTitle": ["刷新", "Refresh"],
   "materials.folderItems": ["{0} 项", "{0} items"],
   "materials.emptyFolder": ["这个文件夹里没有素材", "No materials in this folder"],
+  "materials.back": ["返回上一级", "Back to parent folder"],
+  "materials.backHint": ["双击返回上一级", "Double-click to go back"],
 
   /* ---------- 曲线视图 ---------- */
   "curve.aria": ["曲线编辑", "Curve editor"],
