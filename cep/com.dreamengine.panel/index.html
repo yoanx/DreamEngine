@@ -374,29 +374,10 @@
       <output id="thumbSizeValue">132</output>
     </span>
     <span id="selectionStats"></span>
-    <button class="queue-toggle" id="btnQueue" type="button" title="查看生成队列" data-i18n-title="queue.toggle">
-      <span data-i18n="queue.label">队列</span> <span id="queueCounts">—</span>
-    </button>
   </footer>
 
-  <aside class="queue-drawer" id="queueDrawer" hidden aria-label="生成队列" data-i18n-aria="queue.title">
-    <div class="queue-head">
-      <h3 data-i18n="queue.title">生成队列</h3>
-      <button class="icon-button" id="btnQueueClose" type="button" aria-label="关闭队列" data-i18n-aria="queue.close">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M6 6l12 12M18 6L6 18"/>
-        </svg>
-      </button>
-    </div>
-    <div class="queue-actions">
-      <button class="action-button" id="btnQueueRetry" type="button" data-i18n="queue.retry">重试失败</button>
-      <span class="queue-summary" id="queueSummary"></span>
-    </div>
-    <ul class="queue-list" id="queueList"></ul>
-  </aside>
-
   <aside class="settings-drawer" id="settingsDrawer" hidden aria-label="设置" data-i18n-aria="settings.title">
-    <div class="queue-head">
+    <div class="drawer-head">
       <h3 data-i18n="settings.title">设置</h3>
       <button class="icon-button" id="btnSettingsClose" type="button" aria-label="关闭设置" data-i18n-aria="settings.close">
         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -425,42 +406,6 @@
                     data-i18n-title="lang.enTitle">EN</button>
           </div>
         </div>
-      </section>
-
-      <section class="settings-group">
-        <h4 data-i18n="settings.maintenance">预览维护</h4>
-        <div class="settings-background">
-          <div class="settings-row">
-            <span class="settings-label" data-i18n="settings.effectBackground">效果预览背景</span>
-            <span class="settings-value" id="effectBackgroundName"
-                  data-i18n="settings.effectBackgroundDefault">默认素材</span>
-          </div>
-          <div class="settings-background-actions">
-            <button class="action-button" id="btnEffectBackground" type="button"
-                    data-i18n="settings.effectBackgroundChoose">上传背景图片</button>
-            <button class="action-button" id="btnEffectBackgroundClear" type="button" hidden
-                    data-i18n="settings.effectBackgroundClear">恢复默认</button>
-          </div>
-          <p class="settings-note" data-i18n="settings.effectBackgroundNote">
-            自定义背景用于普通效果预览；文字、形状、遮罩和两层输入类效果仍使用各自的专用图层，避免效果失效。
-          </p>
-        </div>
-        <button class="settings-action" id="btnGenerate" type="button">
-          <span class="settings-action-title" data-i18n="settings.genMissing">生成缺失预览</span>
-          <span class="settings-action-note" data-i18n="settings.genMissingNote">渲染当前 AE 环境里还没出图的内置效果</span>
-        </button>
-        <button class="settings-action" id="btnRefresh" type="button">
-          <span class="settings-action-title" data-i18n="settings.rescan">重新扫描 AE 效果</span>
-          <span class="settings-action-note" data-i18n="settings.rescanNote">刚装了新插件时用，强制重读效果清单</span>
-        </button>
-        <button class="settings-action" id="btnRetry" type="button" hidden>
-          <span class="settings-action-title" data-i18n="settings.retry">重试失败</span>
-          <span class="settings-action-note" data-i18n="settings.retryNote">把生成失败的条目重新排队</span>
-        </button>
-        <button class="settings-action" id="btnOpenQueue" type="button">
-          <span class="settings-action-title" data-i18n="settings.openQueue">查看生成队列</span>
-          <span class="settings-action-note" data-i18n="settings.openQueueNote">待渲染 / 渲染中 / 失败的逐条状态</span>
-        </button>
       </section>
 
       <section class="settings-group">

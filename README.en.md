@@ -121,6 +121,7 @@ Preset categories and preset favorites are shared between the panel and Hub.
 **Presets**
 
 - Browse imported presets and their previews.
+- The preset library stays in sync with Hub: it recursively shows the user library and merges AE installed/User Presets indexed by Hub. External presets are grouped by AE source folder, stay read-only, and are not copied.
 - Click to apply a preset; long-press to delete a preset inside the library.
 - Categories and favorites are shared bidirectionally with Hub.
 - Animated presets play on hover; static presets show an orange dot.

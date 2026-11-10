@@ -1139,6 +1139,14 @@ body.is-resizing-sidebar * {
   list-style: none;
 }
 
+.sidebar-group-title {
+  padding: 12px 10px 5px;
+  color: var(--faint);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
 .category-item {
   display: flex;
   align-items: center;
@@ -1200,7 +1208,6 @@ main::-webkit-scrollbar,
 .preset-view::-webkit-scrollbar,
 .preset-sidebar::-webkit-scrollbar,
 .preset-main::-webkit-scrollbar,
-.queue-list::-webkit-scrollbar,
 .settings-scroll::-webkit-scrollbar,
 .curve-presets::-webkit-scrollbar,
 .materials-sidebar::-webkit-scrollbar,
@@ -1214,7 +1221,6 @@ main::-webkit-scrollbar-track,
 .preset-view::-webkit-scrollbar-track,
 .preset-sidebar::-webkit-scrollbar-track,
 .preset-main::-webkit-scrollbar-track,
-.queue-list::-webkit-scrollbar-track,
 .settings-scroll::-webkit-scrollbar-track,
 .curve-presets::-webkit-scrollbar-track,
 .materials-sidebar::-webkit-scrollbar-track,
@@ -1227,7 +1233,6 @@ main::-webkit-scrollbar-thumb,
 .preset-view::-webkit-scrollbar-thumb,
 .preset-sidebar::-webkit-scrollbar-thumb,
 .preset-main::-webkit-scrollbar-thumb,
-.queue-list::-webkit-scrollbar-thumb,
 .settings-scroll::-webkit-scrollbar-thumb,
 .curve-presets::-webkit-scrollbar-thumb,
 .materials-sidebar::-webkit-scrollbar-thumb,
@@ -1243,7 +1248,6 @@ main::-webkit-scrollbar-thumb:hover,
 .preset-view::-webkit-scrollbar-thumb:hover,
 .preset-sidebar::-webkit-scrollbar-thumb:hover,
 .preset-main::-webkit-scrollbar-thumb:hover,
-.queue-list::-webkit-scrollbar-thumb:hover,
 .settings-scroll::-webkit-scrollbar-thumb:hover,
 .curve-presets::-webkit-scrollbar-thumb:hover,
 .materials-sidebar::-webkit-scrollbar-thumb:hover,
@@ -1256,7 +1260,6 @@ main::-webkit-scrollbar-button,
 .preset-view::-webkit-scrollbar-button,
 .preset-sidebar::-webkit-scrollbar-button,
 .preset-main::-webkit-scrollbar-button,
-.queue-list::-webkit-scrollbar-button,
 .settings-scroll::-webkit-scrollbar-button,
 .curve-presets::-webkit-scrollbar-button,
 .materials-sidebar::-webkit-scrollbar-button,
@@ -1271,7 +1274,6 @@ main::-webkit-scrollbar-corner,
 .preset-view::-webkit-scrollbar-corner,
 .preset-sidebar::-webkit-scrollbar-corner,
 .preset-main::-webkit-scrollbar-corner,
-.queue-list::-webkit-scrollbar-corner,
 .settings-scroll::-webkit-scrollbar-corner,
 .curve-presets::-webkit-scrollbar-corner,
 .materials-sidebar::-webkit-scrollbar-corner,
@@ -1497,8 +1499,7 @@ main {
   white-space: nowrap;
 }
 
-#selectionStats,
-#queueCounts {
+#selectionStats {
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
@@ -1537,122 +1538,19 @@ main {
   text-align: right;
 }
 
-/* 生成队列：状态栏上一个入口 + 右侧抽屉。
-   以前队列只有状态栏里一行字，看不到「还剩多少、哪条失败」，
-   批量生成时只能干等。 */
-.queue-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 1px 8px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: transparent;
-  color: var(--faint);
-  font-size: 10px;
-  cursor: pointer;
-}
-
-.queue-toggle:hover {
-  border-color: var(--border-strong);
-  color: var(--text);
-}
-
-.queue-toggle #queueCounts {
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
-}
-
-.queue-drawer {
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 20;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  width: min(320px, 82vw);
-  padding: 12px 14px;
-  border-left: 1px solid var(--border);
-  background: var(--surface);
-  box-shadow: -12px 0 24px rgba(0, 0, 0, 0.35);
-}
-
-.queue-drawer[hidden] {
-  display: none;
-}
-
-.queue-head {
+.drawer-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-.queue-head h3 {
+.drawer-head h3 {
   margin: 0;
   font-size: 12px;
   font-weight: 650;
 }
 
-.queue-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.queue-summary {
-  color: var(--muted);
-  font-size: 10px;
-}
-
-.queue-list {
-  flex: 1 1 auto;
-  margin: 0;
-  padding: 0;
-  overflow-y: auto;
-  list-style: none;
-}
-
-.queue-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 5px 0;
-  border-bottom: 1px solid var(--border);
-}
-
-.queue-item .queue-name {
-  flex: 1 1 auto;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.queue-badge {
-  flex: 0 0 auto;
-  padding: 1px 6px;
-  border-radius: 999px;
-  background: var(--surface-2);
-  color: var(--muted);
-  font-size: 10px;
-}
-
-.queue-badge.failed {
-  color: var(--danger);
-}
-
-.queue-badge.rendering {
-  color: var(--accent);
-}
-
-.queue-empty {
-  padding: 18px 0;
-  color: var(--muted);
-  text-align: center;
-}
-
-/* 设置页：顶栏只留一个齿轮入口，语言 / 生成 / 刷新 / 重试都收进这里。
+/* 设置页：顶栏只留一个齿轮入口，语言等低频设置收进这里。
    做成右侧整页抽屉而不是第三个顶部 tab —— 设置是随时调一下就走的，
    不该把效果墙切掉，也不该跟「效果预览 / 预设预览」这两个内容视图同级。 */
 .settings-drawer {
@@ -1726,72 +1624,6 @@ main {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.settings-background {
-  margin: 0 0 10px;
-  padding: 10px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface-2);
-}
-
-.settings-background .settings-note {
-  margin: 8px 0 0;
-}
-
-.settings-background-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 9px;
-}
-
-.settings-background-actions .action-button {
-  min-height: 28px;
-}
-
-.settings-background-actions .action-button[hidden] {
-  display: none;
-}
-
-.settings-action {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  width: 100%;
-  margin: 0 0 6px;
-  padding: 8px 10px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface-2);
-  color: var(--text);
-  text-align: left;
-  cursor: pointer;
-}
-
-.settings-action:hover {
-  border-color: var(--border-strong);
-}
-
-.settings-action:disabled {
-  cursor: wait;
-  opacity: 0.5;
-}
-
-/* 「重试失败」平时是 hidden —— 和抽屉一样要显式覆盖 display:flex */
-.settings-action[hidden] {
-  display: none;
-}
-
-.settings-action-title {
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.settings-action-note {
-  color: var(--muted);
-  font-size: 10px;
-  line-height: 1.4;
 }
 
 .settings-note {

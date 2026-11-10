@@ -103,6 +103,8 @@ var Bridge = (function () {
       // 目录 mtime 只在「增删子项」时变，同名文件被覆盖不会变 ——
       // 所以索引文件本身的时间戳必须单独看，两者互补。
       "    var files = [" +
+      "      docs + '/DreamEngineProbe/preset_catalog.json'," +
+      "      docs + '/DreamEngine/preset_categories.json'," +
       "      B + '/data/manifest.json'," +
       "      B + '/data/plugin_manifest.json'," +
       "      B + '/data/preset_manifest.json'," +
@@ -160,7 +162,6 @@ var Bridge = (function () {
     "engine/recipe.jsx",
     "engine/apply.jsx",
     "engine/previewgen.jsx",
-    "engine/queue.jsx",
     "engine/plugin_state.jsx",
     "engine/catalog.jsx",
     "engine/presets.jsx"
@@ -168,7 +169,7 @@ var Bridge = (function () {
 
   /** 加载 engine 全部模块并求值一个表达式。
    *  @param {string} extensionPath  扩展根目录（正斜杠）
-   *  @param {string} expr   ES3 表达式，例如 AEV_Queue.stats()
+   *  @param {string} expr   ES3 表达式，例如 AEV_PreviewGen.staleList(...)
    *  @param {function(string)} cb
    */
   function runEngine(extensionPath, expr, cb) {

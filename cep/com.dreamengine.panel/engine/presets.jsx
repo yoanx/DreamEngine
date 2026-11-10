@@ -756,25 +756,72 @@ var AEV_Presets = (function () {
         return text.replace(/\.ffx$/i, "");
     }
 
-    /** 列出库内的预设 */
+    function pathKey(pathText) {
+        return String(pathText || "").replace(/\\/g, "/").toLowerCase();
+    }
+
+    /** 读取 Hub 生成的 AE 外部预设索引；文件不存在或损坏时按空索引处理。 */
+    function readExternalCatalog() {
+        var file = new File(Folder.myDocuments.fsName + "/DreamEngineProbe/preset_catalog.json");
+        if (!file.exists) return null;
+        var text = "";
+        try {
+            file.encoding = "UTF-8";
+            if (!file.open("r")) return null;
+            text = String(file.read() || "").replace(/^\uFEFF/, "");
+            file.close();
+            var doc = eval("(" + text + ")");
+            if (doc && doc.items instanceof Array) return doc;
+        } catch (e) {}
+        return null;
+    }
+
+    function presetJson(filePath, name, category, source, sourceKind, external) {
+        return '{"path":' + jsonText(filePath) +
+            ',"name":' + jsonText(name) +
+            ',"category":' + jsonText(category) +
+            ',"source":' + jsonText(source) +
+            ',"sourceKind":' + jsonText(sourceKind) +
+            ',"external":' + (external ? "true" : "false") + "}";
+    }
+
+    /** 列出库内的预设：用户库 + Hub 索引的 AE 外部预设，路径去重。 */
     function libraryJson() {
         var dir = libraryDir();
-        var files = [];
-        try {
-            files = dir.getFiles();
-        } catch (e) {}
+        var found = [];
+        collect(dir, 0, found);
         var items = [];
-        for (var i = 0; i < files.length; i++) {
-            var f = files[i];
-            if (f instanceof Folder) continue;
-            if (!isPresetFile(f.name)) continue;
-            items.push(
-                '{"path":' + jsonText(f.fsName) +
-                ',"name":' + jsonText(displayName(f.name)) +
-                ',"folder":' + jsonText(dir.fsName) + "}"
-            );
+        var seen = {};
+        var externalCount = 0;
+
+        function add(pathText, name, category, source, sourceKind, external) {
+            var key = pathKey(pathText);
+            if (!key || seen[key]) return;
+            var file = new File(pathText);
+            if (!file.exists || !isPresetFile(file.name)) return;
+            seen[key] = true;
+            if (external) externalCount++;
+            items.push(presetJson(file.fsName, displayName(name || file.name),
+                category || "", source || "", sourceKind || "library", external));
         }
+
+        for (var i = 0; i < found.length; i++) {
+            var item = found[i];
+            add(item.path, item.name, categoryOf(item.folder), "", "library", false);
+        }
+
+        var catalog = readExternalCatalog();
+        if (catalog) {
+            for (var j = 0; j < catalog.items.length; j++) {
+                var external = catalog.items[j];
+                if (!external || !external.path) continue;
+                add(external.path, external.name, external.source || categoryOf(external.path),
+                    external.source || "", external.sourceKind || "install", true);
+            }
+        }
+
         return '{"status":"ok","count":' + items.length +
+               ',"externalCount":' + externalCount +
                ',"folder":' + jsonText(dir.fsName) +
                ',"items":[' + items.join(",") + "]}";
     }

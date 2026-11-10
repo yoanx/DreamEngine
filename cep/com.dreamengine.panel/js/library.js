@@ -1,6 +1,4 @@
 var AEV_Library = (function () {
-  var BATCH_LIMIT = 64;
-  var MAX_DEGRADE = 12;
   var state = {
     lang: "zh",
     query: "",
@@ -16,8 +14,6 @@ var AEV_Library = (function () {
     catalog: [],
     items: [],
     extensionPath: "",
-    entries: [],
-    generating: false,
     // 有图但配方/素材已变、需要重渲的条目（来自 AEV_PreviewGen.staleList）
     stale: {},
     // 插件 L2 预览：被拉黑的效果与已生成数量（独立索引，不进 entries）
@@ -637,7 +633,6 @@ var AEV_Library = (function () {
     byId("langEn").className = "segment" + (lang === "en" ? " active" : "");
     /* 静态文案：HTML 上标了 data-i18n 的全部换掉（设置页、队列、按钮 title…） */
     if (typeof AEV_applyI18n === "function") AEV_applyI18n(lang);
-    syncEffectBackgroundUi();
     /* 底栏那条是上一次操作留下的、用旧语言拼出来的字符串，
        语言一换它就不再匹配 —— 直接回到「就绪」 */
     setStatus(L("status.ready"), false);
@@ -686,51 +681,6 @@ var AEV_Library = (function () {
       var saved = AEV_Prefs.thumbSize(view);
       if (saved) thumbPreferred[view] = saved;
     }
-  }
-
-  function effectBackgroundLabel(path) {
-    var value = String(path || "");
-    if (!value) return L("settings.effectBackgroundDefault");
-    var name = value.split(/[\\/]/).pop() || value;
-    try {
-      name = decodeURIComponent(name);
-    } catch (e) {}
-    return name;
-  }
-
-  function syncEffectBackgroundUi() {
-    var label = byId("effectBackgroundName");
-    var clear = byId("btnEffectBackgroundClear");
-    if (label) label.textContent = effectBackgroundLabel(state.effectBackground);
-    if (clear) clear.hidden = !state.effectBackground;
-  }
-
-  function saveEffectBackground(path, message) {
-    state.effectBackground = String(path || "");
-    if (window.AEV_Prefs) AEV_Prefs.setEffectBackground(state.effectBackground);
-    syncEffectBackgroundUi();
-    refresh(function (error) {
-      setStatus(error ? L("msg.noCatalog", [String(error.message || error)]) : message, !!error);
-    });
-  }
-
-  function chooseEffectBackground() {
-    var button = byId("btnEffectBackground");
-    button.disabled = true;
-    engine("AEV_PreviewGen.pickBackground()", function (result) {
-      button.disabled = false;
-      var data = parseEngineResult(result);
-      if (data.status === "cancelled") return;
-      if (data.status !== "ok" || !data.path) {
-        setStatus(L("msg.backgroundFailed", [data.reason || L("msg.unknown")]), true);
-        return;
-      }
-      saveEffectBackground(data.path, L("msg.backgroundSelected", [data.name || effectBackgroundLabel(data.path)]));
-    });
-  }
-
-  function clearEffectBackground() {
-    saveEffectBackground("", L("msg.backgroundCleared"));
   }
 
   function thumbGridId(view) {
@@ -810,13 +760,11 @@ var AEV_Library = (function () {
   }
 
   /**
-   * 重新扫描并渲染。
+   * 重新读取当前预览与 AE 效果清单。
    * @param {function} done    完成回调
-   * @param {boolean} force    true = 强制重扫 AE 效果清单（用户点了「重新扫描」）
+   * @param {boolean} force    true = 强制重扫 AE 效果清单
    */
   function refresh(done, force) {
-    var button = byId("btnRefresh");
-    button.disabled = true;
     setStatus(state.lang === "zh" ? "正在扫描 AE 效果…" : "Scanning AE effects…", false);
 
     loadJson("data/names.json", function (namesError, namesData) {
@@ -838,7 +786,6 @@ var AEV_Library = (function () {
         state.manifest = manifestData;
         state.previews = {};
         state.previewVariants = {};
-        state.entries = [];
         var columns = manifestData.columns || 8;
         var cellSize = manifestData.cellSize || 256;
         // sheets 数组的顺序不等于它的 index 字段（打包器按落盘顺序追加），
@@ -858,22 +805,10 @@ var AEV_Library = (function () {
             ? Number(manifestData.aeMajor) || 0
             : Number(preview.aeMajor) || 0;
           addPreviewVariant(preview);
-          state.entries.push({
-            matchName: preview.matchName,
-            sheet: preview.sheet || 0,
-            cell:
-              Math.floor((preview.y || 0) / cellSize) * columns +
-              Math.floor((preview.x || 0) / cellSize),
-            frames: preview.frames || 1,
-            frameTemplate: preview.frameSrc || "",
-            aeMajor: preview.aeMajor,
-            key: preview.key || ""
-          });
         }
 
         // ---- 插件 L2 预览（可选索引，首次安装时不存在） ----
-        // 只合入显示用的 state.previews；绝不塞进 state.entries——
-        // writeManifest 会整份重写 L1 主索引，install_l1 又会覆盖它。
+        // 只合入显示用的 state.previews；面板不写回任何预览索引。
         loadOptionalJson("data/plugin_manifest.json", function (pluginData) {
           loadOptionalJson("data/plugin_blacklist.json", function (blacklistData) {
             state.pluginBlacklist = {};
@@ -934,8 +869,6 @@ var AEV_Library = (function () {
                         : " (" + staleCount + " previews stale)";
                   }
                   setStatus(ready, false);
-                  button.disabled = false;
-                  refreshQueue();
                   if (done) done(null);
                 });
               }, force);
@@ -947,7 +880,6 @@ var AEV_Library = (function () {
 
     function finish(error) {
       setStatus(String(error.message || error), true);
-      button.disabled = false;
       if (done) done(error);
     }
   }
@@ -977,7 +909,7 @@ var AEV_Library = (function () {
       scheduleWatch();
       return;
     }
-    if (document.hidden || state.generating) {
+    if (document.hidden) {
       scheduleWatch();
       return;
     }
@@ -1137,398 +1069,9 @@ var AEV_Library = (function () {
     }
   }
 
-  function entriesToTsv(entries) {
-    var lines = [];
-    for (var i = 0; i < entries.length; i++) {
-      var entry = entries[i];
-      lines.push(
-        [
-          entry.matchName,
-          entry.sheet,
-          entry.cell,
-          entry.frames,
-          entry.frameTemplate || "",
-          String(entry.aeMajor || 0),
-          entry.key || ""
-        ].join("\t")
-      );
-    }
-    return lines.join("\n");
-  }
-
-  /** 同名效果重渲时，只替换当前 AE 主版本的旧条目，保留其它版本回退图。 */
-  function dropCurrentPreviewEntries(matchNames) {
-    var names = {};
-    for (var i = 0; i < matchNames.length; i++) names[matchNames[i]] = true;
-    var kept = [];
-    for (var j = 0; j < state.entries.length; j++) {
-      var entry = state.entries[j];
-      if (names[entry.matchName] &&
-          Number(entry.aeMajor) === Number(state.catalogMajor)) {
-        continue;
-      }
-      kept.push(entry);
-    }
-    state.entries = kept;
-  }
-
-  function writeManifest(callback) {
-    var tsv = entriesToTsv(state.entries);
-    engine(
-      "AEV_PreviewGen.writeManifest(" +
-        JSON.stringify(tsv) +
-        "," +
-        JSON.stringify(state.extensionPath) +
-        "," +
-        JSON.stringify(state.effectBackground) +
-        ")",
-      function (result) {
-        callback(parseEngineResult(result));
-      }
-    );
-  }
-
-  function finishGenerate(message, isError) {
-    state.generating = false;
-    byId("btnGenerate").disabled = false;
-    byId("btnRetry").hidden = !isError;
-    engine("AEV_PreviewGen.cleanupArtifacts()", function () {
-      refresh(function () {
-        setStatus(message, !!isError);
-      });
-    });
-  }
-
-  /** 把「已安装但没有预览」的效果排进队列并逐批渲染，直到队列为空 */
-  function generateMissing() {
-    if (state.generating) return;
-    if (!state.extensionPath) {
-      setStatus(L("msg.extUnknown"), true);
-      return;
-    }
-
-    var installedBuiltinNames = {};
-    for (var c0 = 0; c0 < state.catalog.length; c0++) {
-      if (isActiveEffect(state.catalog[c0]) &&
-          AEV_ViewModel.isBuiltinEffect(state.catalog[c0])) {
-        installedBuiltinNames[state.catalog[c0].matchName] = true;
-      }
-    }
-
-    var existingNames = [];
-    var staleNames = [];
-    for (var key in state.previews) {
-      if (!state.previews.hasOwnProperty(key)) continue;
-      // 插件预览没有 AE 主版本字段，不能按内置效果的版本规则重渲。
-      if (!installedBuiltinNames[key]) continue;
-      if (state.stale[key] || !isExactPreview(key)) staleNames.push(key);
-      else existingNames.push(key);
-    }
-
-    var candidates = [];
-    var pluginSkipped = 0;
-    for (var i = 0; i < state.catalog.length; i++) {
-      var effect = state.catalog[i];
-      if (!isActiveEffect(effect)) continue;
-      // 插件效果绝不进整网混渲：实测 BCC / Sapphire 混渲会让 AE 进程直接消失，
-      // 而面板与 AE 是同一个进程。它们走独立离线通道 run_plugin_preview.jsx。
-      if (!AEV_ViewModel.isBuiltinEffect(effect)) {
-        pluginSkipped++;
-        continue;
-      }
-      // 当前版本预览且未过期才算完整；旧版回退图继续显示，但仍需生成当前版本。
-      if (isExactPreview(effect.matchName) && !state.stale[effect.matchName]) continue;
-      if (AEV_ViewModel.isNoPreview(effect.category)) continue;
-      if (AEV_ViewModel.isPoorPreviewTarget(effect)) continue;
-      candidates.push(effect);
-    }
-    // 先渲"看得出差异"的常用分类，并让首批覆盖多个分类；
-    // 按 catalog 原始顺序取会先撞上 3D 跟踪这类无效效果。
-    candidates = AEV_ViewModel.interleaveByCategory(candidates);
-
-    var queueNames = [];
-    // 一次点击最多补一张网（64 格）。宁可让用户多点几次，也不要把 AE 锁住几分钟。
-    var ceiling = BATCH_LIMIT;
-    for (var c = 0; c < candidates.length && queueNames.length < ceiling; c++) {
-      queueNames.push(candidates[c].matchName);
-    }
-
-    if (queueNames.length === 0) {
-      var doneMessage =
-        pluginSkipped > 0
-          ? L("msg.genAllDone", [pluginSkipped])
-          : L("msg.nothingToDo");
-      engine("AEV_PreviewGen.cleanupArtifacts()", function () {
-        setStatus(doneMessage, false);
-      });
-      return;
-    }
-
-    state.generating = true;
-    byId("btnGenerate").disabled = true;
-    var staleCount = staleNames.length;
-    var queueMessage =
-      staleCount > 0
-        ? L("msg.queuedStale", [queueNames.length, staleCount])
-        : L("msg.queued", [queueNames.length]);
-    if (pluginSkipped > 0) {
-      queueMessage += L("msg.queuedPlugins", [pluginSkipped]);
-    }
-    setStatus(queueMessage, false);
-
-    var totalAdded = 0;
-    var guard = 0;
-    var degraded = false;
-    var failedNames = [];
-    var nextSheet = 0;
-    for (var e = 0; e < state.entries.length; e++) {
-      if (state.entries[e].sheet >= nextSheet) nextSheet = state.entries[e].sheet + 1;
-    }
-
-    engine(
-      "AEV_Queue.markCached(" + JSON.stringify(existingNames) + ")",
-      function () {
-        engine("AEV_Queue.reopen(" + JSON.stringify(staleNames) + ")", function () {
-          engine("AEV_Queue.ensure(" + JSON.stringify(queueNames) + ")", function () {
-            pump();
-          });
-        });
-      }
-    );
-
-    function pump() {
-      guard++;
-      if (guard > 64) {
-        finishGenerate(L("msg.abortGuard"), true);
-        return;
-      }
-
-      // 每批单独成一张网。已有预览是 v1 的单文件整图（batch_000.png），
-      // 新生成的是帧序列（batch_001_%04d.png），两种图不能混在同一张 sheet 里，
-      // 否则取图路径会打架；宁可浪费旧网的空位，也不做格式混装。
-      var sheetIndex = nextSheet++;
-      var limit = BATCH_LIMIT;
-
-      setStatus(L("msg.generating", [totalAdded, limit]), false);
-
-      var expr =
-        "AEV_Queue.drain(" +
-        sheetIndex +
-        ',{limit:' +
-        limit +
-        ",keepAssets:true,background:" +
-        JSON.stringify(state.effectBackground) +
-        ',cellOffset:0,outputRoot:"extension",extensionPath:' +
-        JSON.stringify(state.extensionPath) +
-        "})";
-
-      engine(expr, function (result) {
-        var data = parseEngineResult(result);
-        if (data.status === "idle") {
-          finishGenerate(L("msg.genDone", [totalAdded]), false);
-          return;
-        }
-        if (data.status !== "ok") {
-          var retryNames = data.names || [];
-          // 整网渲染是一损俱损：只要有一个效果自身报错，整批 64 条全部失败，
-          // 而错误信息里不含条目名。此时降级为逐条渲染，把能出的挑出来。
-          if (!degraded && retryNames.length > 1) {
-            degraded = true;
-            setStatus(
-              L("msg.batchFailed", [data.reason || L("msg.unknown")]),
-              false
-            );
-            retryEach(retryNames, 0);
-            return;
-          }
-          finishGenerate(L("msg.genFailed", [data.reason || data.batch || L("msg.unknown")]), true);
-          return;
-        }
-
-        var names = data.names || [];
-        if (names.length === 0) {
-          finishGenerate(L("msg.genStopped"), true);
-          return;
-        }
-
-        dropCurrentPreviewEntries(names);
-        for (var n = 0; n < names.length; n++) {
-          state.entries.push({
-            matchName: names[n],
-            sheet: sheetIndex,
-            cell: n,
-            frames: 6,
-            frameTemplate:
-              "thumbs/batch_" + zeroPad(sheetIndex, 3) + "_%04d.png",
-            aeMajor: state.catalogMajor
-          });
-        }
-        totalAdded += names.length;
-
-        writeManifest(function (written) {
-          if (written.status !== "ok") {
-            finishGenerate(L("msg.manifestFailed", [written.reason || ""]), true);
-            return;
-          }
-          refreshQueue();
-          pump();
-        });
-      });
-    }
-
-    /** 整网失败后的逐条重试：能渲的留下，坏的跳过（队列侧会把 attempts 用尽后标 failed）。
-     *  每条单独占一张网，避免互相覆盖；只有整批失败时才会走到这里。
-     *  单次最多试 MAX_DEGRADE 条——否则一次点击要等 64 次单渲，用户会以为卡死。
-     */
-    function retryEach(names, index) {
-      if (index >= names.length || index >= MAX_DEGRADE) {
-        var remaining = names.length - index;
-        var sep = state.lang === "zh" ? "、" : ", ";
-        var tail =
-          failedNames.length > 0
-            ? L("msg.tailFailed", [failedNames.length, failedNames.slice(0, 3).join(sep)])
-            : "";
-        var rest = remaining > 0 ? L("msg.tailRest", [remaining]) : "";
-        finishGenerate(L("msg.genPartial", [totalAdded]) + rest + tail, failedNames.length > 0);
-        return;
-      }
-
-      var sheetIndex = nextSheet++;
-      setStatus(L("msg.retryEach", [index + 1, names.length]), false);
-
-      var expr =
-        "AEV_Queue.drain(" +
-        sheetIndex +
-        ",{limit:1,keepAssets:true,background:" +
-        JSON.stringify(state.effectBackground) +
-        ',cellOffset:0,outputRoot:"extension",extensionPath:' +
-        JSON.stringify(state.extensionPath) +
-        "})";
-
-      engine(expr, function (result) {
-        var data = parseEngineResult(result);
-        var got = (data && data.names) || [];
-        if (data && data.status === "ok" && got.length === 1) {
-          dropCurrentPreviewEntries(got);
-          state.entries.push({
-            matchName: got[0],
-            sheet: sheetIndex,
-            cell: 0,
-            frames: 6,
-            frameTemplate: "thumbs/batch_" + zeroPad(sheetIndex, 3) + "_%04d.png",
-            aeMajor: state.catalogMajor
-          });
-          totalAdded += 1;
-          writeManifest(function () {
-            retryEach(names, index + 1);
-          });
-          return;
-        }
-        failedNames.push(names[index]);
-        retryEach(names, index + 1);
-      });
-    }
-  }
-
-  function retryFailed() {
-    if (state.generating || !state.extensionPath) return;
-    engine("AEV_Queue.retryFailed()", function (result) {
-      var data = parseEngineResult(result);
-      setStatus(L("msg.requeued", [data.reset || 0]), false);
-      refreshQueue();
-    });
-  }
-
-  /* ---------- 生成队列抽屉 ---------- */
-
-  function queueStatusText(status) {
-    if (state.lang === "en") {
-      if (status === "pending") return "pending";
-      if (status === "rendering") return "rendering";
-      if (status === "failed") return "failed";
-      if (status === "cached") return "done";
-      return status;
-    }
-    if (status === "pending") return "待渲染";
-    if (status === "rendering") return "渲染中";
-    if (status === "failed") return "失败";
-    if (status === "cached") return "已完成";
-    return status;
-  }
-
-  function queueLabel(matchName) {
-    var record = state.names[matchName] || {};
-    if (state.lang === "zh") {
-      return record.nameZh || record.nameEn || matchName;
-    }
-    return record.nameEn || record.nameZh || matchName;
-  }
-
-  function renderQueueList(items) {
-    var list = byId("queueList");
-    if (!list) return;
-    list.textContent = "";
-    if (!items.length) {
-      var empty = document.createElement("li");
-      empty.className = "queue-empty";
-      empty.textContent = state.lang === "zh" ? "队列是空的" : "Queue is empty";
-      list.appendChild(empty);
-      return;
-    }
-    for (var i = 0; i < items.length; i++) {
-      var item = items[i];
-      var li = document.createElement("li");
-      li.className = "queue-item";
-      li.title = item.reason || item.matchName;
-      var name = document.createElement("span");
-      name.className = "queue-name";
-      name.textContent = queueLabel(item.matchName);
-      var badge = document.createElement("span");
-      badge.className = "queue-badge " + (item.status || "");
-      badge.textContent = queueStatusText(item.status);
-      li.appendChild(name);
-      li.appendChild(badge);
-      list.appendChild(li);
-    }
-  }
-
-  /** 拉一次队列状态：状态栏计数 + 抽屉列表 */
-  function refreshQueue() {
-    if (!state.extensionPath) return;
-    engine("AEV_Queue.stats()", function (result) {
-      var data = parseEngineResult(result);
-      var counts = byId("queueCounts");
-      if (counts) {
-        if (data && data.pending !== undefined) {
-          // 底栏只放紧凑数字：「0 待渲染 / 0 失败」在窄面板下会被压成
-          // 逐字竖排、把底栏撑高好几倍。完整含义放 title 与队列抽屉里。
-          counts.textContent = data.pending + " / " + data.failed;
-          var toggle = byId("btnQueue");
-          if (toggle) {
-            toggle.title = state.lang === "zh"
-              ? "查看生成队列：待渲染 " + data.pending + " · 失败 " + data.failed
-              : "Queue: " + data.pending + " pending · " + data.failed + " failed";
-          }
-        } else {
-          counts.textContent = "—";
-        }
-      }
-      var summary = byId("queueSummary");
-      if (summary) {
-        summary.textContent = data
-          ? L("queue.summary", [data.pending, data.rendering, data.failed, data.total])
-          : "";
-      }
-      engine("AEV_Queue.listJson(80)", function (listResult) {
-        var listData = parseEngineResult(listResult);
-        renderQueueList((listData && listData.items) || []);
-      });
-    });
-  }
-
   /* ---------- 预设库（M3） ---------- */
 
-  /* 预设预览的独立索引（不进 L1 的 manifest.json —— 它会被 writeManifest 重写）。
+  /* 预设预览的独立索引（不进 L1 的 manifest.json，由离线工具维护）。
      面板生成的内置预设 + 离线脚本生成的插件预设，两份合并；离线条目优先。 */
   function loadPresetIndex(done) {
     loadOptionalJson("data/preset_manifest.json", function (data) {
@@ -1648,9 +1191,15 @@ var AEV_Library = (function () {
       var presetItem = base[v];
       var categoryId = presetCategoryFor(presetItem.path);
       if (state.presetCategory === "__uncategorized__") {
+        if (presetItem.external) continue;
         if (categoryId) continue;
-      } else if (state.presetCategory !== "all" && categoryId !== state.presetCategory) {
-        continue;
+      } else if (state.presetCategory.indexOf("ae:") === 0) {
+        if (!presetItem.external ||
+            (presetItem.source || "AE 内置") !== state.presetCategory.substring(3)) {
+          continue;
+        }
+      } else if (state.presetCategory !== "all") {
+        if (presetItem.external || categoryId !== state.presetCategory) continue;
       }
       if (state.presetFavoritesOnly && !isFavorite("presets", presetItem.path)) continue;
       visible.push(presetItem);
@@ -1695,7 +1244,7 @@ var AEV_Library = (function () {
       }
       thumb.appendChild(favoriteButton("presets", item.path, renderPresetList));
 
-      (function (preset) {
+      if (!item.external) (function (preset) {
         var categoryButton = document.createElement("button");
         categoryButton.type = "button";
         categoryButton.className = "preset-category-toggle";
@@ -1732,7 +1281,9 @@ var AEV_Library = (function () {
 
       var category = document.createElement("span");
       category.className = "preset-category";
-      category.textContent = presetCategoryLabel(item) || item.category || L("preset.fallbackCategory");
+      category.textContent = item.external
+        ? "AE · " + (item.source || "外部预设")
+        : presetCategoryLabel(item) || item.category || L("preset.fallbackCategory");
 
       card.appendChild(thumb);
       if (badge) card.appendChild(badge);
@@ -1747,6 +1298,7 @@ var AEV_Library = (function () {
 
   function bindPresetItem(button, item) {
     button.addEventListener("pointerdown", function (event) {
+      if (item.external) return;
       if (event.button !== undefined && event.button !== 0) return;
       if (event.target && event.target.closest &&
           event.target.closest(".favorite-toggle,.preset-category-toggle")) {
@@ -1770,6 +1322,7 @@ var AEV_Library = (function () {
       applyPreset(item);
     });
     button.addEventListener("contextmenu", function (event) {
+      if (item.external) return;
       event.preventDefault();
       openPresetCategoryMenu(item, event.clientX, event.clientY);
     });
@@ -1860,8 +1413,14 @@ var AEV_Library = (function () {
     var favoriteCount = 0;
     var uncategorized = 0;
     var counts = {};
+    var aeCounts = {};
     for (var i = 0; i < items.length; i++) {
       if (isFavorite("presets", items[i].path)) favoriteCount++;
+      if (items[i].external) {
+        var source = items[i].source || "AE 内置";
+        aeCounts[source] = (aeCounts[source] || 0) + 1;
+        continue;
+      }
       var categoryId = presetCategoryFor(items[i].path);
       if (!categoryId) uncategorized++;
       else counts[categoryId] = (counts[categoryId] || 0) + 1;
@@ -1885,6 +1444,28 @@ var AEV_Library = (function () {
         categories[c]
       ));
     }
+    var aeSources = [];
+    for (var sourceName in aeCounts) {
+      if (aeCounts.hasOwnProperty(sourceName)) aeSources.push(sourceName);
+    }
+    aeSources.sort(function (a, b) {
+      if (aeCounts[a] !== aeCounts[b]) return aeCounts[b] - aeCounts[a];
+      return a.localeCompare(b, state.lang === "zh" ? "zh-Hans-CN" : "en");
+    });
+    if (aeSources.length) {
+      var aeTitle = document.createElement("li");
+      aeTitle.className = "sidebar-group-title";
+      aeTitle.textContent = state.lang === "zh" ? "AE 预设分类" : "AE preset categories";
+      list.appendChild(aeTitle);
+      for (var ae = 0; ae < aeSources.length; ae++) {
+        list.appendChild(presetSidebarRow(
+          "ae:" + aeSources[ae],
+          aeSources[ae],
+          aeCounts[aeSources[ae]],
+          false
+        ));
+      }
+    }
   }
 
   function presetSidebarRow(id, label, count, favoriteRow, category) {
@@ -1897,8 +1478,12 @@ var AEV_Library = (function () {
     button.appendChild(textSpan("category-label", label));
     button.appendChild(textSpan("category-count", String(count)));
     button.addEventListener("click", function () {
-      if (favoriteRow) state.presetFavoritesOnly = !state.presetFavoritesOnly;
-      else state.presetCategory = id;
+      if (favoriteRow) {
+        state.presetFavoritesOnly = !state.presetFavoritesOnly;
+        state.presetCategory = "all";
+      } else {
+        state.presetCategory = id;
+      }
       renderPresetList();
     });
     if (category) {
@@ -2181,7 +1766,6 @@ var AEV_Library = (function () {
   /**
    * 设置页开关。
    *
-   * 与队列抽屉互斥：两个都是右侧覆盖层，同时开只会互相盖住。
    * 齿轮按钮是「切换」语义；Esc 与点抽屉外都能收起。
    */
   function setSettingsOpen(open) {
@@ -2190,10 +1774,6 @@ var AEV_Library = (function () {
     if (!drawer || !trigger) return;
     drawer.hidden = !open;
     trigger.setAttribute("aria-expanded", open ? "true" : "false");
-    if (open) {
-      var queue = byId("queueDrawer");
-      if (queue) queue.hidden = true;
-    }
   }
 
   /**
@@ -2333,7 +1913,6 @@ var AEV_Library = (function () {
     if (window.AEV_Prefs) state.effectBackground = AEV_Prefs.effectBackground();
     // 首屏：把 data-i18n 的静态文案对齐到当前语言（默认中文，等价于无操作）
     if (typeof AEV_applyI18n === "function") AEV_applyI18n(state.lang);
-    syncEffectBackgroundUi();
 
     byId("langZh").addEventListener("click", function () { setLanguage("zh"); });
     byId("langEn").addEventListener("click", function () { setLanguage("en"); });
@@ -2357,27 +1936,11 @@ var AEV_Library = (function () {
       rebuildItems();
       render();
     });
-    byId("btnRefresh").addEventListener("click", function () {
-      // 「重新扫描」= 强制重扫 AE 效果清单（用户可能刚装了新插件）
-      refresh(null, true);
-    });
-    byId("btnGenerate").addEventListener("click", generateMissing);
-    byId("btnRetry").addEventListener("click", retryFailed);
-    byId("btnEffectBackground").addEventListener("click", chooseEffectBackground);
-    byId("btnEffectBackgroundClear").addEventListener("click", clearEffectBackground);
     byId("btnSettings").addEventListener("click", function () {
       setSettingsOpen(byId("settingsDrawer").hidden);
     });
     byId("btnSettingsClose").addEventListener("click", function () {
       setSettingsOpen(false);
-    });
-    byId("btnOpenQueue").addEventListener("click", function () {
-      setSettingsOpen(false);
-      var drawer = byId("queueDrawer");
-      if (drawer) {
-        drawer.hidden = false;
-        refreshQueue();
-      }
     });
     // Esc 关设置页；点在抽屉与齿轮之外也关。
     document.addEventListener("keydown", function (event) {
@@ -2414,21 +1977,6 @@ var AEV_Library = (function () {
       if (trigger && trigger.contains && trigger.contains(target)) return;
       if (drawer.contains && drawer.contains(target)) return;
       setSettingsOpen(false);
-    });
-    byId("btnQueue").addEventListener("click", function () {
-      var drawer = byId("queueDrawer");
-      if (!drawer) return;
-      var opening = drawer.hidden;
-      setSettingsOpen(false); // 与设置页互斥
-      drawer.hidden = !opening;
-      if (opening) refreshQueue();
-    });
-    byId("btnQueueClose").addEventListener("click", function () {
-      var drawer = byId("queueDrawer");
-      if (drawer) drawer.hidden = true;
-    });
-    byId("btnQueueRetry").addEventListener("click", function () {
-      retryFailed();
     });
     byId("btnPresetCategoryAdd").addEventListener("click", function () {
       openPresetCategoryEditor("create", null);
