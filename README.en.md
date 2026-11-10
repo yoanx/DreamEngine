@@ -143,7 +143,7 @@ Preset categories and preset favorites are shared between the panel and Hub.
 - Category counts and search cover only the folder you are in; empty folders are hidden.
 - Refresh and change-root sit in the top-right corner; refreshing keeps your current folder, and if it was deleted the view falls back to the nearest existing parent.
 - Automatically classify video, images, audio, `.aep` projects, and `.jsx/.jsxbin` scripts.
-- Click video to preview up to two seconds.
+- Click video to preview up to five seconds.
 - Audio displays a waveform generated inside the panel and can be played or stopped with a click; waveform generation does not require FFmpeg.
 - Double-click video, images, or audio to import and place it at the current composition time.
 - `.aep` files are imported as projects only; their contents are not parsed or added as media layers.

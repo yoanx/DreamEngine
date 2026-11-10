@@ -728,7 +728,7 @@ var AEV_MaterialsUI = (function () {
       var promise = video.play();
       if (promise && promise.catch) promise.catch(function () {});
     } catch (e2) {}
-    state.videoTimer = setTimeout(pauseAll, 2000);
+    state.videoTimer = setTimeout(pauseAll, 5000);
   }
 
   function playAudio(audio) {

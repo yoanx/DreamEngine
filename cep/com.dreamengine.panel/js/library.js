@@ -802,6 +802,14 @@ var AEV_Library = (function () {
 
     state.thumbSizes[view] = value;
     document.documentElement.style.setProperty("--view-size", value + "px");
+    var fontMain = Math.max(10, Math.min(18, value * 0.075));
+    var fontMeta = Math.max(9, Math.min(13, value * 0.055));
+    var textPad = Math.max(3, Math.min(10, value * 0.035));
+    var textGap = Math.max(2, Math.min(6, value * 0.015));
+    document.documentElement.style.setProperty("--card-font-main", fontMain.toFixed(1) + "px");
+    document.documentElement.style.setProperty("--card-font-meta", fontMeta.toFixed(1) + "px");
+    document.documentElement.style.setProperty("--card-text-pad", textPad.toFixed(1) + "px");
+    document.documentElement.style.setProperty("--card-text-gap", textGap.toFixed(1) + "px");
 
     var grid = byId(thumbGridId(view));
     if (grid) grid.classList.toggle("compact", value < THUMB_COMPACT);
@@ -1335,6 +1343,11 @@ var AEV_Library = (function () {
     button.addEventListener("pointerleave", cancelPresetHold);
     button.addEventListener("pointercancel", cancelPresetHold);
     button.addEventListener("click", function (event) {
+      // 双击会连续触发两次 click；第一次已经应用，忽略后续 click。
+      if (event.detail > 1) {
+        event.preventDefault();
+        return;
+      }
       if (state.presetHoldTriggeredPath === item.path) {
         state.presetHoldTriggeredPath = "";
         event.preventDefault();

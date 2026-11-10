@@ -11,6 +11,10 @@
   --accent: #86aeb2;
   --accent-soft: rgba(134, 174, 178, 0.12);
   --danger: #b07a72;
+  --card-font-main: 12px;
+  --card-font-meta: 10px;
+  --card-text-pad: 5px;
+  --card-text-gap: 3px;
 }
 
 * {
@@ -302,9 +306,9 @@ html.keyboard-nav [role="button"]:focus {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: var(--card-text-gap);
   min-width: 0;
-  padding: 8px 10px;
+  padding: var(--card-text-pad);
   border: 0;
   border-radius: 6px;
   background: transparent;
@@ -324,7 +328,7 @@ html.keyboard-nav [role="button"]:focus {
 
 .preset-card .preset-name {
   overflow: hidden;
-  font-size: 12px;
+  font-size: var(--card-font-main);
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -333,7 +337,7 @@ html.keyboard-nav [role="button"]:focus {
 .preset-card .preset-category {
   overflow: hidden;
   color: var(--muted);
-  font-size: 10px;
+  font-size: var(--card-font-meta);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -1385,14 +1389,14 @@ main {
 }
 
 .card-copy {
-  padding: 5px 1px 0;
+  padding: var(--card-text-pad) var(--card-text-pad) 0;
 }
 
 .card-name {
   display: block;
   overflow: hidden;
   color: var(--text);
-  font-size: 12px;
+  font-size: var(--card-font-main);
   font-weight: 600;
   line-height: 1.35;
   text-overflow: ellipsis;
@@ -1402,11 +1406,11 @@ main {
 .card-meta {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: var(--card-text-gap);
   min-width: 0;
   margin-top: 2px;
   color: var(--faint);
-  font-size: 10px;
+  font-size: var(--card-font-meta);
 }
 
 .plugin-dot {
@@ -1465,8 +1469,8 @@ main {
 .grid.compact { gap: 6px; }
 .grid.compact .effect-card { border-radius: 5px; }
 .grid.compact .thumb { border-radius: 5px; }
-.grid.compact .card-copy { padding: 4px 1px 0; }
-.grid.compact .card-name { font-size: 10px; line-height: 1.25; }
+.grid.compact .card-copy { padding: var(--card-text-pad) var(--card-text-pad) 0; }
+.grid.compact .card-name { font-size: var(--card-font-main); line-height: 1.25; }
 .grid.compact .card-meta { display: none; }
 .grid.compact .thumb-placeholder { font-size: 9px; }
 .grid.compact .card-plus { width: 18px; height: 18px; font-size: 11px; }
@@ -1982,8 +1986,8 @@ main {
 .material-parent {
   display: flex;
   width: 100%;
-  min-height: 72px;
-  aspect-ratio: 16 / 10;
+  min-height: 48px;
+  align-self: stretch;
   align-items: center;
   justify-content: center;
   padding: 0;
@@ -2007,12 +2011,9 @@ main {
 }
 
 .material-parent svg {
-  width: 72%;
-  max-width: 104px;
-  min-width: 42px;
-  height: 72%;
-  max-height: 76px;
-  min-height: 30px;
+  width: 44%;
+  height: auto;
+  aspect-ratio: 1 / 1;
   fill: currentColor;
   stroke: none;
   stroke-linecap: round;
@@ -2174,7 +2175,7 @@ main {
 .material-card.folder .material-name {
   min-width: 0;
   flex: 1 1 auto;
-  font-size: 11px;
+  font-size: 10px;
   line-height: 1.25;
 }
 
@@ -2182,7 +2183,7 @@ main {
   flex: 0 0 auto;
   margin-left: auto;
   color: var(--accent);
-  font-size: 9px;
+  font-size: 8px;
   line-height: 1.2;
   white-space: nowrap;
 }
@@ -2227,7 +2228,7 @@ main {
 
 .material-kind {
   color: #7f8a91;
-  font-size: 11px;
+  font-size: 10px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
@@ -2275,14 +2276,14 @@ main {
 }
 
 .material-card-body {
-  padding: 7px 9px 8px;
+  padding: 7px 7px 8px;
 }
 
 .material-file-row {
   display: flex;
   min-width: 0;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
 }
 
 .material-file-stem {
@@ -2290,7 +2291,7 @@ main {
   flex: 1 1 auto;
   overflow: hidden;
   color: var(--text);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   line-height: 1.25;
   text-overflow: ellipsis;
@@ -2299,11 +2300,11 @@ main {
 
 .material-file-ext {
   flex: 0 0 auto;
-  padding: 1px 5px;
+  padding: 0 4px;
   border-radius: 3px;
   background: rgba(56, 125, 222, 0.28);
   color: #b7d5ff;
-  font-size: 9px;
+  font-size: 7px;
   font-weight: 700;
   letter-spacing: 0.04em;
   line-height: 1.4;
@@ -2312,7 +2313,7 @@ main {
 .material-name {
   overflow: hidden;
   color: var(--text);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   line-height: 1.35;
   text-overflow: ellipsis;
