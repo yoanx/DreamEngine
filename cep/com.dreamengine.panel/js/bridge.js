@@ -66,65 +66,6 @@ var Bridge = (function () {
     evalAE(jsx, cb);
   }
 
-  /** 外部变更指纹：预设目录 / 背景目录 / 缩略图目录 / 四份索引的修改时间。
-   *
-   *  为什么需要：面板之外还有三条路径会改数据 ——
-   *    · DreamEngine Hub（独立程序）导入预设
-   *    · 一键 bat 渲染完写回索引与图片
-   *    · 用户在资源管理器里直接往预设库丢 .ffx
-   *  以前这些改完只能「关掉面板再重开」。这里只取 mtime 拼一个字符串，
-   *  前端比对即可，不读文件内容，2~3 秒一次的开销可以忽略。
-   *
-   *  @param {string} extensionPath  扩展根目录（正斜杠）
-   *  @param {function(string)} cb    形如 "1699...|1699...|x|..."，失败返回 ERR:xxx
-   */
-  function watchStamp(extensionPath, cb) {
-    var base = extensionPath ? String(extensionPath).replace(/\\/g, "/") : "";
-    var jsx =
-      "(function(){" +
-      "  try{" +
-      "    var B = " + JSON.stringify(base) + ";" +
-      "    if (!B) return 'ERR:no_base';" +
-      "    var docs = Folder.myDocuments.fsName;" +
-      "    var out = [];" +
-      "    var dirs = [" +
-      "      docs + '/DreamEngine/presets'," +
-      "      docs + '/DreamEngine/backgrounds'," +
-      "      B + '/data/thumbs'" +
-      "    ];" +
-      "    for (var i = 0; i < dirs.length; i++) {" +
-      "      var t = 'x';" +
-      "      try {" +
-      "        var d = new Folder(dirs[i]);" +
-      "        if (d.exists) t = String(d.modified.getTime());" +
-      "      } catch (e1) {}" +
-      "      out.push(t);" +
-      "    }" +
-      // 目录 mtime 只在「增删子项」时变，同名文件被覆盖不会变 ——
-      // 所以索引文件本身的时间戳必须单独看，两者互补。
-      "    var files = [" +
-      "      docs + '/DreamEngineProbe/preset_catalog.json'," +
-      "      docs + '/DreamEngine/preset_categories.json'," +
-      "      B + '/data/manifest.json'," +
-      "      B + '/data/plugin_manifest.json'," +
-      "      B + '/data/preset_manifest.json'," +
-      "      B + '/data/preset_plugin_manifest.json'," +
-      "      B + '/data/animated.json'" +
-      "    ];" +
-      "    for (var j = 0; j < files.length; j++) {" +
-      "      var t2 = 'x';" +
-      "      try {" +
-      "        var f = new File(files[j]);" +
-      "        if (f.exists) t2 = String(f.modified.getTime());" +
-      "      } catch (e2) {}" +
-      "      out.push(t2);" +
-      "    }" +
-      "    return out.join('|');" +
-      "  } catch (e) { return 'ERR:' + e.toString(); }" +
-      "})()";
-    evalAE(jsx, cb);
-  }
-
   /** 取「我的文档」绝对路径（交给 AE 判断，最可靠） */
   function getDocsPath(cb) {
     evalAE("(function(){try{return Folder.myDocuments.fsName}catch(e){return ''}})()", function (p) {
@@ -330,7 +271,6 @@ var Bridge = (function () {
     evalAERaw: evalAERaw,
     writeFile: writeFile,
     listFiles: listFiles,
-    watchStamp: watchStamp,
     getDocsPath: getDocsPath,
     getExtensionPath: getExtensionPath,
     runEngine: runEngine,

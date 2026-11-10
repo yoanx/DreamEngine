@@ -154,6 +154,51 @@ code { font-family: Consolas, "Cascadia Mono", "DreamEngine Sans", monospace; fo
   line-height: 1.6;
 }
 
+.about-update {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface);
+}
+
+.about-update.has-update {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.about-update-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.about-update-copy strong {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.about-update-copy small {
+  overflow: hidden;
+  color: var(--faint);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.about-update-btn {
+  flex: none;
+  min-width: 76px;
+  height: 28px;
+  padding: 0 10px;
+  font-size: 11px;
+}
+
 .about-links {
   overflow: hidden;
   border: 1px solid var(--border);

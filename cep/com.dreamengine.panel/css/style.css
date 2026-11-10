@@ -1297,7 +1297,7 @@ main {
    面板一变宽卡片就跟着变大，滑块形同虚设。
    固定列宽下：格子大小只由滑块决定，面板比例只影响每行放几张。
 
-   滑块范围固定 48–180px，不随窗口比例改变；JS 会在极窄面板下把
+   效果/预设滑块范围固定 48–360px，素材页为 48–180px；JS 会在极窄面板下把
    实际格子收敛到能放下的宽度并同步写回滑块，保证「标多少、格子就是多少」。
    CSS 这边的 min() 只是最后一道兜底：极端窄面板下至少让预览可见。 */
 .grid {
@@ -1309,6 +1309,34 @@ main {
   gap: 8px;
 }
 
+.card-slot {
+  position: relative;
+  min-width: 0;
+}
+
+.card-slot:not(.mounted)::before {
+  content: "";
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 6px;
+  background: var(--surface-2);
+  opacity: 0.35;
+}
+
+.effect-slot {
+  min-height: calc(var(--view-size, 132px) + 48px);
+}
+
+.preset-slot {
+  min-height: calc(var(--view-size, 180px) + 56px);
+}
+
+.card-slot > .effect-card,
+.card-slot > .preset-card {
+  width: 100%;
+}
+
 .effect-card {
   min-width: 0;
   padding: 0;
@@ -1316,11 +1344,6 @@ main {
   border-radius: 6px;
   background: transparent;
   text-align: left;
-}
-
-.effect-card:hover .thumb {
-  filter: brightness(1.08);
-  box-shadow: inset 0 0 0 1px var(--border-strong);
 }
 
 /* 预览过期：图还在但配方/素材变了。用角标而不是隐藏，
@@ -3064,11 +3087,6 @@ main {
  * background-image。
  * ============================================================ */
 
-@keyframes card-stars {
-  from { transform: scale(1) translate(0, 0); }
-  to { transform: scale(1.12) translate(-2%, -2%); }
-}
-
 .effect-card,
 .preset-card,
 .material-card {
@@ -3079,7 +3097,6 @@ main {
   transform-style: preserve-3d;
   transition:
     transform 150ms ease-out,
-    box-shadow 240ms ease,
     border-color 240ms ease;
   z-index: 1;
 }
@@ -3122,48 +3139,6 @@ main {
   opacity: 0.95;
 }
 
-/* 悬停外发光 */
-.effect-card:hover .thumb,
-.preset-card:hover .preset-thumb {
-  filter: brightness(1.08);
-  box-shadow:
-    0 0 20px -4px rgba(255, 255, 255, 0.45),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
-}
-
-.material-card:hover {
-  box-shadow:
-    0 0 20px -4px rgba(255, 255, 255, 0.4),
-    0 0 0 1px rgba(255, 255, 255, 0.2),
-    0 0.55rem 1.5rem -0.5rem rgba(0, 0, 0, 0.55);
-}
-
-/* 星点：效果卡（非过期）和预设卡的缩略图上 */
-.effect-card:not(.stale) .thumb::after,
-.preset-card .preset-thumb::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  border-radius: inherit;
-  pointer-events: none;
-  background-image:
-    radial-gradient(circle at 18% 24%, rgba(255, 255, 255, 0.9) 1px, transparent 1.6px),
-    radial-gradient(circle at 74% 32%, rgba(255, 255, 255, 0.7) 1px, transparent 1.6px),
-    radial-gradient(circle at 42% 76%, rgba(255, 255, 255, 0.55) 0.8px, transparent 1.4px),
-    radial-gradient(circle at 86% 82%, rgba(255, 255, 255, 0.7) 0.9px, transparent 1.5px);
-  background-size: 120% 120%;
-  opacity: 0.16;
-  transition: opacity 240ms ease;
-}
-
-.effect-card:hover:not(.stale) .thumb::after,
-.preset-card:hover .preset-thumb::after {
-  opacity: 0.5;
-  animation: card-stars 5s linear infinite alternate;
-}
-
-/* 星点层会盖到「+」按钮上，抬高按钮 */
 .card-plus { z-index: 6; }
 
 @media (prefers-reduced-motion: reduce) {
@@ -3171,9 +3146,5 @@ main {
   .preset-card,
   .material-card {
     transition: none;
-  }
-  .effect-card:hover .thumb::after,
-  .preset-card:hover .preset-thumb::after {
-    animation: none;
   }
 }

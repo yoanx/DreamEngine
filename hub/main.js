@@ -10,7 +10,7 @@
  *   · 不自己实现安装 —— 一律调用 tools/install_dreamengine.ps1
  * ============================================================ */
 
-const { app, BrowserWindow, ipcMain, dialog, shell, Menu, clipboard, nativeImage } = require("electron");
+const { app, BrowserWindow, ipcMain, dialog, shell, Menu, clipboard, nativeImage, net } = require("electron");
 const path = require("node:path");
 const fs = require("node:fs");
 
@@ -31,6 +31,8 @@ const effectOverrides = require("./core/effect_overrides");
 const catalog = require("./core/catalog");
 const effects = require("./core/effects");
 const effectFavorites = require("./core/effect_favorites");
+const update = require("./core/update");
+const packageInfo = require("./package.json");
 const {
   importImageAsPng,
   normalizeBackgroundDirectory,
@@ -106,6 +108,17 @@ function preferredAe() {
   const exe = String(meta.aeExe || "");
   if (exe && fs.existsSync(exe)) return exe;
   return bestAfterFX();
+}
+
+async function fetchGithubReleases() {
+  const response = await net.fetch(update.RELEASES_API, {
+    headers: {
+      Accept: "application/vnd.github+json",
+      "User-Agent": "DreamEngine-Hub",
+    },
+  });
+  if (!response.ok) throw new Error(`GitHub HTTP ${response.status}`);
+  return response.json();
 }
 
 function snapshot() {
@@ -233,13 +246,23 @@ function createWindow() {
 
 function registerIpc() {
   ipcMain.handle("hub:snapshot", () => snapshot());
+  ipcMain.handle("app:version", () => ({
+    version: app.getVersion(),
+    releaseVersion: packageInfo.releaseVersion || app.getVersion(),
+  }));
+  ipcMain.handle("updates:check", () => update.checkForUpdates({
+    currentVersion: packageInfo.releaseVersion || app.getVersion(),
+    fetchReleases: fetchGithubReleases,
+  }));
   ipcMain.handle("shell:openExternal", (_event, url) => {
+    const target = String(url || "");
     const allowed = new Set([
       "https://v.douyin.com/-9l_jE72QY4/",
       "https://github.com/yoanx/DreamEngine",
     ]);
-    if (!allowed.has(url)) return false;
-    return shell.openExternal(url).then(() => true).catch(() => false);
+    const releaseBase = "https://github.com/yoanx/DreamEngine/releases";
+    if (!allowed.has(target) && target !== releaseBase && !target.startsWith(releaseBase + "/")) return false;
+    return shell.openExternal(target).then(() => true).catch(() => false);
   });
   ipcMain.handle("clipboard:writeText", (_event, text) => {
     if (text !== "972561311") return false;

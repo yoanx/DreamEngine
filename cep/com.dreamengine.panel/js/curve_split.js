@@ -61,10 +61,26 @@ var AEV_CurveSplit = (function () {
     var maxEditor = Math.max(MIN_EDITOR, total - MIN_PRESETS);
     var size = Math.min(Math.max(want, MIN_EDITOR), maxEditor);
 
-    st.el.editor.style.flex = "0 0 " + size + "px";
-    st.el.presets.style.flex = "1 1 auto";
+    applySizes(size, total);
+  }
+
+  /**
+   * 窄屏：编辑器吸收剩余高度，预设区按内容高度自适应并受最大高度限制。
+   * 宽屏：保持原来的左右固定比例布局。
+   */
+  function applySizes(size, total) {
+    var presetsSize = total - size;
+    if (st.wide) {
+      st.el.editor.style.flex = "0 0 " + size + "px";
+      st.el.presets.style.flex = "1 1 auto";
+      st.el.presets.style.maxHeight = "";
+    } else {
+      st.el.editor.style.flex = "1 1 auto";
+      st.el.presets.style.flex = "0 1 auto";
+      st.el.presets.style.maxHeight = Math.max(MIN_PRESETS, presetsSize) + "px";
+    }
     /* 空间实在不够时把预设区收起来，而不是让画布被挤成一条线 */
-    st.el.presets.style.display = total - size < MIN_PRESETS - 8 ? "none" : "";
+    st.el.presets.style.display = presetsSize < MIN_PRESETS - 8 ? "none" : "";
   }
 
   function currentRatio() {
@@ -84,8 +100,7 @@ var AEV_CurveSplit = (function () {
     var maxEditor = Math.max(MIN_EDITOR, total - MIN_PRESETS);
     size = Math.min(Math.max(size, MIN_EDITOR), maxEditor);
 
-    st.el.editor.style.flex = "0 0 " + size + "px";
-    st.el.presets.style.display = total - size < MIN_PRESETS - 8 ? "none" : "";
+    applySizes(size, total);
     if (st.el.resizer) st.el.resizer.classList.add("active");
 
     if (st.wide) st.ratio.row = size / total;

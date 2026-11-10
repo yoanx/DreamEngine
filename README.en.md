@@ -104,6 +104,7 @@ Preset categories and preset favorites are shared between the panel and Hub.
 **Settings and diagnostics**
 
 - Inspect Hub, panel, and built-in preview versions.
+- Check GitHub Releases from the About page and open the download page when a newer release is available.
 - Detect installed AE versions and current AE status.
 - Open the extension, preset, and log directories.
 

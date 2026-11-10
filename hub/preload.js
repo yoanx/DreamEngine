@@ -11,6 +11,8 @@ const { contextBridge, ipcRenderer, webUtils } = require("electron");
 contextBridge.exposeInMainWorld("hub", {
   /* 环境快照：AE 是否运行、扩展装没装、各目录在哪 */
   snapshot: () => ipcRenderer.invoke("hub:snapshot"),
+  appVersion: () => ipcRenderer.invoke("app:version"),
+  checkUpdates: () => ipcRenderer.invoke("updates:check"),
   openExternal: (url) => ipcRenderer.invoke("shell:openExternal", url),
   copyText: (text) => ipcRenderer.invoke("clipboard:writeText", text),
 

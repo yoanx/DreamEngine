@@ -292,6 +292,7 @@ var AEV_Library = (function () {
     frameDelay = Math.max(16, Math.round(frameDelay));
     var frameIndex = 0;
     var playTimer = null;
+    var hoverTimer = null;
     var showFrame = function (index) {
       thumb.style.backgroundImage =
         'url("' + framePath(preview.frameSrc, index) + '")';
@@ -300,18 +301,25 @@ var AEV_Library = (function () {
       if (!playTimer) return;
       clearInterval(playTimer);
       playTimer = null;
+      for (var i = 0; i < activePreviewStops.length; i++) {
+        if (activePreviewStops[i] === stop) {
+          activePreviewStops.splice(i, 1);
+          break;
+        }
+      }
     };
     var startPlaying = function () {
-      if (playTimer) return;
+      if (playTimer || Date.now() < previewSuppressUntil) return;
       frameIndex = 0;
       showFrame(frameIndex);
       playTimer = setInterval(function () {
         frameIndex = (frameIndex + 1) % frameCount;
         showFrame(frameIndex);
       }, frameDelay);
+      activePreviewStops.push(stop);
     };
     var play = function () {
-      if (!isAnimated || playTimer || frameCount < 2) return;
+      if (!isAnimated || playTimer || frameCount < 2 || Date.now() < previewSuppressUntil) return;
       if (preview.__ready) {
         startPlaying();
         return;
@@ -328,8 +336,20 @@ var AEV_Library = (function () {
     if (still > frameCount - 1) still = frameCount - 1;
     showFrame(still);
     if (isAnimated && frameCount > 1) {
-      card.addEventListener("mouseenter", play);
-      card.addEventListener("mouseleave", stop);
+      card.addEventListener("mouseenter", function () {
+        if (hoverTimer) clearTimeout(hoverTimer);
+        hoverTimer = setTimeout(function () {
+          hoverTimer = null;
+          play();
+        }, 220);
+      });
+      card.addEventListener("mouseleave", function () {
+        if (hoverTimer) {
+          clearTimeout(hoverTimer);
+          hoverTimer = null;
+        }
+        stop();
+      });
     }
   }
 
@@ -441,6 +461,68 @@ var AEV_Library = (function () {
     return card;
   }
 
+  var lazyCardObserver = null;
+
+  /** 只创建视口附近的完整卡片；离屏项保留轻量槽位。 */
+  function renderLazyCards(container, items, slotClass, factory) {
+    if (!container) return;
+    if (lazyCardObserver) lazyCardObserver.disconnect();
+    container.textContent = "";
+
+    function makeSlot(item) {
+      var slot = document.createElement("div");
+      var card = null;
+      slot.className = "card-slot " + slotClass;
+      slot.__mount = function () {
+        if (card) return;
+        card = factory(item);
+        slot.appendChild(card);
+        slot.classList.add("mounted");
+      };
+      slot.__unmount = function () {
+        if (!card) return;
+        stopAllPreviewPlayback();
+        if (card.parentNode === slot) slot.removeChild(card);
+        card = null;
+        slot.classList.remove("mounted");
+      };
+      return slot;
+    }
+
+    if (!window.IntersectionObserver) {
+      var all = document.createDocumentFragment();
+      for (var a = 0; a < items.length; a++) {
+        var fallbackSlot = makeSlot(items[a]);
+        fallbackSlot.__mount();
+        all.appendChild(fallbackSlot);
+      }
+      container.appendChild(all);
+      return;
+    }
+
+    var scrollRoot = container.closest(".preset-main, main") || null;
+    lazyCardObserver = new IntersectionObserver(function (entries) {
+      for (var i = 0; i < entries.length; i++) {
+        var slot = entries[i].target;
+        if (entries[i].isIntersecting) slot.__mount();
+        else slot.__unmount();
+      }
+    }, { root: scrollRoot, rootMargin: "400px 0px", threshold: 0.01 });
+
+    var fragment = document.createDocumentFragment();
+    var slots = [];
+    for (var i = 0; i < items.length; i++) {
+      var slot = makeSlot(items[i]);
+      slots.push(slot);
+      fragment.appendChild(slot);
+    }
+    container.appendChild(fragment);
+    for (var j = 0; j < slots.length; j++) lazyCardObserver.observe(slots[j]);
+    /* 首批卡片立即挂载，避免滚动到新页面时出现一帧空槽位。 */
+    var initial = Math.min(slots.length, 12);
+    for (var k = 0; k < initial; k++) slots[k].__mount();
+  }
+
   /**
    * 把效果加到 AE 里当前选中的图层。
    *
@@ -496,6 +578,7 @@ var AEV_Library = (function () {
   }
 
   function render() {
+    stopAllPreviewPlayback();
     var visible = AEV_ViewModel.filterItems(state.items, {
       lang: state.lang,
       query: state.query,
@@ -524,13 +607,7 @@ var AEV_Library = (function () {
 
     var grid = byId("previewGrid");
     var empty = byId("emptyState");
-    var fragment = document.createDocumentFragment();
-
-    grid.textContent = "";
-    for (var i = 0; i < visible.length; i++) {
-      fragment.appendChild(createCard(visible[i]));
-    }
-    grid.appendChild(fragment);
+    renderLazyCards(grid, visible, "effect-slot", createCard);
     empty.hidden = visible.length !== 0;
     byId("selectionStats").textContent =
       (state.lang === "zh" ? "显示 " : "Showing ") + visible.length;
@@ -659,7 +736,7 @@ var AEV_Library = (function () {
    * 1fr 会把卡片拉宽到不同的实际像素宽度——同一张预览在宽面板上
    * 显得比窄面板上小，细节看不清。滑块让用户自己定一个合适的尺寸。
    *
-   * 滑块范围固定 48–180px（与 index.html 一致），**不随窗口比例变化**。
+   * 效果/预设滑块范围固定 48–360px，素材页固定 48–180px。
    *
    * 关键约束：**滑块标的值必须等于实际格子宽度**。
    * 设一个放不下的值（比如面板可用 150px 却要 180px 的格子），
@@ -669,10 +746,15 @@ var AEV_Library = (function () {
    *   · 面板变宽时恢复用户原本选的尺寸
    */
   var THUMB_MIN = 48;
-  var THUMB_MAX = 180;
+  var THUMB_MAX = 360;
+  var MATERIAL_THUMB_MAX = 180;
   var THUMB_STEP = 2;
   var THUMB_COMPACT = 80;
   var thumbPreferred = { effects: 132, presets: 180, materials: 132 };
+
+  function thumbMaxFor(view) {
+    return view === "materials" ? MATERIAL_THUMB_MAX : THUMB_MAX;
+  }
 
   function loadThumbPreferences() {
     if (!window.AEV_Prefs) return;
@@ -701,14 +783,15 @@ var AEV_Library = (function () {
   function setThumbSize(size, persist) {
     var view = state.view;
     if (!state.thumbSizes.hasOwnProperty(view)) return;
+    var maxThumb = thumbMaxFor(view);
     var requested = Number(size);
     if (!isNaN(requested) && requested > 0) {
-      thumbPreferred[view] = Math.max(THUMB_MIN, Math.min(THUMB_MAX, requested));
+      thumbPreferred[view] = Math.max(THUMB_MIN, Math.min(maxThumb, requested));
       if (persist && window.AEV_Prefs) {
         AEV_Prefs.setThumbSize(view, thumbPreferred[view]);
       }
     }
-    var limit = Math.min(THUMB_MAX, availableThumbWidth(view));
+    var limit = Math.min(maxThumb, availableThumbWidth(view));
     if (limit < THUMB_MIN) limit = THUMB_MIN;
 
     var value = Math.min(thumbPreferred[view], limit);
@@ -725,9 +808,9 @@ var AEV_Library = (function () {
 
     var slider = byId("thumbSize");
     if (slider) {
-      // 范围恒定 48–180：面板比例只影响「能否放到该尺寸」，不改变滑块刻度
+      // 范围按视图固定；面板比例只影响「能否放到该尺寸」，不改变滑块刻度
       slider.min = String(THUMB_MIN);
-      slider.max = String(THUMB_MAX);
+      slider.max = String(maxThumb);
       slider.step = String(THUMB_STEP);
       // 收敛后把实际生效值写回，避免「标 180、实际 150」的错位
       slider.value = String(value);
@@ -884,88 +967,6 @@ var AEV_Library = (function () {
     }
   }
 
-  /* ---------- 外部变更监视 ---------- */
-  /* 面板之外改数据的三条路径：Hub 程序导入预设、一键 bat 渲完写回索引、
-     用户在资源管理器里直接往预设库丢 .ffx。
-     以前这些改完只能「关掉面板再重开」；这里每 3 秒比对一次 mtime 组合戳，
-     变了就静默重载，并保持滚动位置不跳。
-
-     三条自律：
-       1. 只读时间戳，不读文件内容 —— 一次 evalScript 往返仍在 10~50ms 量级；
-       2. 面板不可见、正在批量生成时跳过本轮，不和用户抢 AE 主线程；
-       3. 只在戳真的变了才 refresh，避免无谓重扫 1000+ 条卡片。 */
-  var watchTimer = null;
-  var watchStamp = "";
-  var watchReady = false;
-  var WATCH_INTERVAL = 3000;
-
-  function scheduleWatch() {
-    if (watchTimer) clearTimeout(watchTimer);
-    watchTimer = setTimeout(pollWatch, WATCH_INTERVAL);
-  }
-
-  function pollWatch() {
-    if (!state.extensionPath || !Bridge.isCEP || !Bridge.isCEP()) {
-      scheduleWatch();
-      return;
-    }
-    if (document.hidden) {
-      scheduleWatch();
-      return;
-    }
-    Bridge.watchStamp(state.extensionPath, function (stamp) {
-      if (!stamp || stamp.indexOf("ERR") === 0 || stamp === "__NOT_CEP__") {
-        scheduleWatch();
-        return;
-      }
-      if (!watchReady) {
-        // 首次只建立基线，不触发刷新（否则面板一打开就多扫一次）
-        watchStamp = stamp;
-        watchReady = true;
-        scheduleWatch();
-        return;
-      }
-      if (stamp === watchStamp) {
-        scheduleWatch();
-        return;
-      }
-      watchStamp = stamp;
-      reloadFromDisk();
-    });
-  }
-
-  function reloadFromDisk() {
-    var grid = byId("previewGrid");
-    var top = grid ? grid.scrollTop : 0;
-    setStatus(
-      state.lang === "zh" ? "检测到外部更新，正在同步…" : "External change detected, syncing…",
-      false
-    );
-    refresh(function (error) {
-      var again = byId("previewGrid");
-      if (again) again.scrollTop = top;
-      if (error) {
-        var detail = error && error.message ? String(error.message) : String(error);
-        setStatus(
-          (state.lang === "zh" ? "同步外部更新失败：" : "Failed to sync: ") + detail,
-          true
-        );
-      } else {
-        // 预设库、背景、预设索引一起重载：Hub 导入预设走的就是这条链路
-        loadPresetLibrary();
-        setStatus(state.lang === "zh" ? "已同步外部更新" : "Synced external changes", false);
-      }
-      scheduleWatch();
-    }, false);
-  }
-
-  function startWatch() {
-    if (!Bridge.isCEP || !Bridge.isCEP()) return;
-    watchReady = false;
-    watchStamp = "";
-    pollWatch();
-  }
-
   /* ---------- 生成队列：与 engine/*.jsx 的唯一交互面 ---------- */
 
   function parseEngineResult(text) {
@@ -1034,6 +1035,27 @@ var AEV_Library = (function () {
    * HTTP 缓存，所以两者不会各拉一份。
    */
   var frameImages = {};
+  var activePreviewStops = [];
+  var previewSuppressUntil = 0;
+
+  function stopAllPreviewPlayback() {
+    var stops = activePreviewStops;
+    activePreviewStops = [];
+    for (var i = 0; i < stops.length; i++) {
+      try { stops[i](); } catch (e) {}
+    }
+  }
+
+  function suppressPreviewPlayback() {
+    previewSuppressUntil = Date.now() + 260;
+    stopAllPreviewPlayback();
+  }
+
+  document.addEventListener("wheel", suppressPreviewPlayback, { passive: true });
+  document.addEventListener("scroll", suppressPreviewPlayback, true);
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden) suppressPreviewPlayback();
+  });
 
   function frameImage(url) {
     var img = frameImages[url];
@@ -1153,8 +1175,11 @@ var AEV_Library = (function () {
   }
 
   /** 载入用户自建的预设库（我的文档/DreamEngine/presets） */
-  function loadPresetLibrary() {
-    if (!state.extensionPath) return;
+  function loadPresetLibrary(done, skipRender) {
+    if (!state.extensionPath) {
+      if (done) done();
+      return;
+    }
     loadPresetOrganizer(function () {
       engine("AEV_Presets.libraryJson()", function (result) {
         var data = parseEngineResult(result);
@@ -1163,16 +1188,21 @@ var AEV_Library = (function () {
             state.lang === "zh" ? "读取预设库失败" : "Failed to read preset library",
             true
           );
+          if (done) done();
           return;
         }
         state.presets = data.items || [];
         state.presetFolder = data.folder || "";
-        loadPresetIndex(renderPresetList);
+        loadPresetIndex(function () {
+          if (!skipRender || state.view === "presets") renderPresetList();
+          if (done) done();
+        });
       });
     });
   }
 
   function renderPresetList() {
+    stopAllPreviewPlayback();
     var list = byId("presetList");
     if (!list) return;
     var query = String(state.presetQuery || "").toLowerCase();
@@ -1209,11 +1239,7 @@ var AEV_Library = (function () {
       return String(a.name).localeCompare(String(c.name), locale);
     });
 
-    list.textContent = "";
-    var shown = 0;
-    for (var i = 0; i < visible.length; i++) {
-      var item = visible[i];
-      shown++;
+    function createPresetCard(item) {
       var card = document.createElement("div");
       card.className = "preset-card";
       card.setAttribute("role", "button");
@@ -1290,10 +1316,9 @@ var AEV_Library = (function () {
       card.appendChild(name);
       card.appendChild(category);
       bindPresetItem(card, item);
-      list.appendChild(card);
-      // 一次最多渲染 400 张：几百个预设全量建 DOM 会让面板明显卡顿
-      if (shown >= 400) break;
+      return card;
     }
+    renderLazyCards(list, visible, "preset-slot", createPresetCard);
   }
 
   function bindPresetItem(button, item) {
@@ -1870,6 +1895,7 @@ var AEV_Library = (function () {
 
   function setView(view) {
     var previous = state.view;
+    if (previous !== view) stopAllPreviewPlayback();
     state.view = view;
     var key;
     for (key in VIEW_PANELS) {
@@ -1898,7 +1924,11 @@ var AEV_Library = (function () {
       if (grid) grid.textContent = "";
     }
 
-    if (view === "presets") loadPresetLibrary();
+    if (view === "presets") {
+      // 预设数据在面板载入时已经读过；这里只渲染缓存，不重新扫描。
+      if (state.presets.length || state.presetFolder) renderPresetList();
+      else loadPresetLibrary();
+    }
     // 曲线视图是常驻的曲线模板：进入只重绘，不去读 AE（读只发生在按「应用」时）
     if (view === "curve" && window.AEV_CurveUI) AEV_CurveUI.enter();
     if (view === "materials" && window.AEV_MaterialsUI) AEV_MaterialsUI.enter();
@@ -2030,7 +2060,7 @@ var AEV_Library = (function () {
       });
     }
 
-    /* 面板被拖宽或拖窄时重新收敛实际尺寸（滑块范围始终 48–180，不变）。
+    /* 面板被拖宽或拖窄时重新收敛实际尺寸（各视图的滑块范围固定）。
        否则会出现「滑块标 180、实际只有 150」的错位。 */
     var resizeTimer = null;
     window.addEventListener("resize", function () {
@@ -2041,14 +2071,14 @@ var AEV_Library = (function () {
     });
 
     refresh(function (error) {
-      // 索引就绪后再开监视：extensionPath 在首次 refresh 里才解析出来。
+      // 面板每次重新载入时只刷新一次；AE 运行期间不再轮询外部文件变化。
       // 同时清一次上一轮异常中断留下的 DE_* 临时对象。
       if (!error && state.extensionPath) {
         engine("AEV_PreviewGen.cleanupArtifacts()", function () {
-          startWatch();
+          loadPresetLibrary(null, true);
         });
       } else {
-        startWatch();
+        loadPresetLibrary(null, true);
       }
     });
   }
