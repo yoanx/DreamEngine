@@ -36,6 +36,18 @@ var AEV_Assets = (function () {
         return String(file.length || 0) + ":" + String(modified);
     }
 
+    /**
+     * 内置 photo 背景解析为随包默认图；其它专用素材仍返回空串，
+     * 由各调用方继续走 text / solid / shape / pattern 的原有分支。
+     */
+    function resolveBackground(id, extensionPath) {
+        if (String(id || "") !== "photo") return "";
+        var root = String(extensionPath || "");
+        if (!root) return "";
+        var file = new File(root + "/assets/preview-default.png");
+        return file.exists ? file.fsName : "";
+    }
+
     function key(kind, size, background) {
         return kind + "@" + size + "@" + backgroundFingerprint(background);
     }
@@ -344,6 +356,7 @@ var AEV_Assets = (function () {
         VERSION: VERSION,
         fingerprint: fingerprint,
         backgroundFingerprint: backgroundFingerprint,
+        resolveBackground: resolveBackground,
         get: get,
         getFresh: getFresh,
         centerTextAsset: centerTextAsset,

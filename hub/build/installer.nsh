@@ -5,7 +5,7 @@
   FileClose $0
 
   DetailPrint "Installing DreamEngine CEP panel..."
-  nsExec::ExecToLog 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$INSTDIR\resources\installer\install_dreamengine.ps1" -Source "$INSTDIR\resources\panel" -Quiet'
+  nsExec::ExecToLog 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$INSTDIR\resources\installer\install_dreamengine.ps1" -Source "$INSTDIR\resources\panel" -UpdateL1 -Quiet'
   Pop $0
   ${If} $0 != 0
     MessageBox MB_ICONEXCLAMATION|MB_OK "DreamEngine Hub was installed, but the After Effects panel setup failed. Open Hub settings and rerun the installer."

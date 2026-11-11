@@ -17,6 +17,8 @@
 # ============================================================
 param(
   [string]$Background = "",
+  [ValidateSet(12, 24, 30, 60)]
+  [int]$Fps = 24,
   [int]$Limit = 40,
   [int]$Rounds = 40,
   [int]$Timeout = 240,
@@ -49,6 +51,7 @@ $presets = Join-Path $docs "DreamEngine\presets"
 
 $todoPath        = Join-Path $probe "next_preset_plugin_batch.tsv"
 $bgPath          = Join-Path $probe "preset_plugin_background.txt"
+$fpsPath         = Join-Path $probe "preset_plugin_fps.txt"
 $logPath         = Join-Path $probe "preset_plugin_run.log"
 $entriesPath     = Join-Path $probe "preset_plugin_previews.tsv"
 $blacklistPath   = Join-Path $probe "preset_plugin_blacklist.tsv"
@@ -519,13 +522,13 @@ function Build-PluginIndex {
       plugins = $plugins
       plugin = $true
       sliceColumns = 1
-      sliceCellSize = 128
-      sliceWidth = 128
-      sliceHeight = 128
+      sliceCellSize = 720
+      sliceWidth = 720
+      sliceHeight = 720
       x = 0
       y = 0
-      width = 128
-      height = 128
+      width = 720
+      height = 720
     }
   }
   $items = @()
@@ -714,6 +717,7 @@ for ($round = 1; $round -le $maxRounds; $round++) {
   $batch = @($cands | Select-Object -First $Limit)
   Write-Utf8 $todoPath (($batch -join "`n") + "`n")
   Write-Utf8 $bgPath $Background
+Write-Utf8 $fpsPath ([string]$Fps)
   Write-Utf8 $pendingPath ([string]$cands.Count)
   $before = @(Read-Lines $logPath).Count
   $roundTimeout = [Math]::Max($Timeout, $batch.Count * 30)

@@ -188,15 +188,24 @@ if (-not (Test-Path $l1ManifestSrc)) {
     if (Test-Path (Join-Path $l1Src "previews.tsv")) {
       Copy-Item -Force (Join-Path $l1Src "previews.tsv") (Join-Path $dataDst "previews.tsv")
     }
+    if (Test-Path (Join-Path $l1Src "animated.json")) {
+      Copy-Item -Force (Join-Path $l1Src "animated.json") (Join-Path $dataDst "animated.json")
+    }
     $l1Thumbs = Join-Path $l1Src "thumbs"
     if (Test-Path $l1Thumbs) {
-      # 只补缺失文件：同名文件可能是用户重渲过的更新版本
-      foreach ($img in (Get-ChildItem $l1Thumbs -File -Filter *.png)) {
-        $dstImg = Join-Path (Join-Path $dataDst "thumbs") $img.Name
-        if (-not (Test-Path $dstImg)) { Copy-Item -Force $img.FullName $dstImg }
+      # -UpdateL1 是显式替换内置预览包；同名 WebP 必须覆盖，
+      # 否则旧单页文件会阻止安装包里的新动画生效。
+      # 递归复制，保留 webp/插件名/ 与 stills/ 子目录。
+      $l1ThumbsRoot = (Resolve-Path $l1Thumbs).Path
+      foreach ($img in (Get-ChildItem $l1ThumbsRoot -Recurse -File)) {
+        $relative = $img.FullName.Substring($l1ThumbsRoot.Length).TrimStart([char]92, [char]47)
+        $dstImg = Join-Path (Join-Path $dataDst "thumbs") $relative
+        $dstParent = Split-Path -Parent $dstImg
+        if ($dstParent) { New-Item -ItemType Directory -Force -Path $dstParent | Out-Null }
+        Copy-Item -Force $img.FullName $dstImg
       }
     }
-    $deployed = @(Get-ChildItem (Join-Path $dataDst "thumbs") -File -ErrorAction SilentlyContinue).Count
+    $deployed = @(Get-ChildItem (Join-Path $dataDst "thumbs") -Recurse -File -ErrorAction SilentlyContinue).Count
     Say "内置预览已部署：$deployed 张图" "Green"
   }
 }

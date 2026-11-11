@@ -194,6 +194,7 @@
     /** 解析无表头的 next_plugin_batch.tsv（matchName \t frames \t plugin） */
     function readTodoText(text) {
         var out = [];
+        var previewFrames = AEV_PreviewGen.config().animatedPreview.frameCount || 24;
         var rows = String(text || "").replace(/^\uFEFF/, "").split(/\r?\n/);
         for (var t = 0; t < rows.length; t++) {
             var row = rows[t];
@@ -202,7 +203,7 @@
             if (!p[0]) continue;
             out.push({
                 matchName: p[0],
-                frames: parseInt(p[1], 10) || 6,
+                frames: previewFrames,
                 plugin: p[2] || CATALOG_PLUGIN_FALLBACK
             });
         }
@@ -218,7 +219,7 @@
         var result = { todo: [], count: 0 };
         var lines = [CATALOG_HEADER];
         var effects = app.effects;
-        var frames = AEV_PreviewGen.config().animatedPreview.frameCount || 6;
+        var frames = AEV_PreviewGen.config().animatedPreview.frameCount || 24;
         for (var i = 0; i < effects.length; i++) {
             var info = {
                 matchName: String(effects[i].matchName || ""),
@@ -373,12 +374,13 @@
     }
 
     var entries = PS.readEntries(readText(ENTRIES));
+    var conf = AEV_PreviewGen.config();
+    BATCH_SIZE = conf.contactSheet.effectsPerSheet || 4;
     var limit = BATCH_SIZE;
     var wanted = parseInt(readText(LIMIT_FILE), 10);
     if (wanted > 0) limit = wanted;
     var maxItems = parseInt(readText(MAX_ITEMS_FILE), 10) || 0;
     // Plugin sheets start at 1000 to avoid the L1 sheet range.
-    var conf = AEV_PreviewGen.config();
     var size = {
         cellSize: conf.contactSheet.cellSize,
         columns: 1,
@@ -393,6 +395,9 @@
     var okCount = 0;
     var failCount = 0;
     var fatalReason = "";
+    function sameRenderKind(left, right) {
+        return (left.plugin === "内置") === (right.plugin === "内置");
+    }
     function isInfrastructureFailure(raw) {
         return String(raw || "").indexOf("no_png_template") >= 0;
     }
@@ -400,6 +405,14 @@
         return String(readText(BACKGROUND_FILE) || "").replace(/[\r\n]+/g, "");
     }
     function writeIndex() {
+        var currentManifest = null;
+        try {
+            var manifestText = readText(MANIFEST);
+            if (manifestText) currentManifest = eval("(" + manifestText + ")");
+        } catch (eManifest) {}
+        if (currentManifest && currentManifest.items && PS.mergePreviewFields) {
+            entries = PS.mergePreviewFields(entries, currentManifest.items);
+        }
         writeText(ENTRIES, PS.entriesTsv(entries));
         writeText(MANIFEST, PS.buildManifest(entries, size));
     }
@@ -421,7 +434,10 @@
         entries = PS.addEntry(entries, {
             matchName: item.matchName,
             sheet: sheetIndex,
-            frames: item.frames,
+            frames: 24,
+            duration: 1,
+            fps: 24,
+            previewVersion: 2,
             frameTemplate: tmpl,
             plugin: item.plugin,
             x: layout.x,
@@ -448,7 +464,24 @@
         }
     }
 
+    var manifestTextCache = "";
+    function manifestWebpForMatchName(matchName) {
+        if (!manifestTextCache) manifestTextCache = readText(MANIFEST);
+        if (!manifestTextCache || !matchName) return "";
+        var escaped = String(matchName).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        var re = new RegExp('"matchName"\\s*:\\s*"' + escaped +
+            '"[^}]*?"webpSrc"\\s*:\\s*"([^"]+)"');
+        var match = re.exec(manifestTextCache);
+        return match ? match[1] : "";
+    }
+
     function entryFramesExist(entry) {
+        if (entry && entry.webpSrc) {
+            var webp = new File(EXT + "/data/" + entry.webpSrc);
+            if (webp.exists) return true;
+        }
+        var manifestWebp = entry ? manifestWebpForMatchName(entry.matchName) : "";
+        if (manifestWebp && new File(EXT + "/data/" + manifestWebp).exists) return true;
         var template = String(entry && entry.frameTemplate || "");
         if (!template) return true;
         var frames = Math.max(1, parseInt(entry.frames, 10) || 1);
@@ -522,8 +555,8 @@
                 singleCell: false,
                 targetComp: renderTemplateComp,
                 targetQueueItem: renderTemplateQueue,
-                gridColumns: 8,
-                gridRows: Math.ceil(group.length / 8),
+                gridColumns: conf.contactSheet.columns,
+                gridRows: Math.ceil(group.length / conf.contactSheet.columns),
                 frames: maxFrames,
                 freshAssets: true,
                 background: backgroundValue()
@@ -538,7 +571,7 @@
         var renderedNames = data && data.names ? String(data.names).split(",") : [];
         var batchOk = data && data.status === "ok" && renderedNames.length === group.length;
         if (batchOk) {
-            var columns = 8;
+            var columns = conf.contactSheet.columns;
             var cellSize = conf.contactSheet.cellSize;
             var width = columns * cellSize;
             var height = Math.ceil(group.length / columns) * cellSize;
@@ -628,7 +661,8 @@
             }
             var group = [];
             while (cursor < run.length && group.length < BATCH_SIZE &&
-                   group.length < remaining && !forceSingles[run[cursor].matchName]) {
+                   group.length < remaining && !forceSingles[run[cursor].matchName] &&
+                   (group.length === 0 || sameRenderKind(group[0], run[cursor]))) {
                 group.push(run[cursor]);
                 cursor++;
             }

@@ -31,6 +31,8 @@ const effectOverrides = require("./core/effect_overrides");
 const catalog = require("./core/catalog");
 const effects = require("./core/effects");
 const effectFavorites = require("./core/effect_favorites");
+const previewPackage = require("./core/preview_package");
+const { buildEffectPreviews } = require("./core/effect_preview_builder");
 const update = require("./core/update");
 const packageInfo = require("./package.json");
 const {
@@ -49,6 +51,9 @@ let dumpJob = null;
 let guardJob = null;
 // 本次属性获取的 AE 版本，合并缓存时写进每组 meta
 let dumpContext = { ae: "", aeVersion: "", aeMajor: 0 };
+let previewBuildRunning = false;
+let previewBuildQueued = false;
+let previewBuildLastKey = "";
 // 属性缓存模块由数据面提交引入；未安装时 UI 会收到 not_wired，不崩
 let paramCacheModule;
 function paramCache() {
@@ -145,6 +150,50 @@ function snapshot() {
       : { running: false, mode: "", state: null },
     aeGuard: guardJob ? guardJob.snapshot() : { running: false },
   };
+}
+
+function notifyEffectPreviewsBuilt(result) {
+  if (!result || !result.built || !mainWindow || mainWindow.isDestroyed()) return;
+  mainWindow.webContents.send("effect-previews:built", result);
+}
+
+/**
+ * 一批 PNG 落盘后就把它们裁成 WebP，并清掉已完成的中间 PNG。
+ * 同一时间只跑一个 Sharp 构建，渲染状态变化太快时合并为下一轮。
+ */
+function runEffectPreviewBuild() {
+  if (previewBuildRunning) {
+    previewBuildQueued = true;
+    return;
+  }
+  previewBuildRunning = true;
+  buildEffectPreviews(paths, { quality: 80 })
+    .then((result) => notifyEffectPreviewsBuilt(result))
+    .catch((error) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send("effect-previews:built", {
+          ok: false,
+          reason: String(error.message || error),
+        });
+      }
+    })
+    .finally(() => {
+      previewBuildRunning = false;
+      if (previewBuildQueued) {
+        previewBuildQueued = false;
+        runEffectPreviewBuild();
+      }
+    });
+}
+
+function maybeBuildEffectPreviews(state) {
+  if (!state || state.mode !== "render" || state.phase !== "rendering") return;
+  const current = Number(state.current) || 0;
+  if (current <= 0) return;
+  const key = `${Number(state.round) || 0}:${current}`;
+  if (key === previewBuildLastKey) return;
+  previewBuildLastKey = key;
+  runEffectPreviewBuild();
 }
 
 /* ---------------------------------------------------------------
@@ -324,7 +373,7 @@ function registerIpc() {
   ipcMain.handle("backgrounds:list", () => {
     // 与面板的 preset_preview.backgroundsJson 保持同一组内置 id
     const builtin = [
-      { id: "photo", label: "标准素材" },
+      { id: "photo", label: "DreamEngine 默认图" },
       { id: "text", label: "文字" },
       { id: "solid", label: "纯色" },
       { id: "shape", label: "形状" },
@@ -460,10 +509,26 @@ function registerIpc() {
     const opts = options || {};
     if (!opts.ae) opts.ae = preferredAe();
     cleanupJobMarkers(paths);
+    previewBuildLastKey = "";
 
     const cat = Array.isArray(opts.matchNames) ? catalog.readCatalog(paths) : null;
-    if (cat && !cat.ok) return { ok: false, reason: "no_catalog" };
-    const plan = cat ? catalog.planSelection(cat, opts.matchNames, !!opts.force) : null;
+    const builtinFallback = Array.isArray(opts.matchNames)
+      ? effects
+          .list(paths)
+          .items.filter((item) => item.source === "builtin" && item.renderable)
+          .map((item) => ({
+            matchName: item.matchName,
+            status: item.status || "pending",
+            reason: item.reason || "",
+            selectable: true,
+            plugin: "内置",
+            frames: item.frames || 36,
+          }))
+      : [];
+    if (cat && !cat.ok && builtinFallback.length === 0) return { ok: false, reason: "no_catalog" };
+    const plan = Array.isArray(opts.matchNames)
+      ? catalog.planSelection(cat && cat.ok ? cat : { items: [] }, opts.matchNames, !!opts.force, builtinFallback)
+      : null;
     if (plan && plan.mode === "selection") {
       const { selected, skipped } = plan;
       if (selected.length === 0) {
@@ -629,6 +694,46 @@ function registerIpc() {
   ipcMain.handle("effects:clearPreview", (_event, matchName) =>
     effects.clearPreview(paths, matchName),
   );
+  ipcMain.handle("effect-previews:import", async () => {
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: "导入效果预览包",
+      buttonLabel: "导入",
+      properties: ["openFile"],
+      filters: [{ name: "DreamEngine 效果预览包", extensions: ["zip"] }],
+    });
+    if (result.canceled || !result.filePaths[0]) {
+      return { ok: false, reason: "cancelled" };
+    }
+    try {
+      return await previewPackage.importEffectPreviews(paths, result.filePaths[0]);
+    } catch (error) {
+      return { ok: false, reason: "import_failed", detail: String(error.message || error) };
+    }
+  });
+  ipcMain.handle("effect-previews:export", async (_event, options) => {
+    fs.mkdirSync(paths.userRoot, { recursive: true });
+    const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+    const result = await dialog.showSaveDialog(mainWindow, {
+      title: "导出效果预览包",
+      buttonLabel: "导出",
+      defaultPath: path.join(paths.userRoot, `DreamEngine-Effect-Previews-${stamp}.zip`),
+      filters: [{ name: "DreamEngine 效果预览包", extensions: ["zip"] }],
+    });
+    if (result.canceled || !result.filePath) {
+      return { ok: false, reason: "cancelled" };
+    }
+    try {
+      const exported = await previewPackage.exportEffectPreviews(
+        paths,
+        result.filePath,
+        options || {},
+      );
+      if (exported.ok) shell.showItemInFolder(result.filePath);
+      return exported;
+    } catch (error) {
+      return { ok: false, reason: "export_failed", detail: String(error.message || error) };
+    }
+  });
 
   ipcMain.handle("plugin-effects:stop", () => {
     if (!pluginJob) return { ok: false, reason: "no_job" };
@@ -914,6 +1019,7 @@ if (!gotLock) {
       paths,
       script: path.join(toolsDir(), "generate_plugin_effects.ps1"),
       onState: (state) => {
+        maybeBuildEffectPreviews(state);
         if (mainWindow && !mainWindow.isDestroyed()) {
           mainWindow.webContents.send("plugin-effects:state", state);
         }
@@ -926,6 +1032,9 @@ if (!gotLock) {
           if (pluginJob && pluginJob.getMode() === "catalog") {
             mainWindow.webContents.send("plugin-effects:catalog", catalog.readCatalog(paths));
           }
+        }
+        if (pluginJob && pluginJob.getMode() !== "catalog") {
+          runEffectPreviewBuild();
         }
       },
     });

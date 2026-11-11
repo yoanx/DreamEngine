@@ -86,6 +86,7 @@ test("readCatalog: 合并 rendered / blacklisted / excluded / noPreview", () => 
   assert.equal(byName.get("ADBE AudWave").status, "no_preview");
   assert.equal(byName.get("ADBE AudWave").selectable, false);
   assert.equal(byName.get("S_Blur").status, "pending");
+  assert.equal(byName.get("S_Blur").frames, 24);
 });
 
 test("filterSelection: 默认跳过已生成/黑名单，force 时放行", () => {
@@ -120,6 +121,22 @@ test("planSelection: 显式空选集仍是选集模式，不能退化成全量",
   assert.equal(all.mode, "all");
 });
 
+test("planSelection: 内置效果可借助效果库条目进入同一个渲染选集", () => {
+  const cat = {
+    items: [{ matchName: "S_Glow", status: "pending", selectable: true }],
+  };
+  const fallback = [{
+    matchName: "ADBE Glo2",
+    status: "pending",
+    selectable: true,
+    plugin: "内置",
+    frames: 24,
+  }];
+  const plan = catalog.planSelection(cat, ["S_Glow", "ADBE Glo2"], false, fallback);
+  assert.deepEqual(plan.selected.map((item) => item.matchName), ["S_Glow", "ADBE Glo2"]);
+  assert.equal(plan.selected[1].plugin, "内置");
+});
+
 test("writeSelection: 无表头、tab 分隔、CRLF", () => {
   const { paths } = makeWorkspace();
   const count = catalog.writeSelection(paths, [
@@ -128,7 +145,7 @@ test("writeSelection: 无表头、tab 分隔、CRLF", () => {
   ]);
   assert.equal(count, 2);
   const text = fs.readFileSync(paths.pluginSelection, "utf8");
-  assert.equal(text, "S_Glow\t6\tSapphire\r\nS_Blur\t6\tSapphire\r\n");
+  assert.equal(text, "S_Glow\t6\tSapphire\r\nS_Blur\t24\tSapphire\r\n");
 });
 
 test("presets.list: 递归扫描子目录", () => {

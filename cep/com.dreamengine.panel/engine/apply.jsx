@@ -7,12 +7,12 @@
 //   · app.project.items.getItemByName 会崩 AE → 只遍历 items
 //   · app.project.activeItem 未必是合成 → 两条路都找
 //   · 给 comp.selectedLayers 赋值会崩 AE → 只读取，不赋值
+//   · 应用到用户图层时只 addProperty：预览配方、手动覆盖参数和启发式
+//     都只服务于预览，不能写进用户工程
 //   · 给插件效果写任何参数都会让整条效果废掉（报「需要数字、数组或
-//     属性的位置找到类型为 Error 的对象」）→ 插件只 addProperty，
-//     一个参数都不碰
-//   · 内置效果的参数可以安全写 → 套显式配方（与缩略图一致）
+//     属性的位置找到类型为 Error 的对象」）
 //
-// 不做的事：不打关键帧、不做启发式赋值。
+// 不做的事：不套配方、不写参数、不打关键帧。
 //   关键帧是缩略图用来「演一遍」的，落到用户图层上会污染时间线；
 //   启发式会把颜色改成橙色、模糊改一半，在真实图层上是破坏性的。
 //
@@ -122,8 +122,7 @@ var AEV_Apply = (function () {
      * 返回 JSON：
      *   {status:"ok", effect, comp, layer, mode}
      *   {status:"error", reason:"no_comp"|"no_layer"|"add_failed", ...}
-     * mode: "recipe"（内置，套了显式配方）/ "default"（内置但无配方）
-     *       / "plugin-default"（插件，参数一个没动）
+     * mode: "default"（原始效果，参数一个没动）
      */
     function addToSelectedJson(matchName) {
         var name = String(matchName || "");
@@ -170,25 +169,7 @@ var AEV_Apply = (function () {
             return result("error", [["reason", "add_failed"], ["effect", name]]);
         }
 
-        // 参数策略：内置套显式配方（与缩略图一致）；插件一个参数都不动。
         var mode = "default";
-        var writes = 0;
-        var builtin = false;
-        if (typeof AEV_Recipe !== "undefined") {
-            try {
-                builtin = AEV_Recipe.isBuiltinMatch(name);
-            } catch (e4) {}
-        }
-        if (builtin) {
-            try {
-                writes = AEV_Recipe.applyRecipe(effect, name);
-            } catch (e5) {
-                writes = 0;
-            }
-            mode = writes > 0 ? "recipe" : "default";
-        } else {
-            mode = "plugin-default";
-        }
 
         var layerName = "";
         try {

@@ -33,6 +33,7 @@
     var LOG = OUT.fsName + "/preset_plugin_run.log";
     var TODO = OUT.fsName + "/next_preset_plugin_batch.tsv";
     var BACKGROUND = OUT.fsName + "/preset_plugin_background.txt";
+    var FPS_FILE = OUT.fsName + "/preset_plugin_fps.txt";
     var ENTRIES = OUT.fsName + "/preset_plugin_previews.tsv";
     var BLACKLIST = OUT.fsName + "/preset_plugin_blacklist.tsv";
     var FORCE = OUT.fsName + "/preset_plugin_force.txt";
@@ -228,6 +229,7 @@
         todo.push(path);
     }
     var background = String(readText(BACKGROUND) || "photo").replace(/^\s+|\s+$/g, "");
+    var renderFps = parseInt(readText(FPS_FILE), 10) || 24;
     if (!background) background = "photo";
     var pendingAtStart = parseInt(readText(PENDING), 10);
     if (!(pendingAtStart >= 0)) pendingAtStart = todo.length;
@@ -257,7 +259,8 @@
             raw = PP.renderJson(presetPath, sheet, {
                 extensionPath: EXT,
                 background: background,
-                cellSize: 128,
+                fps: renderFps,
+                cellSize: 720,
                 // 专用 AE 实例 + 逐条隔离：插件预设照渲，不在面板进程里冒险
                 allowPlugins: true,
                 targetComp: renderTemplateComp,

@@ -186,6 +186,35 @@ check("removeBlacklist 空名单/空 map 安全", () => {
   assert.deepEqual(PS.removeBlacklist({}, ["a"]), {});
 });
 
+check("buildManifest 保留 WebP 引用字段", () => {
+  const doc = JSON.parse(PS.buildManifest([{
+    matchName: "ADBE Glo2",
+    sheet: 1000,
+    frames: 24,
+    fps: 24,
+    previewVersion: 2,
+    frameTemplate: "thumbs/batch_1000_%04d.png",
+    plugin: "内置",
+    webpSrc: "thumbs/webp/ADBE Glo2.webp",
+    stillSrc: "thumbs/webp/stills/ADBE Glo2.webp",
+    stillFrame: 12,
+  }], { cellSize: 720, columns: 1 }));
+  assert.equal(doc.items[0].webpSrc, "thumbs/webp/ADBE Glo2.webp");
+  assert.equal(doc.items[0].stillSrc, "thumbs/webp/stills/ADBE Glo2.webp");
+  assert.equal(doc.items[0].stillFrame, 12);
+});
+
+check("mergePreviewFields 按 matchName 保留 WebP 引用", () => {
+  const merged = PS.mergePreviewFields(
+    [{ matchName: "a" }, { matchName: "b" }],
+    [{ matchName: "a", webpSrc: "a.webp", stillSrc: "stills/a.webp", stillFrame: 12 }],
+  );
+  assert.equal(merged[0].webpSrc, "a.webp");
+  assert.equal(merged[0].stillSrc, "stills/a.webp");
+  assert.equal(merged[0].stillFrame, 12);
+  assert.equal(merged[1].webpSrc, undefined);
+});
+
 /* ---------------- 顺带验证黑名单/日志的基本契约 ---------------- */
 
 check("readBlacklist / mergeBlacklist / removeBlacklist 可串联", () => {

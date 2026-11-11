@@ -107,11 +107,15 @@
           <button class="btn" id="btnEffectRefresh" type="button">刷新</button>
           <button class="btn" id="btnEffectSyncCategories" type="button"
                   title="扫描当前 AE 的插件效果分类（只建索引，不渲染）">同步 AE 分类</button>
+          <button class="btn" id="btnEffectPreviewImport" type="button"
+                  title="导入别人分享的效果预览包；同名效果会被覆盖">导入预览包</button>
+          <button class="btn" id="btnEffectPreviewExport" type="button"
+                  title="把当前全部效果预览导出为 zip">导出预览包</button>
           <button class="btn" id="btnEffectSelectUnrendered" type="button"
-                  title="选择当前筛选下所有待渲染的插件效果">选择未渲染</button>
+                  title="选择当前筛选下所有待渲染的效果">选择未渲染</button>
           <button class="btn ghost" id="btnEffectClearSelection" type="button" disabled>清空选择</button>
           <button class="btn" id="btnEffectRenderSelected" type="button" disabled
-                  title="只渲染已勾选的插件效果">渲染所选 (0)</button>
+                  title="只渲染已勾选的效果">渲染所选 (0)</button>
           <button class="btn" id="btnEffectFavoritesOnly" type="button"
                   aria-pressed="false" title="只看已收藏的效果">仅显示已收藏效果</button>
           <select class="input preset-source" id="effectPluginFilter" aria-label="效果来源">
@@ -165,7 +169,7 @@
                   <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4zM4 12h16M12 4v16"/></svg>
                 </div>
                 <div class="flow-kind-name">效果</div>
-                <div class="flow-kind-desc">把插件效果加到测试图层上，逐条渲染预览</div>
+                <div class="flow-kind-desc">把内置或插件效果加到测试图层上，逐条渲染预览</div>
                 <div class="flow-kind-meta" id="flowKindEffectMeta">读取中…</div>
               </button>
             </div>
@@ -221,6 +225,15 @@
                   <label class="field">
                     <span class="field-label">预览背景</span>
                     <select id="flowBackground" class="input"></select>
+                  </label>
+                  <label class="field" id="flowPresetFpsField" hidden>
+                    <span class="field-label">预设帧率</span>
+                    <select id="flowPresetFps" class="input">
+                      <option value="12">12 fps</option>
+                      <option value="24" selected>24 fps</option>
+                      <option value="30">30 fps</option>
+                      <option value="60">60 fps</option>
+                    </select>
                   </label>
                   <div class="field-row">
                     <label class="field narrow">
@@ -504,6 +517,23 @@
       <span class="spacer"></span>
       <button class="btn" id="renderLogCloseBottom" type="button">关闭</button>
     </footer>
+  </section>
+</div>
+
+<div class="modal-mask" id="effectExportDialog" hidden>
+  <section class="modal-card effect-export-card" role="dialog" aria-modal="true"
+           aria-labelledby="effectExportTitle">
+    <h3 id="effectExportTitle">导出效果预览</h3>
+    <p>选择要包含在预览包中的插件。</p>
+    <div class="effect-export-toolbar">
+      <button class="btn ghost" id="effectExportSelectAll" type="button">全选</button>
+      <button class="btn ghost" id="effectExportClear" type="button">清空</button>
+    </div>
+    <div class="effect-export-list" id="effectExportPluginList"></div>
+    <div class="modal-actions">
+      <button class="btn" id="effectExportCancel" type="button">取消</button>
+      <button class="btn primary" id="effectExportConfirm" type="button">导出</button>
+    </div>
   </section>
 </div>
 

@@ -16,7 +16,7 @@
 
 var AEV_PluginState = (function () {
     var VERSION = 1;
-    var ENTRY_HEADER = "matchName\tsheet\tframes\tframeTemplate\tplugin\tx\ty\tcolumns\twidth\theight";
+    var ENTRY_HEADER = "matchName\tsheet\tframes\tframeTemplate\tplugin\tx\ty\tcolumns\twidth\theight\tduration\tfps\tpreviewVersion";
     var BLACKLIST_HEADER = "matchName\treason";
 
     function jsonText(value) {
@@ -153,7 +153,10 @@ var AEV_PluginState = (function () {
                 y: parseInt(p[6], 10) || 0,
                 columns: parseInt(p[7], 10) || 1,
                 width: parseInt(p[8], 10) || 0,
-                height: parseInt(p[9], 10) || 0
+                height: parseInt(p[9], 10) || 0,
+                duration: parseFloat(p[10]) || 0,
+                fps: parseInt(p[11], 10) || 0,
+                previewVersion: parseInt(p[12], 10) || 0
             });
         }
         return out;
@@ -173,7 +176,10 @@ var AEV_PluginState = (function () {
                 String(e.y || 0),
                 String(e.columns || 1),
                 String(e.width || 0),
-                String(e.height || 0)
+                String(e.height || 0),
+                String(e.duration || 0),
+                String(e.fps || 0),
+                String(e.previewVersion || 0)
             ].join("\t"));
         }
         return lines.join("\r\n");
@@ -193,6 +199,31 @@ var AEV_PluginState = (function () {
         }
         if (!replaced) out.push(item);
         out.sort(function (a, b) { return a.sheet - b.sheet; });
+        return out;
+    }
+
+    /** 把 Node 生成器写进 manifest 的 WebP 字段带回下一轮索引。 */
+    function mergePreviewFields(entries, previewItems) {
+        var byName = {};
+        for (var i = 0; i < (previewItems || []).length; i++) {
+            var item = previewItems[i];
+            if (item && item.matchName) byName[item.matchName] = item;
+        }
+        var out = [];
+        for (var e = 0; e < entries.length; e++) {
+            var entry = entries[e];
+            var next = {};
+            for (var key in entry) {
+                if (entry.hasOwnProperty(key)) next[key] = entry[key];
+            }
+            var preview = byName[entry.matchName];
+            if (preview) {
+                if (preview.webpSrc) next.webpSrc = preview.webpSrc;
+                if (preview.stillSrc) next.stillSrc = preview.stillSrc;
+                if (preview.stillFrame !== undefined) next.stillFrame = preview.stillFrame;
+            }
+            out.push(next);
+        }
         return out;
     }
 
@@ -278,14 +309,14 @@ var AEV_PluginState = (function () {
     /**
      * 拼面板用的独立索引。
      *
-     * 插件图是 1×1 单格（128×128），不是 L1 的 8×8 整网；每个条目都带上
+     * 插件图是 1×1 单格（720×720），不是 L1 的整网；每个条目都带上
      * slice* 布局字段，spriteSlice 才不会按整网参数切片。
      * 不能复用 item 的 width/height：L1 里那是「格子尺寸」，不是整图尺寸，
      * 拿它当整图会让 rows 算成 1，所有格位都被压到 (0,0)。
      */
     function buildManifest(entries, size) {
         var conf = size || {};
-        var cellSize = conf.cellSize || 128;
+        var cellSize = conf.cellSize || 720;
         var columns = conf.columns || 1;
         var width = conf.width || cellSize * columns;
         var height = conf.height || cellSize * columns;
@@ -305,11 +336,17 @@ var AEV_PluginState = (function () {
             parts.push('"x":' + (e.x || 0) + ',"y":' + (e.y || 0));
             parts.push('"width":' + cellSize + ',"height":' + cellSize);
             parts.push('"frames":' + e.frames);
+            parts.push('"duration":' + (Number(e.duration) || 1));
+            parts.push('"fps":' + (parseInt(e.fps, 10) || 24));
+            parts.push('"effectPreviewVersion":' + (parseInt(e.previewVersion, 10) || 0));
             parts.push('"sliceColumns":' + itemColumns + ',"sliceCellSize":' + cellSize);
             parts.push('"sliceWidth":' + itemWidth + ',"sliceHeight":' + itemHeight);
             parts.push('"plugin":' + jsonText(e.plugin || "其它插件"));
             if (tmpl) parts.push('"frameSrc":' + jsonText(tmpl));
             if (firstFrame) parts.push('"src":' + jsonText(firstFrame));
+            if (e.webpSrc) parts.push('"webpSrc":' + jsonText(e.webpSrc));
+            if (e.stillSrc) parts.push('"stillSrc":' + jsonText(e.stillSrc));
+            if (e.stillFrame !== undefined) parts.push('"stillFrame":' + parseInt(e.stillFrame, 10));
             items.push("{" + parts.join(",") + "}");
 
             if (!seenSheets[String(e.sheet)] && firstFrame) {
@@ -339,6 +376,7 @@ var AEV_PluginState = (function () {
         readEntries: readEntries,
         entriesTsv: entriesTsv,
         addEntry: addEntry,
+        mergePreviewFields: mergePreviewFields,
         planRun: planRun,
         planStats: planStats,
         buildManifest: buildManifest

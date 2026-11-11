@@ -15,7 +15,7 @@
  *     （沉浸式视频、生成等）里且插件未知的条目，都归回「AE 内置」分组 —— 扫描的
  *     matchName 前缀启发式会漏判 Keylight、VISINF 颗粒、Mettle VR 效果等 AE 自带效果
  *   · 内置严格按 manifest.items 顺序；插件按 catalog TSV 行序（manifest 独有项追加）
- *   · fps 固定 12，与 engine/render_config.jsx 的离线渲染帧率一致
+ *   · 内置效果默认 24fps；插件预览读取 manifest 自己记录的 fps/duration
  *   · 收藏按 matchName 存在 <userRoot>/effect_favorites.json（effect_favorites.js 读写）；
  *     条目的 renderable/generated 标记让 UI 知道「能不能渲染 / 能不能取消渲染」
  *   · clearPreview 删除一条插件效果的预览帧、索引、TSV 行与黑名单记录，让它回到待渲染
@@ -31,7 +31,8 @@ const catalog = require("./catalog");
 const effectFavorites = require("./effect_favorites");
 const effectOverrides = require("./effect_overrides");
 
-const FPS = 12;
+const FPS = 24;
+const EFFECT_PREVIEW_VERSION = 2;
 
 function readJson(file) {
   try {
@@ -47,6 +48,39 @@ function isFile(file) {
   } catch {
     return false;
   }
+}
+
+/**
+ * 读取 <dataDir>/animated.json —— 只记录「静态」条目的独立索引。
+ *
+ * 为什么不能信 manifest 的 frames：面板按固定 24 帧渲染整网，manifest.items 里
+ * 每一条都写 frames=24（实测已安装版 227/227 全是 24），但其中相当一部分效果本身
+ * 没有动态，产出的 WebP 只有 1 页（实测 227 条里 79 条是单帧）。按 frames>1 判定
+ * 会把这 79 条静态项误标成 animated:true，UI 于是既不给它们「静止帧」标记，又会
+ * 在 hover 时白解码一遍单帧 WebP —— 用户看到的就是「预览静止」。
+ *
+ * 这份索引由 tools/mark_animated.mjs（逐帧字节比对）与 core/effect_preview_builder.js
+ * （按 WebP 实际页数）写入，是判定动静的唯一可靠依据。文件缺失或损坏时返回空集合，
+ * 调用方回退到 frames>1 的旧行为，不会因为少了索引就把动图当成静图。
+ */
+function readStaticPreviewNames(dataDir) {
+  const doc = readJson(path.join(dataDir, "animated.json"));
+  const still = new Set();
+  for (const item of (doc && doc.items) || []) {
+    if (item && item.matchName && item.animated === false) still.add(String(item.matchName));
+  }
+  return still;
+}
+
+function dataPreviewPath(dataDir, relative) {
+  const value = String(relative || "");
+  return value ? path.join(dataDir, value) : "";
+}
+
+function isCurrentEffectPreview(entry, frames, fps) {
+  return Number(entry.effectPreviewVersion) === EFFECT_PREVIEW_VERSION &&
+    Number(frames) === 24 &&
+    (Number(fps) || FPS) === 24;
 }
 
 /** 依次取第一个非空文本（0 与 false 不算空，便于 x/y 等数值字段复用） */
@@ -70,7 +104,7 @@ function trimmed(value) {
  * 注意不能拿条目自己的 width/height 当整图尺寸 —— 那是格子尺寸。
  */
 function sliceGeometry(entry, manifest) {
-  const cellSize = Number(entry.sliceCellSize) || Number(manifest.cellSize) || 128;
+  const cellSize = Number(entry.sliceCellSize) || Number(manifest.cellSize) || 720;
   const columns = Number(entry.sliceColumns) || Number(manifest.columns) || 1;
   const width = Number(entry.sliceWidth) || Number(manifest.width) || cellSize * columns;
   const height = Number(entry.sliceHeight) || Number(manifest.height) || cellSize * columns;
@@ -83,20 +117,38 @@ function sliceGeometry(entry, manifest) {
   };
 }
 
-/** 内置效果：L1 整网上的一个格子（多数是 6 帧动图，部分是单帧静图） */
-function builtinItem(entry, manifest, sheetByIndex, names, dataDir) {
+/**
+ * 动静判定：静态索引里显式标了 false 的一律算静态，其余回退到「帧数大于 1」。
+ * frames 来自 manifest，面板统一按 24 帧渲染，单帧效果也写 24，所以不能只靠它。
+ */
+function resolveAnimated(matchName, frames, staticNames) {
+  if (staticNames && staticNames.has(matchName)) return false;
+  return Number(frames) > 1;
+}
+
+/** 内置效果：L1 整网上的一个格子（多数是 24 帧动图，部分是单帧静图） */
+function builtinItem(entry, manifest, sheetByIndex, names, dataDir, staticNames) {
   const matchName = String((entry && entry.matchName) || "");
   if (!matchName) return null;
 
   const sheet = sheetByIndex.get(Number(entry.sheet)) || null;
   const frameSrc = String(entry.frameSrc || (sheet && sheet.src) || "");
-  if (!frameSrc) return null;
+  const webpSrc = String(entry.webpSrc || "");
+  if (!frameSrc && !webpSrc) return null;
 
   const framePattern = path.join(dataDir, frameSrc);
-  if (!isFile(framePattern.replace("%04d", "0000"))) return null;
+  if (!webpSrc && !isFile(framePattern.replace("%04d", "0000"))) return null;
 
   const record = names.get(matchName) || {};
   const frames = Math.max(1, Number(entry.frames) || 1);
+  const fps = Math.max(1, Number(entry.fps) || FPS);
+  const duration = Math.max(0, Number(entry.duration) || frames / fps);
+  const stillFrame = Math.min(
+    frames - 1,
+    Math.max(0, Number.isFinite(Number(entry.stillFrame))
+      ? Number(entry.stillFrame)
+      : Math.floor(frames / 2)),
+  );
   const geometry = sliceGeometry(entry, manifest);
   const nameZh = String(record.nameZh || "");
   const nameEn = String(record.nameEn || "");
@@ -114,15 +166,19 @@ function builtinItem(entry, manifest, sheetByIndex, names, dataDir) {
     plugin: "内置",
     source: "builtin",
     frames,
-    fps: FPS,
-    framePattern,
+    fps,
+    duration,
+    framePattern: frameSrc ? framePattern : "",
+    webpSrc: dataPreviewPath(dataDir, entry.webpSrc),
+    stillSrc: dataPreviewPath(dataDir, entry.stillSrc),
     cellSize: geometry.cellSize,
     columns: geometry.columns,
     rows: geometry.rows,
     x: geometry.x,
     y: geometry.y,
-    stillFrame: frames - 1,
-    animated: frames > 1,
+    stillFrame,
+    animated: resolveAnimated(matchName, frames, staticNames),
+    previewCurrent: isCurrentEffectPreview(entry, frames, fps),
     hasPreview: true,
     status: "rendered",
     reason: "",
@@ -173,23 +229,41 @@ function previewPattern(entry, dataDir) {
   return isFile(framePattern.replace("%04d", "0000")) ? framePattern : "";
 }
 
+function hasWebpPreview(entry, dataDir) {
+  const relative = String((entry && entry.webpSrc) || "");
+  if (!relative) return false;
+  return isFile(path.join(dataDir, relative));
+}
+
 /** 有预览的插件条目：沿用效果库渲染条目的形状（1×N 单行拼图） */
-function renderedPluginItem(meta, entry, manifest, dataDir) {
+function renderedPluginItem(meta, entry, manifest, dataDir, staticNames) {
   const frames = Math.max(1, Number(entry.frames) || 1);
+  const fps = Math.max(1, Number(entry.fps) || FPS);
+  const duration = Math.max(0, Number(entry.duration) || frames / fps);
+  const stillFrame = Math.min(
+    frames - 1,
+    Math.max(0, Number.isFinite(Number(entry.stillFrame))
+      ? Number(entry.stillFrame)
+      : Math.floor(frames / 2)),
+  );
   const geometry = sliceGeometry(entry, manifest);
   return {
     ...meta,
     source: "plugin",
     frames,
-    fps: FPS,
+    fps,
+    duration,
     framePattern: previewPattern(entry, dataDir),
+    webpSrc: dataPreviewPath(dataDir, entry.webpSrc),
+    stillSrc: dataPreviewPath(dataDir, entry.stillSrc),
     cellSize: geometry.cellSize,
     columns: geometry.columns,
     rows: geometry.rows,
     x: geometry.x,
     y: geometry.y,
-    stillFrame: frames - 1,
-    animated: frames > 1,
+    stillFrame,
+    animated: resolveAnimated(meta.matchName, frames, staticNames),
+    previewCurrent: isCurrentEffectPreview(entry, frames, fps),
     hasPreview: true,
     status: "rendered",
     reason: "",
@@ -211,6 +285,7 @@ function placeholderPluginItem(meta, status, reason) {
     y: 0,
     stillFrame: 0,
     animated: false,
+    previewCurrent: false,
     hasPreview: false,
     status,
     reason,
@@ -239,10 +314,42 @@ function builtinCategoryNames(names) {
   return set;
 }
 
+/**
+ * 生成预览落盘/导出使用的插件名。
+ *
+ * 原始 AE 扫描目录会把 Keylight、VISINF Grain、Mettle SkyBox 等归到
+ * 「其它插件」，但 Hub 展示层依据内置分类把它们归回「内置」。落盘和导出
+ * 必须复用同一套判断，否则同一效果会在 UI 显示为内置、文件却落在其它插件。
+ */
+function createPluginResolver(paths) {
+  const names = catalog.readNames(paths);
+  const catalogRows = catalog.readCatalogRows(paths);
+  const rowsByName = new Map();
+  for (const row of catalogRows.rows) {
+    if (row && row.matchName && !rowsByName.has(row.matchName)) {
+      rowsByName.set(row.matchName, row);
+    }
+  }
+  const builtinCats = builtinCategoryNames(names);
+
+  return (item, fallback) => {
+    const matchName = String((item && item.matchName) || "");
+    const row = rowsByName.get(matchName) || null;
+    const record = names.get(matchName) || {};
+    const rowPlugin = trimmed(row && row.plugin);
+    const rowCategory = trimmed(row && row.category);
+    const builtin =
+      isBuiltinCatalogRecord(record) ||
+      (rowPlugin === "其它插件" && rowCategory && builtinCats.has(rowCategory));
+    if (builtin) return "内置";
+    return String((rowPlugin || (item && item.plugin) || fallback || "其它插件")).trim();
+  };
+}
+
 /** 目录行 → 渲染条目（有预览）或占位条目（待渲染/黑名单），source 由调用方决定 */
-function catalogItemFor(meta, entry, manifest, dataDir, blacklist) {
-  if (entry && previewPattern(entry, dataDir)) {
-    return renderedPluginItem(meta, entry, manifest, dataDir);
+function catalogItemFor(meta, entry, manifest, dataDir, blacklist, staticNames) {
+  if (entry && (previewPattern(entry, dataDir) || hasWebpPreview(entry, dataDir))) {
+    return renderedPluginItem(meta, entry, manifest, dataDir, staticNames);
   }
   if (blacklist.has(meta.matchName)) {
     return placeholderPluginItem(meta, "blacklisted", blacklist.get(meta.matchName) || "");
@@ -263,6 +370,8 @@ function list(paths) {
   const catalogRows = catalog.readCatalogRows(paths);
   const favorites = effectFavorites.read(paths);
   const favoriteSet = new Set(favorites.items);
+  /* 动静判定以 animated.json 为准（manifest 的 frames 统一写 24，不能区分单帧） */
+  const staticNames = readStaticPreviewNames(dataDir);
 
   /** 统一追加访问标记：收藏 / 插件管线可渲染 / 预览由插件管线生成 */
   const decorate = (item, renderable, generated) => {
@@ -280,8 +389,8 @@ function list(paths) {
     if (sheet && sheet.index !== undefined) sheetByIndex.set(Number(sheet.index), sheet);
   }
   for (const entry of (builtinDoc && builtinDoc.items) || []) {
-    const item = builtinItem(entry, builtinDoc, sheetByIndex, names, dataDir);
-    if (item) builtinItems.push(decorate(item, false, false));
+    const item = builtinItem(entry, builtinDoc, sheetByIndex, names, dataDir, staticNames);
+    if (item) builtinItems.push(decorate(item, true, false));
   }
 
   /* 插件：遍历 catalog TSV 全部行（跳过 excluded / no_preview），
@@ -295,6 +404,10 @@ function list(paths) {
       entryByMatchName.set(entry.matchName, entry);
     }
   }
+  const pluginPreviewNames = new Set(entryByMatchName.keys());
+  const dedupedBuiltinItems = builtinItems.filter(
+    (item) => !pluginPreviewNames.has(item.matchName),
+  );
   const blacklist = catalog.readBlacklist(paths);
   const builtinCats = builtinCategoryNames(names);
   const builtinExtra = [];
@@ -306,9 +419,7 @@ function list(paths) {
     const entry = entryByMatchName.get(matchName) || null;
     const record = names.get(matchName) || {};
     const meta = pluginMeta(row, entry, names);
-    const item = catalogItemFor(meta, entry, pluginDoc, dataDir, blacklist);
-    /* renderable 只认 catalog TSV 行（可交给现有插件渲染管线）；manifest 独有项不可渲染 */
-    const renderable = !!fromCatalog;
+    const item = catalogItemFor(meta, entry, pluginDoc, dataDir, blacklist, staticNames);
     /* generated 只认 plugin_manifest 命中；L1 内置预览是面板渲染的，不算生成 */
     const generated = !!entry;
     /* 第三方目录里混进来的 AE 自带效果：
@@ -317,8 +428,11 @@ function list(paths) {
     const unknownPlugin = trimmed(row && row.plugin) === "其它插件";
     const builtinCategory =
       unknownPlugin && !!trimmed(row && row.category) && builtinCats.has(trimmed(row && row.category));
+    const isBuiltin = isBuiltinCatalogRecord(record) || builtinCategory;
+    /* 内置效果已接入统一效果渲染器；第三方 manifest 独有项仍不可重渲 */
+    const renderable = !!fromCatalog || isBuiltin;
     decorate(item, renderable, generated);
-    if (isBuiltinCatalogRecord(record) || builtinCategory) {
+    if (isBuiltin) {
       item.source = "builtin";
       item.plugin = "内置";
       builtinExtra.push(item);
@@ -339,7 +453,7 @@ function list(paths) {
     addCatalogRow({ matchName: entry.matchName }, false);
   }
 
-  const items = [...builtinItems, ...builtinExtra, ...pluginItems];
+  const items = [...dedupedBuiltinItems, ...builtinExtra, ...pluginItems];
 
   /* 手动调参标记：有覆盖行 = “手动”，全部验证过 = 已验证。 */
   const overrideDoc = effectOverrides.read(paths);
@@ -350,6 +464,10 @@ function list(paths) {
     overridesByMatch.get(override.matchName).push(override);
   }
   for (const item of items) {
+    if (item.hasPreview && item.previewCurrent === false) {
+      item.status = "pending";
+      item.reason = "legacy_preview";
+    }
     const rows = overridesByMatch.get(item.matchName) || [];
     item.manual = rows.length > 0;
     item.manualVerified = rows.length > 0 && rows.every((row) => row.verified === true);
@@ -423,6 +541,10 @@ function framePatternMatcher(pattern) {
 function collectEntryFiles(paths, entry, output) {
   const src = dataFilePath(paths, entry && entry.src);
   if (src) output.add(src);
+  const webp = dataFilePath(paths, entry && entry.webpSrc);
+  if (webp) output.add(webp);
+  const still = dataFilePath(paths, entry && entry.stillSrc);
+  if (still) output.add(still);
   const pattern = dataFilePath(paths, entry && entry.frameSrc);
   if (!pattern) return;
   const match = framePatternMatcher(pattern);
@@ -510,6 +632,10 @@ function clearPreview(paths, matchName) {
   for (const item of remaining) {
     const src = dataFilePath(paths, item.src);
     if (src) protectedExact.add(path.resolve(src).toLowerCase());
+    const webp = dataFilePath(paths, item.webpSrc);
+    if (webp) protectedExact.add(path.resolve(webp).toLowerCase());
+    const still = dataFilePath(paths, item.stillSrc);
+    if (still) protectedExact.add(path.resolve(still).toLowerCase());
     const pattern = dataFilePath(paths, item.frameSrc);
     if (!pattern) continue;
     const match = framePatternMatcher(pattern);
@@ -559,4 +685,4 @@ function clearPreview(paths, matchName) {
   return { ok: true, removed: removedItems.length, deleted };
 }
 
-module.exports = { list, clearPreview, FPS };
+module.exports = { list, clearPreview, createPluginResolver, FPS };

@@ -255,6 +255,7 @@ function setView(name) {
   }
   if (target !== "presets") closePresetDelete();
   if (target !== "presets") closePresetRename();
+  if (target !== "effects") closeEffectExportDialog();
   if (target !== "presets") hideCategoryMenu();
   if (target !== "presets" && state.presetHoverStop) state.presetHoverStop();
 }
@@ -1096,6 +1097,7 @@ function effectCategoryLabel(item) {
 
 /* hasPreview 由数据层给出；老数据没有该字段时退回看 framePattern */
 function effectHasPreview(item) {
+  if (item && item.previewCurrent === false) return false;
   if (item && typeof item.hasPreview === "boolean") return item.hasPreview;
   return !!(item && item.framePattern);
 }
@@ -1411,7 +1413,7 @@ function fillEffectPluginSelect(groups) {
 }
 
 function effectSpritePosition(item) {
-  const cellSize = Math.max(1, Number(item.cellSize) || 128);
+  const cellSize = Math.max(1, Number(item.cellSize) || 720);
   const columns = Math.max(1, Number(item.columns) || 1);
   const rows = Math.max(1, Number(item.rows) || 1);
   const x = Number(item.x) || 0;
@@ -1427,6 +1429,12 @@ function effectSpritePosition(item) {
 /* 内置是 8×8 整网、插件是单行 8 格：用背景百分比裁切，格子永远精确等于缩略框 */
 function applyEffectPreview(preview, item, frameIndex) {
   if (!preview) return;
+  if (item.webpSrc) {
+    preview.style.backgroundSize = "cover";
+    preview.style.backgroundPosition = "center";
+    preview.style.backgroundImage = `url("${toFileUrl(item.stillSrc || item.webpSrc)}")`;
+    return;
+  }
   const slice = effectSpritePosition(item);
   preview.style.backgroundSize = slice.size;
   preview.style.backgroundPosition = slice.position;
@@ -1435,6 +1443,37 @@ function applyEffectPreview(preview, item, frameIndex) {
 }
 
 function bindEffectHoverPreview(card, preview, item) {
+  if (item.webpSrc) {
+    const image = document.createElement("img");
+    image.className = "effect-preview-webp";
+    image.alt = "";
+    image.loading = "lazy";
+    preview.appendChild(image);
+    let timer = null;
+    function stop() {
+      if (timer) {
+        clearTimeout(timer);
+        timer = null;
+      }
+      image.classList.remove("playing");
+      if (image.getAttribute("src")) image.removeAttribute("src");
+      if (state.effectHoverStop === stop) state.effectHoverStop = null;
+    }
+    if (item.animated && Number(item.frames) > 1) {
+      card.addEventListener("mouseenter", () => {
+        if (state.effectHoverStop && state.effectHoverStop !== stop) state.effectHoverStop();
+        state.effectHoverStop = stop;
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(() => {
+          timer = null;
+          image.onload = () => image.classList.add("playing");
+          image.src = toFileUrl(item.webpSrc);
+        }, 220);
+      });
+      card.addEventListener("mouseleave", stop);
+    }
+    return;
+  }
   if (!item.animated || Number(item.frames) <= 1 || !item.framePattern) return;
   const frames = Math.max(1, Number(item.frames) || 1);
   const fps = Math.max(1, Number(item.fps) || 12);
@@ -1563,7 +1602,7 @@ function selectUnrenderedEffects() {
     (item) => item.renderable && !item.hasPreview && item.status === "pending",
   );
   if (!candidates.length) {
-    setStatus("当前筛选下没有待渲染的插件效果", true);
+    setStatus("当前筛选下没有待渲染的效果", true);
     return;
   }
   for (const item of candidates) {
@@ -1674,7 +1713,7 @@ function effectCardNode(item) {
   const thumb = document.createElement("div");
   thumb.className = "card-thumb";
   let preview = null;
-  if (hasPreview && item.framePattern) {
+  if (hasPreview && (item.webpSrc || item.framePattern)) {
     preview = document.createElement("div");
     preview.className = "effect-preview";
     applyEffectPreview(preview, item, stillFrame);
@@ -1741,7 +1780,7 @@ function paintEffectEmpty(hasData) {
     subs.push("试试清空搜索、切换来源，或者点左侧的「全部效果」。");
   } else {
     title.textContent = "效果库还是空的";
-    subs.push("插件效果要先到「渲染」页生成预览，生成后会自动出现在这里。");
+    subs.push("效果预览要到「渲染」页生成，生成后会自动出现在这里。");
     subs.push("内置效果预览随 DreamEngine 面板安装，装好后重启 Hub 就能看到。");
     subs.push("分类会跟随 After Effects 自动同步，不用手动新建。");
   }
@@ -1807,6 +1846,10 @@ function paintEffectSyncButton() {
   const scanning = !!state.pluginCatalogScanning;
   button.disabled = scanning || anyJobBusy() || !hubHas("scanPluginEffects");
   button.textContent = scanning ? "正在同步…" : "同步 AE 分类";
+  const importButton = $("btnEffectPreviewImport");
+  const exportButton = $("btnEffectPreviewExport");
+  if (importButton) importButton.disabled = scanning || anyJobBusy();
+  if (exportButton) exportButton.disabled = scanning || anyJobBusy();
 }
 
 function paintEffectsLibrary() {
@@ -1857,6 +1900,105 @@ async function loadEffects() {
 async function refreshEffects() {
   await loadEffects();
   setStatus("已刷新");
+}
+
+async function importEffectPreviewPackage() {
+  if (!hubHas("importEffectPreviewPackage")) {
+    setStatus("主进程尚未提供预览包导入接口", true);
+    return;
+  }
+  setStatus("正在导入效果预览包…");
+  try {
+    const result = await window.hub.importEffectPreviewPackage();
+    if (!result || !result.ok) {
+      if (result && result.reason === "cancelled") {
+        setStatus("已取消导入");
+        return;
+      }
+      setStatus("导入失败：" + String((result && (result.detail || result.reason)) || "未知原因"), true);
+      return;
+    }
+    await loadEffects();
+    setStatus(`已导入 ${result.added} 条效果预览，覆盖 ${result.replaced} 条`);
+  } catch (error) {
+    setStatus("导入失败：" + String((error && error.message) || error), true);
+  }
+}
+
+function effectExportPluginEntries() {
+  const counts = new Map();
+  const items = (state.effectData && state.effectData.items) || [];
+  for (const item of items) {
+    if (!item || !item.hasPreview) continue;
+    const plugin = String(item.plugin || "其它插件");
+    counts.set(plugin, (counts.get(plugin) || 0) + 1);
+  }
+  return [...counts.entries()].sort((a, b) => a[0].localeCompare(b[0], "zh-CN"));
+}
+
+function openEffectExportDialog() {
+  const entries = effectExportPluginEntries();
+  if (!entries.length) {
+    setStatus("当前没有可导出的效果预览", true);
+    return;
+  }
+  const list = $("effectExportPluginList");
+  list.textContent = "";
+  for (const [plugin, count] of entries) {
+    const label = document.createElement("label");
+    label.className = "effect-export-option";
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.value = plugin;
+    input.checked = true;
+    const name = document.createElement("span");
+    name.textContent = plugin;
+    const total = document.createElement("span");
+    total.textContent = `${count} 条`;
+    label.appendChild(input);
+    label.appendChild(name);
+    label.appendChild(total);
+    list.appendChild(label);
+  }
+  $("effectExportDialog").hidden = false;
+}
+
+function closeEffectExportDialog() {
+  const dialog = $("effectExportDialog");
+  if (dialog) dialog.hidden = true;
+}
+
+function selectedEffectExportPlugins() {
+  return [...document.querySelectorAll("#effectExportPluginList input:checked")]
+    .map((input) => input.value);
+}
+
+async function exportEffectPreviewPackage() {
+  if (!hubHas("exportEffectPreviewPackage")) {
+    setStatus("主进程尚未提供预览包导出接口", true);
+    return;
+  }
+  const plugins = selectedEffectExportPlugins();
+  if (!plugins.length) {
+    setStatus("请选择至少一个插件", true);
+    return;
+  }
+  closeEffectExportDialog();
+  setStatus("正在导出效果预览包…");
+  try {
+    const result = await window.hub.exportEffectPreviewPackage({ plugins });
+    if (!result || !result.ok) {
+      if (result && result.reason === "cancelled") {
+        setStatus("已取消导出");
+        return;
+      }
+      setStatus("导出失败：" + String((result && (result.detail || result.reason)) || "未知原因"), true);
+      return;
+    }
+    setStatus(`已导出 ${result.items} 条效果预览，共 ${result.files} 个文件`);
+  } catch (error) {
+    setStatus("导出失败：" + String((error && error.message) || error), true);
+  }
 }
 
 async function syncEffectCategories() {
@@ -2156,6 +2298,23 @@ function bind() {
 
   $("btnEffectRefresh").addEventListener("click", refreshEffects);
   $("btnEffectSyncCategories").addEventListener("click", syncEffectCategories);
+  $("btnEffectPreviewImport").addEventListener("click", importEffectPreviewPackage);
+  $("btnEffectPreviewExport").addEventListener("click", openEffectExportDialog);
+  $("effectExportCancel").addEventListener("click", closeEffectExportDialog);
+  $("effectExportConfirm").addEventListener("click", exportEffectPreviewPackage);
+  $("effectExportSelectAll").addEventListener("click", () => {
+    for (const input of document.querySelectorAll("#effectExportPluginList input")) {
+      input.checked = true;
+    }
+  });
+  $("effectExportClear").addEventListener("click", () => {
+    for (const input of document.querySelectorAll("#effectExportPluginList input")) {
+      input.checked = false;
+    }
+  });
+  $("effectExportDialog").addEventListener("click", (event) => {
+    if (event.target === $("effectExportDialog")) closeEffectExportDialog();
+  });
   $("btnEffectSelectUnrendered").addEventListener("click", selectUnrenderedEffects);
   $("btnEffectClearSelection").addEventListener("click", clearEffectLibrarySelection);
   $("btnEffectRenderSelected").addEventListener("click", renderSelectedEffects);
@@ -2194,6 +2353,10 @@ function bind() {
       event.preventDefault();
       closeRenderLog();
     }
+    if (event.key === "Escape" && !$("effectExportDialog").hidden) {
+      event.preventDefault();
+      closeEffectExportDialog();
+    }
   });
 
   $("btnOpenExt").addEventListener("click", () => window.hub.reveal($("setExtDir").textContent));
@@ -2212,6 +2375,17 @@ function bind() {
     window.PreviewFlow.setAeGuardEnabled(!!event.target.checked);
     setStatus(event.target.checked ? "已开启 AE 崩溃修复自动处理" : "已关闭 AE 崩溃修复自动处理");
   });
+
+  if (window.hub && typeof window.hub.onEffectPreviewsBuilt === "function") {
+    window.hub.onEffectPreviewsBuilt(async (result) => {
+      await loadEffects();
+      if (result && result.ok) {
+        setStatus(`已生成 ${result.built} 条动画预览`);
+      } else if (result) {
+        setStatus("动画预览生成失败：" + String(result.reason || "未知原因"), true);
+      }
+    });
+  }
 
 }
 

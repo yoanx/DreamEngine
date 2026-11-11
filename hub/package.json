@@ -26,6 +26,10 @@
     "productName": "DreamEngine Hub",
     "artifactName": "DreamEngine-Hub-Setup-${version}.${ext}",
     "asar": true,
+    "asarUnpack": [
+      "node_modules/sharp/**/*",
+      "node_modules/@img/**/*"
+    ],
     "directories": {
       "output": "dist"
     },
@@ -73,5 +77,10 @@
       "runAfterFinish": true,
       "deleteAppDataOnUninstall": true
     }
+  },
+  "dependencies": {
+    "sharp": "^0.34.4",
+    "yauzl": "^3.2.0",
+    "yazl": "^3.3.1"
   }
 }

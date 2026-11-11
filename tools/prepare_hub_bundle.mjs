@@ -33,7 +33,7 @@ mkdirSync(resolve(RELEASE, "panel/l1"), { recursive: true });
 mkdirSync(resolve(RELEASE, "tools"), { recursive: true });
 mkdirSync(resolve(RELEASE, "installer"), { recursive: true });
 
-for (const name of ["CSXS", "css", "engine", "js", "svg"]) {
+for (const name of ["assets", "CSXS", "css", "engine", "js", "svg"]) {
   copyRequired(resolve(PANEL_SRC, name), resolve(RELEASE, "panel/extension", name));
 }
 copyRequired(resolve(PANEL_SRC, "index.html"), resolve(RELEASE, "panel/extension/index.html"));

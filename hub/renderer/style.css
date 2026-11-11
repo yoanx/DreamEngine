@@ -945,6 +945,21 @@ body.sidebar-resizing {
 
 .card-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
+.effect-preview-webp {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+
+.effect-preview-webp.playing {
+  opacity: 1;
+}
+
 .card-category-toggle {
   position: absolute;
   z-index: 4;
@@ -1428,6 +1443,29 @@ body.sidebar-resizing {
 }
 .modal-field input:focus { border-color: var(--accent); }
 .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+
+.effect-export-card { width: min(460px, 100%); }
+.effect-export-toolbar { display: flex; gap: 8px; margin-top: 12px; }
+.effect-export-list {
+  display: grid;
+  gap: 6px;
+  max-height: 260px;
+  overflow: auto;
+  margin-top: 8px;
+}
+.effect-export-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 12px;
+}
+.effect-export-option input { accent-color: var(--accent); }
+.effect-export-option span:last-child { margin-left: auto; color: var(--muted); }
 
 /* ---------- 选择效果模态框 ---------- */
 
@@ -2277,6 +2315,10 @@ body.sidebar-resizing {
   flex-direction: column;
   gap: 4px;
   margin-bottom: 10px;
+}
+
+#viewRender .flow-config .field[hidden] {
+  display: none !important;
 }
 
 #viewRender .field-row {

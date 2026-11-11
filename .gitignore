@@ -22,6 +22,8 @@ logs/
 !docs/**/*.png
 # 面板正式品牌图例外
 !cep/com.dreamengine.panel/css/brand-mark.png
+# 效果与预设预览的默认素材
+!cep/com.dreamengine.panel/assets/preview-default.png
 # Hub 品牌图例外
 !hub/assets/icon.png
 !hub/renderer/brand-mark.png
@@ -55,6 +57,7 @@ preset-library.json
 # node_modules 上百 MB 不入库；package-lock.json 必须入库，否则依赖会漂移
 hub/node_modules/
 hub/dist/
+hub/dist-*/
 hub/build/release/
 
 # ---- 临时与系统文件 ----

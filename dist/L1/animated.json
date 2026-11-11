@@ -1,0 +1,321 @@
+{
+ "version": 1,
+ "items": [
+  {
+   "matchName": "CC Glue Gun",
+   "animated": false
+  },
+  {
+   "matchName": "CC RepeTile",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE SelectiveColor",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE Vibrance",
+   "animated": false
+  },
+  {
+   "matchName": "VISINF Grain Removal",
+   "animated": false
+  },
+  {
+   "matchName": "Keylight 906",
+   "animated": false
+  },
+  {
+   "matchName": "Mettle SkyBox Converter",
+   "animated": false
+  },
+  {
+   "matchName": "Mettle SkyBox Color Gradients",
+   "animated": false
+  },
+  {
+   "matchName": "Mettle SkyBox Denoise",
+   "animated": false
+  },
+  {
+   "matchName": "Mettle SkyBox Chromatic Aberrat",
+   "animated": false
+  },
+  {
+   "matchName": "Mettle SkyBox Blur",
+   "animated": false
+  },
+  {
+   "matchName": "Mettle SkyBox Fractal Noise",
+   "animated": false
+  },
+  {
+   "matchName": "Mettle SkyBox Glow",
+   "animated": false
+  },
+  {
+   "matchName": "Mettle SkyBox Digital Glitch",
+   "animated": false
+  },
+  {
+   "matchName": "Mettle SkyBox Sharpen",
+   "animated": false
+  },
+  {
+   "matchName": "Mettle SkyBox Rotate Sphere",
+   "animated": false
+  },
+  {
+   "matchName": "Mettle SkyBox Viewer",
+   "animated": false
+  },
+  {
+   "matchName": "Mettle SkyBox Project 2D",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE Cineon Converter2",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE Matte Choker",
+   "animated": false
+  },
+  {
+   "matchName": "APC CardDanceCam",
+   "animated": false
+  },
+  {
+   "matchName": "APC Caustics",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE Channel Blur",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE Difference Matte2",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE OFMotionBlur",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE GROW BOUNDS",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE RefineRBMatte",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE Channel Combiner",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE Radial Shadow",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE ProfileToProfile",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE RefineMatte2",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE LIQUIFY",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE Change To Color",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE ATG Extract",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE Time Displacement",
+   "animated": false
+  },
+  {
+   "matchName": "CC Spotlight",
+   "animated": false
+  },
+  {
+   "matchName": "CC Environment",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE KeyCleaner",
+   "animated": false
+  },
+  {
+   "matchName": "CC Overbrights",
+   "animated": false
+  },
+  {
+   "matchName": "CC Mr. Mercury",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE MESH WARP",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE Grid",
+   "animated": false
+  },
+  {
+   "matchName": "CC Simple Wire Removal",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE Remove Color Matting",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE Deflicker",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE Texturize",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE Paint Bucket",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE Rolling Shutter",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE RESHAPE",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE Scribble Fill",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE Gamma/Pedestal/Gain2",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE Circle",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE Stroke",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE PS Arbitrary Map",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE Venetian Blinds",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE Mirror",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE Corner Pin",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE Linear Color Key2",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE Drop Shadow",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE Offset",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE Ramp",
+   "animated": false
+  },
+  {
+   "matchName": "APC Vegas",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE SCHMEAR",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE Set Matte3",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE SubspaceStabilizer",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE Write-on",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE BEZMESH",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE Timewarp",
+   "animated": false
+  },
+  {
+   "matchName": "CC Ripple Pulse",
+   "animated": false
+  },
+  {
+   "matchName": "CC Smear",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE Easy Levels2",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE CurvesCustom",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE Change Color",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE Pro Levels2",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE HUE SATURATION",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE Lumetri",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE Difference",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE Exposure2",
+   "animated": false
+  },
+  {
+   "matchName": "ADBE Posterize Time",
+   "animated": false
+  }
+ ]
+}

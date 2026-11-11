@@ -25,7 +25,7 @@
     step: "type",
     kinds: ["preset", "effect"],
     kind: null,
-    plan: { items: [], config: { ae: "", background: "", limit: 40, rounds: 40, force: false } },
+    plan: { items: [], config: { ae: "", background: "", presetFps: 24, limit: 40, rounds: 40, force: false } },
     reached: new Set(["type"]),
     /* 从库进入：记下入口，用于左上角「← 返回」和第 3 步的「来自库选择」提示 */
     entry: null,
@@ -98,6 +98,8 @@
   function previewFor(item) {
     if (!item) return "";
     if (item.thumb) return fileUrl(item.thumb);
+    if (item.webpSrc) return fileUrl(item.webpSrc);
+    if (item.stillSrc) return fileUrl(item.stillSrc);
     if (item.framePattern) return fileUrl(String(item.framePattern).replace("%04d", "0000"));
     if (item.photo) return fileUrl(item.photo);
     return "";
@@ -131,7 +133,7 @@
     }
   }
   function busyHint(kind) {
-    return kind === "effect" ? "插件效果" : "预设";
+    return kind === "effect" ? "效果" : "预设";
   }
 
   /* AE 崩溃修复看守：全局开关（设置页 / 确认页 / 获取页共用一份偏好） */
@@ -260,7 +262,9 @@
   }
   function effectItems() {
     const data = state && state.effectData;
-    return data && Array.isArray(data.items) ? data.items : [];
+    return data && Array.isArray(data.items)
+      ? data.items.filter((item) => item && item.renderable !== false)
+      : [];
   }
 
   function paintKinds() {
@@ -273,7 +277,7 @@
     setText(
       "flowKindEffectMeta",
       effects.length
-        ? "库内 " + effects.length + " 个效果（含插件）"
+        ? "库内 " + effects.length + " 个可渲染效果"
         : "效果库还是空的，先在效果库同步插件目录",
     );
   }
@@ -336,6 +340,7 @@
         matchName: kind === "effect" ? String(item.matchName || "") : "",
         plugin: kind === "effect" ? String(item.plugin || "") : "",
         category: kind === "effect" ? String(item.category || "") : "",
+        fps: kind === "preset" ? Number(item.fps) || 0 : 0,
       });
     }
     resetTuningDone();
@@ -608,7 +613,7 @@
         label: String(item.label || item.name || item.id || ""),
       }))
       .filter((entry) => entry.value && entry.value !== "__custom__");
-    if (!entries.length) entries.push({ value: "photo", label: "标准素材" });
+    if (!entries.length) entries.push({ value: "photo", label: "DreamEngine 默认图" });
     entries.push({ value: "__custom__", label: "自己添加…" });
     fillSelect(node, entries, flow.plan.config.background);
     flow.plan.config.background = node.value === "__custom__" ? "" : node.value;
@@ -676,6 +681,9 @@
     const bg = el("flowBackground");
     if (bg && config.background) bg.value = config.background;
     if (!config.background) config.background = "photo";
+    show("flowPresetFpsField", kind === "preset");
+    const presetFps = el("flowPresetFps");
+    if (presetFps) presetFps.value = String(config.presetFps || 24);
     const limit = el("flowLimit");
     if (limit) limit.value = config.limit;
     const rounds = el("flowRounds");
@@ -751,12 +759,17 @@
     const config = flow.plan.config;
     const ae = el("flowAeVersion");
     const background = el("flowBackground");
+    const presetFps = el("flowPresetFps");
     const limit = el("flowLimit");
     const rounds = el("flowRounds");
     const force = el("flowForce");
     if (ae) config.ae = ae.value;
     if (background && background.value && background.value !== "__custom__") {
       config.background = background.value;
+    }
+    if (presetFps) {
+      const value = Number(presetFps.value);
+      config.presetFps = [12, 24, 30, 60].includes(value) ? value : 24;
     }
     if (limit) config.limit = Math.max(1, Math.min(64, Number(limit.value) || config.limit || 8));
     if (rounds) config.rounds = Math.max(1, Math.min(200, Number(rounds.value) || config.rounds || 40));
@@ -851,6 +864,7 @@
   function runPlanSplit(candidates) {
     const items = Array.isArray(candidates) ? candidates : flow.plan.items;
     const force = !!flow.plan.config.force;
+    const presetFps = Number(flow.plan.config.presetFps) || 24;
     const targets = [];
     const skips = [];
     for (const item of items) {
@@ -859,7 +873,8 @@
         skips.push({ key: item.key, name: item.name, reason: item.reason || "excluded" });
         continue;
       }
-      if (status === "rendered" && !force) {
+      if (status === "rendered" && !force &&
+          (flow.kind !== "preset" || Number(item.fps) === presetFps)) {
         skips.push({ key: item.key, name: item.name, reason: "already_rendered" });
         continue;
       }
@@ -877,6 +892,7 @@
       return {
         ae: config.ae,
         background: config.background,
+        fps: Math.max(12, Math.min(60, Number(config.presetFps) || 24)),
         limit: Math.max(1, Math.min(64, Number(config.limit) || 40)),
         rounds: Math.max(1, Math.min(200, Number(config.rounds) || 40)),
         retryFailed: !force,
@@ -1769,7 +1785,7 @@
         flow.kind === "preset"
           ? await window.hub.logTail(400)
           : await window.hub.logPluginEffectsTail(400);
-      openLogDialog(flow.kind === "preset" ? "预设渲染日志" : "插件效果渲染日志", text);
+      openLogDialog(flow.kind === "preset" ? "预设渲染日志" : "效果渲染日志", text);
     } catch (_error) {
       openLogDialog("日志", "读取失败");
     }
@@ -1807,6 +1823,7 @@
     if (saved && saved.kind === flow.kind && saved.config) {
       flow.plan.config = Object.assign({}, flow.plan.config, saved.config);
     }
+    flow.plan.config.force = false;
     for (const item of items) {
       const key = String(item.key || item.matchName || item.path || "");
       if (!key) continue;
@@ -1917,6 +1934,11 @@
     on("flowConfirmBack", "click", () => go("select"));
     on("flowConfirmNext", "click", startFromConfirm);
     on("flowConfirmRetune", "click", reopenTuning);
+    on("flowPresetFps", "change", (event) => {
+      const value = Number(event.target.value);
+      flow.plan.config.presetFps = [12, 24, 30, 60].includes(value) ? value : 24;
+      saveConfig();
+    });
     on("flowBackground", "change", async (event) => {
       const select = event.target;
       if (select.value !== "__custom__") {

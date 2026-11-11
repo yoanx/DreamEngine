@@ -15,8 +15,8 @@
 
 var AEV_PreviewGen = (function () {
     var FALLBACK_CONFIG = {
-        contactSheet: { columns: 8, cellSize: 256, width: 2048, height: 2048, effectsPerSheet: 64 },
-        animatedPreview: { frameCount: 6, fps: 12 },
+        contactSheet: { columns: 2, cellSize: 720, width: 1440, height: 1440, effectsPerSheet: 4 },
+        animatedPreview: { frameCount: 24, fps: 24 },
         render: { pngOutputTemplate: "DreamEngine PNG Sequence" }
     };
 
@@ -171,9 +171,14 @@ var AEV_PreviewGen = (function () {
         }
     }
 
-    function usableBackground(path) {
+    function usableBackground(path, extensionPath) {
         var text = String(path || "");
         if (!text) return "";
+        if (text === "photo" && typeof AEV_Assets !== "undefined" &&
+                AEV_Assets.resolveBackground) {
+            text = AEV_Assets.resolveBackground(text, extensionPath);
+            if (!text) return "";
+        }
         try {
             var file = new File(text);
             return file.exists ? file.fsName : "";
@@ -386,7 +391,7 @@ var AEV_PreviewGen = (function () {
      *            gridColumns, gridRows }
      *   cellOffset —— 本批从网格第几格开始摆。整张新网传 0；
      *   往已有网里补空位时才用得上（要与 manifest 里的 cell 编号一致）。
-     *   singleCell —— 插件隔离重试通道：1×1 单格网，输出 128×128 帧序列。
+     *   singleCell —— 插件隔离重试通道：1×1 单格网，输出 720×720 帧序列。
      */
     function renderBatch(matchNames, sheetIndex, options) {
         if (!matchNames || matchNames.length === 0) {
@@ -400,10 +405,13 @@ var AEV_PreviewGen = (function () {
 
         var conf = config();
         var cellSize = conf.contactSheet.cellSize;
-        // 插件 L2 预览走 singleCell：一张图只渲一个格子（128×128），
+        // 插件 L2 预览走 singleCell：一张图只渲一个格子（720×720），
         // 不必为一条效果生成一整张 1024×1024 的网。默认路径完全不变。
         var singleCell = !!(options && options.singleCell);
-        var background = usableBackground(options && options.background);
+        var background = usableBackground(
+            options && options.background,
+            options && options.extensionPath
+        );
         var requestedColumns = options && parseInt(options.gridColumns, 10);
         var requestedRows = options && parseInt(options.gridRows, 10);
         var columns = singleCell ? 1 : (requestedColumns > 0 ? requestedColumns : conf.contactSheet.columns);
@@ -416,9 +424,8 @@ var AEV_PreviewGen = (function () {
             frames = Math.max(1, parseInt(options.frames, 10) || frames);
         }
 
-        // 合成帧率固定 30，而 config 里的 fps(12) 只是面板播放帧率。
-        // 两者混用会把"6 帧"算成 0.5 秒 → 30fps 下实际渲出 15 帧（实测踩过）。
-        var CELL_FPS = 30;
+        // 合成时间轴与播放帧率统一为 24fps：24 帧正好覆盖 1 秒。
+        var CELL_FPS = 24;
         var durationSeconds = frames / CELL_FPS;
         var requestedStart = options && options.startTime !== undefined
             ? Number(options.startTime) : 0;
@@ -471,7 +478,16 @@ var AEV_PreviewGen = (function () {
                         : buildScene(cellSize);
                 }
             }
-            return scenes[kind];
+            var asset = scenes[kind];
+            try {
+                asset.duration = Math.max(Number(asset.duration) || 0, durationSeconds);
+                for (var layerIndex = 1; layerIndex <= asset.numLayers; layerIndex++) {
+                    try {
+                        asset.layer(layerIndex).outPoint = asset.duration;
+                    } catch (eLayerDuration) {}
+                }
+            } catch (eAssetDuration) {}
+            return asset;
         }
 
         try {
@@ -778,6 +794,7 @@ var AEV_PreviewGen = (function () {
         var cellSize = conf.contactSheet.cellSize;
         var width = conf.contactSheet.width;
         var height = conf.contactSheet.height;
+        var previewFps = conf.animatedPreview.fps || 24;
 
         var rows = [];
         var lines = String(entriesTsv || "").split(/\r?\n/);
@@ -831,6 +848,9 @@ var AEV_PreviewGen = (function () {
             parts2.push('"y":' + (Math.floor(row.cell / columns) * cellSize));
             parts2.push('"width":' + cellSize + ',"height":' + cellSize);
             parts2.push('"frames":' + row.frames);
+            parts2.push('"fps":' + previewFps);
+            parts2.push('"duration":' + (row.frames / previewFps));
+            parts2.push('"effectPreviewVersion":2');
             parts2.push('"aeMajor":' + row.aeMajor);
             if (key) parts2.push('"key":' + jsonText(key));
             if (src) parts2.push('"src":' + jsonText(src));

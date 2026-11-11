@@ -40,6 +40,8 @@ contextBridge.exposeInMainWorld("hub", {
   listEffects: () => ipcRenderer.invoke("effects:list"),
   toggleEffectFavorite: (matchName) => ipcRenderer.invoke("effects:toggleFavorite", matchName),
   clearEffectRender: (matchName) => ipcRenderer.invoke("effects:clearPreview", matchName),
+  importEffectPreviewPackage: () => ipcRenderer.invoke("effect-previews:import"),
+  exportEffectPreviewPackage: (options) => ipcRenderer.invoke("effect-previews:export", options),
 
   /* 手动调参：dump / 基线 / 验证 / 保存覆盖表 / 选择 .ffx */
   readEffectOverrides: (matchName) => ipcRenderer.invoke("manual:overrides", matchName),
@@ -97,6 +99,9 @@ contextBridge.exposeInMainWorld("hub", {
   },
   onPluginEffectsCatalog: (callback) => {
     ipcRenderer.on("plugin-effects:catalog", (_event, doc) => callback(doc));
+  },
+  onEffectPreviewsBuilt: (callback) => {
+    ipcRenderer.on("effect-previews:built", (_event, result) => callback(result));
   },
   onEffectDumpState: (callback) => {
     ipcRenderer.on("dump:state", (_event, state) => callback(state));

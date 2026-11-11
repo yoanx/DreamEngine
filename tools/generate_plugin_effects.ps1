@@ -597,6 +597,14 @@ $fatalReason = ""
 $customBackgroundFallbackTried = $false
 
 for ($round = 1; $round -le $Rounds; $round++) {
+  # -Force 只重渲第一轮；后续 AE 进程必须回到增量模式，
+  # 否则同一批已完成条目会被每一轮重新当成待渲染项。
+  if ($round -gt 1) {
+    if (Test-Path -LiteralPath $forceMarkerPath) {
+      Remove-Item -LiteralPath $forceMarkerPath -Force -ErrorAction SilentlyContinue
+    }
+    $Force = $false
+  }
   if ($Todo) {
     # 选择模式：绝不写 auto 标志（会触发 JSX 重建目录覆盖 Hub 的选择）
     if (Test-Path -LiteralPath $autoPath) {

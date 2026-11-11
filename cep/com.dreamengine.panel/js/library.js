@@ -273,12 +273,53 @@ var AEV_Library = (function () {
    *   · 帧没预加载完就切 background-image，浏览器会先撤掉旧背景 →「闪几下」
    *   · 各帧内容相同的静态预览不该轮播，否则只会反复重解码同一张图
    *
-   * stillIndex：静止时显示第几帧，默认最后一帧（关键帧动画的末态）。
+   * stillIndex：静止时显示第几帧，默认中间帧。
    */
   function attachPreview(thumb, card, preview, isAnimated, stillIndex) {
     var slice = AEV_ViewModel.spriteSlice(preview, state.manifest);
     thumb.style.backgroundSize = slice.size;
     thumb.style.backgroundPosition = slice.position;
+    if (preview.webpSrc) {
+      thumb.style.backgroundSize = "cover";
+      thumb.style.backgroundPosition = "center";
+      thumb.style.backgroundImage =
+        'url("data/' + (preview.stillSrc || preview.webpSrc) + '")';
+      var animated = document.createElement("img");
+      animated.className = "preview-webp";
+      animated.alt = "";
+      thumb.appendChild(animated);
+      var webpTimer = null;
+      var stopWebp = function () {
+        if (webpTimer) {
+          clearTimeout(webpTimer);
+          webpTimer = null;
+        }
+        animated.classList.remove("playing");
+        if (animated.getAttribute("src")) animated.removeAttribute("src");
+        for (var s = 0; s < activePreviewStops.length; s++) {
+          if (activePreviewStops[s] === stopWebp) {
+            activePreviewStops.splice(s, 1);
+            break;
+          }
+        }
+      };
+      if (isAnimated && Number(preview.frames) > 1) {
+        card.addEventListener("mouseenter", function () {
+          if (Date.now() < previewSuppressUntil) return;
+          if (webpTimer) clearTimeout(webpTimer);
+          webpTimer = setTimeout(function () {
+            webpTimer = null;
+            animated.onload = function () {
+              animated.classList.add("playing");
+            };
+            animated.src = "data/" + preview.webpSrc;
+            if (activePreviewStops.indexOf(stopWebp) < 0) activePreviewStops.push(stopWebp);
+          }, 220);
+        });
+        card.addEventListener("mouseleave", stopWebp);
+      }
+      return;
+    }
     if (!preview.frameSrc) {
       thumb.style.backgroundImage = 'url("data/' + preview.src + '")';
       return;
@@ -331,7 +372,7 @@ var AEV_Library = (function () {
         if (card.matches(":hover")) startPlaying();
       });
     };
-    var still = stillIndex === undefined ? frameCount - 1 : stillIndex;
+    var still = stillIndex === undefined ? Math.floor(frameCount / 2) : stillIndex;
     if (still < 0) still = 0;
     if (still > frameCount - 1) still = frameCount - 1;
     showFrame(still);
@@ -372,10 +413,15 @@ var AEV_Library = (function () {
     thumb.className = "thumb";
     if (item.hasPreview) {
       var preview = item.preview;
+      var previewCurrent =
+        Number(preview.effectPreviewVersion) === 2 &&
+        Number(preview.frames) === 24 &&
+        Number(preview.fps) === 24;
       var isAnimated =
+        previewCurrent &&
         state.staticPreviews[item.matchName] !== true &&
         (!preview.frameSrc || (preview.frames || 1) > 1);
-      var stillIndex = item.plugin === "内置" ? undefined : 0;
+      var stillIndex = undefined;
       attachPreview(thumb, card, preview, isAnimated, stillIndex);
     } else {
       var placeholder = document.createElement("span");
@@ -558,19 +604,12 @@ var AEV_Library = (function () {
           setStatus(message, true);
           return;
         }
-        var modeNote = "";
-        if (data.mode === "recipe") {
-          modeNote = state.lang === "zh" ? "（已套用预览参数）" : " (with preview parameters)";
-        } else if (data.mode === "plugin-default") {
-          modeNote = state.lang === "zh" ? "（插件效果，用默认参数）" : " (plugin effect, default parameters)";
-        }
         setStatus(
           (state.lang === "zh" ? "已把「" : "Added ") +
             label +
             (state.lang === "zh" ? "」加到图层「" : "\" to layer \"") +
             (data.layer || "?") +
-            (state.lang === "zh" ? "」" : "\"") +
-            modeNote,
+            (state.lang === "zh" ? "」" : "\""),
           false
         );
       }

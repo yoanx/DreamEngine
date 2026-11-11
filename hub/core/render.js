@@ -31,6 +31,11 @@ function readStateFile(statePath) {
   }
 }
 
+function normalizeFps(value) {
+  const fps = Number(value);
+  return [12, 24, 30, 60].includes(fps) ? fps : 24;
+}
+
 class RenderJob {
   /**
    * @param {object} opts
@@ -68,6 +73,7 @@ class RenderJob {
     const args = ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", this.script];
     if (options.ae) args.push("-AE", String(options.ae));
     if (options.background) args.push("-Background", String(options.background));
+    if (options.fps !== undefined) args.push("-Fps", String(normalizeFps(options.fps)));
     if (options.limit) args.push("-Limit", String(Number(options.limit) || 40));
     if (options.rounds) args.push("-Rounds", String(Number(options.rounds) || 40));
     if (options.autoClose) args.push("-AutoClose");

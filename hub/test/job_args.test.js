@@ -111,6 +111,23 @@ test("RenderJob: 预设选择传 -PresetList/-Force", () => {
   job.stopPolling();
 });
 
+test("RenderJob: 预设帧率传 -Fps，并限制为支持的四个值", () => {
+  const paths = makePaths();
+  const script = makeScript(paths, "generate_plugin_presets.ps1");
+  const first = new RenderJob({
+    paths,
+    script,
+  });
+  first.start({ fps: 60 });
+  assert.ok(hasArg(captured.args, "-Fps", "60"));
+  first.stopPolling();
+
+  const second = new RenderJob({ paths, script });
+  second.start({ fps: 17 });
+  assert.ok(hasArg(captured.args, "-Fps", "24"));
+  second.stopPolling();
+});
+
 test.after(() => {
   cp.spawn = originalSpawn;
   for (const root of tempRoots) {

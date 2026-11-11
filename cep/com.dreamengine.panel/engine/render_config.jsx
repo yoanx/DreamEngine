@@ -12,15 +12,15 @@
 var DREAM_ENGINE_RENDER_CONFIG = {
     version: 1,
     contactSheet: {
-        columns: 8,
-        cellSize: 128,
-        width: 1024,
-        height: 1024,
-        effectsPerSheet: 64
+        columns: 2,
+        cellSize: 720,
+        width: 1440,
+        height: 1440,
+        effectsPerSheet: 4
     },
     animatedPreview: {
-        frameCount: 6,
-        fps: 12
+        frameCount: 24,
+        fps: 24
     },
     l1: {
         totalEffects: 80,

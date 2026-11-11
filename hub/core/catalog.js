@@ -216,7 +216,7 @@ function readCatalog(paths) {
       plugin: row.plugin,
       status: state.status,
       reason: state.status === "excluded" ? row.reason || "excluded" : state.reason,
-      frames: 6,
+      frames: 24,
       selectable: state.status !== "excluded" && state.status !== "no_preview",
     });
   }
@@ -245,9 +245,14 @@ function readCatalog(paths) {
  * @param {string[]} matchNames
  * @param {boolean} force 强制重渲（允许 rendered / blacklisted）
  */
-function filterSelection(catalog, matchNames, force) {
+function filterSelection(catalog, matchNames, force, fallbackItems) {
   const byName = new Map();
   for (const item of (catalog && catalog.items) || []) byName.set(item.matchName, item);
+  for (const item of fallbackItems || []) {
+    if (item && item.matchName && !byName.has(item.matchName)) {
+      byName.set(item.matchName, item);
+    }
+  }
 
   const selected = [];
   const skipped = [];
@@ -279,11 +284,11 @@ function filterSelection(catalog, matchNames, force) {
  * 运行计划的选择模式：undefined 才是全量；显式空数组仍然是一次选集，
  * 只是这次没有可渲染目标，不能悄悄退化成全量。
  */
-function planSelection(catalog, matchNames, force) {
+function planSelection(catalog, matchNames, force, fallbackItems) {
   if (!Array.isArray(matchNames)) {
     return { mode: "all", selected: [], skipped: [] };
   }
-  const result = filterSelection(catalog, matchNames, force);
+  const result = filterSelection(catalog, matchNames, force, fallbackItems);
   return { mode: "selection", selected: result.selected, skipped: result.skipped };
 }
 
@@ -296,7 +301,7 @@ function writeSelection(paths, items) {
     rows.push(
       [
         matchName,
-        String(Number(item.frames) || 6),
+        String(Number(item.frames) || 24),
         String(item.plugin || "其它插件").replace(/[\t\r\n]/g, " "),
       ].join("\t"),
     );

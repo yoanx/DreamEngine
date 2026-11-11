@@ -319,7 +319,7 @@ var AEV_ViewModel = (function () {
     // 不能读 item.width/height：L1 那两个字段是「格子尺寸」而非整图尺寸，
     // 拿它当整图会把 rows 算成 1，所有非首格条目都被切到 (0,0)。
     var cellSize =
-      (preview && preview.sliceCellSize) || (manifest && manifest.cellSize) || 128;
+      (preview && preview.sliceCellSize) || (manifest && manifest.cellSize) || 720;
     var columns =
       (preview && preview.sliceColumns) || (manifest && manifest.columns) || 8;
     var width =

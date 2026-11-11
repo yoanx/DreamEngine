@@ -25,13 +25,16 @@
 
 var AEV_PresetPreview = (function () {
     var VERSION = 1;
-    var FPS = 6;                  // 动态预设每秒至少保留 6 帧
-    var MAX_FRAMES = 36;          // 6 秒 × 6 fps
+    var DEFAULT_FPS = 24;
     var MAX_SPAN_SECONDS = 6;     // 关键帧跨度上限，避免渲出几百帧
     var MAX_PROPS = 900;          // 属性遍历上限，防止深树拖慢 AE
 
+    function frameLimit(fps) {
+        return Math.max(1, Math.ceil(MAX_SPAN_SECONDS * Math.max(1, Number(fps) || DEFAULT_FPS)));
+    }
+
     var BUILTIN_BACKGROUNDS = [
-        { id: "photo", name: "标准（色块＋文字＋细线）" },
+        { id: "photo", name: "DreamEngine 默认图" },
         { id: "text", name: "文字（Dream / Engine）" },
         { id: "solid", name: "纯色" },
         { id: "shape", name: "形状（圆形）" },
@@ -42,7 +45,7 @@ var AEV_PresetPreview = (function () {
         if (typeof DREAM_ENGINE_RENDER_CONFIG !== "undefined" && DREAM_ENGINE_RENDER_CONFIG) {
             return DREAM_ENGINE_RENDER_CONFIG;
         }
-        return { contactSheet: { cellSize: 128 }, animatedPreview: { frameCount: 36, fps: 6 } };
+        return { contactSheet: { cellSize: 720 }, animatedPreview: { frameCount: 36, fps: 24 } };
     }
 
     function pad(value, width) {
@@ -430,14 +433,19 @@ var AEV_PresetPreview = (function () {
     }
 
     /** 搭背景层：内置素材 comp 或用户上传的图片 */
-    function addBackground(comp, background, size, trash) {
+    function addBackground(comp, background, size, trash, extensionPath) {
         var id = String(background || "photo");
         var isCustom = id.indexOf("/") >= 0 || id.indexOf("\\") >= 0;
         if (!isCustom) {
             var asset = null;
             try {
+                var resolvedBackground = id === "photo" &&
+                    typeof AEV_Assets !== "undefined" &&
+                    AEV_Assets.resolveBackground
+                    ? AEV_Assets.resolveBackground(id, extensionPath)
+                    : "";
                 asset = (typeof AEV_Assets !== "undefined")
-                    ? AEV_Assets.getFresh(id, size)
+                    ? AEV_Assets.getFresh(id, size, resolvedBackground)
                     : null;
             } catch (e) {}
             if (!asset) return null;
@@ -504,7 +512,8 @@ var AEV_PresetPreview = (function () {
     function renderJson(presetPath, sheetIndex, options) {
         var opts = options || {};
         var conf = config();
-        var size = Number(opts.cellSize) || conf.contactSheet.cellSize || 128;
+        var size = Number(opts.cellSize) || conf.contactSheet.cellSize || 720;
+        var fps = Math.max(1, Number(opts.fps) || DEFAULT_FPS);
         var background = String(opts.background || "photo");
         var allowPlugins = !!opts.allowPlugins;
         var extensionPath = String(opts.extensionPath || "");
@@ -554,17 +563,17 @@ var AEV_PresetPreview = (function () {
                 }
                 comp.width = size;
                 comp.height = size;
-                comp.frameRate = FPS;
+                comp.frameRate = fps;
                 comp.duration = 2;
             } else {
                 comp = app.project.items.addComp(
                     "DE_preset_cell_" + pad(sheetIndex, 3),
-                    size, size, 1, 2, FPS
+                    size, size, 1, 2, fps
                 );
             }
             comp.time = 0; // applyPreset 会把关键帧放在当前时间指示器上
 
-            var backgroundInfo = addBackground(comp, background, size, trash);
+            var backgroundInfo = addBackground(comp, background, size, trash, extensionPath);
             var bgLayer = backgroundInfo && backgroundInfo.layer;
             if (!bgLayer) return result("error", [["reason", "bad_background"]]);
 
@@ -605,7 +614,7 @@ var AEV_PresetPreview = (function () {
                 }
                 if (String(background) === "text" || effectiveBackground === "text") return null;
                 clearCompLayers(comp);
-                var textAsset = addBackground(comp, "text", size, trash);
+                var textAsset = addBackground(comp, "text", size, trash, extensionPath);
                 if (!textAsset || !textAsset.targets || textAsset.targets.length === 0) return null;
                 effectiveBackground = "text";
                 return tryApply(textAsset.targets, "textAsset");
@@ -650,9 +659,9 @@ var AEV_PresetPreview = (function () {
             }
 
             var range = keyRange(comp);
-            var animated = range.keys > 0 && (range.max - range.min) > 1 / FPS;
+            var animated = range.keys > 0 && (range.max - range.min) > 1 / fps;
             var start = 0;
-            var span = 1 / FPS;
+            var span = 1 / fps;
             var truncated = false;
             var keyStart = 0;
             var keyEnd = 0;
@@ -662,7 +671,7 @@ var AEV_PresetPreview = (function () {
                 keyEnd = range.max;
                 var end = Math.min(range.max, range.min + MAX_SPAN_SECONDS);
                 truncated = range.max > end;
-                span = Math.max(1 / FPS, end - start);
+                span = Math.max(1 / fps, end - start);
             } else {
                 keyStart = 0;
                 keyEnd = 0;
@@ -670,7 +679,7 @@ var AEV_PresetPreview = (function () {
 
             // comp 必须覆盖到最后一个关键帧，否则超出的部分渲不出来
             try {
-                comp.duration = Math.max(1 / FPS, start + span + 1 / FPS);
+                comp.duration = Math.max(1 / fps, start + span + 1 / fps);
             } catch (eDur) {}
 
             queueItem = opts.targetQueueItem
@@ -696,7 +705,7 @@ var AEV_PresetPreview = (function () {
             rawFiles.sort(function (a, b) {
                 return String(a.name) < String(b.name) ? -1 : 1;
             });
-            var wanted = animated ? Math.min(MAX_FRAMES, rawFiles.length) : 1;
+            var wanted = animated ? Math.min(frameLimit(fps), rawFiles.length) : 1;
             for (var k = 0; k < wanted; k++) {
                 var idx = wanted === 1
                     ? Math.floor(rawFiles.length / 2)
@@ -717,7 +726,7 @@ var AEV_PresetPreview = (function () {
                 ["keyStart", String(Math.round(keyStart * 1000) / 1000)],
                 ["keyEnd", String(Math.round(keyEnd * 1000) / 1000)],
                 ["duration", String(Math.round(span * 1000) / 1000)],
-                ["fps", String(FPS)],
+                ["fps", String(fps)],
                 ["truncated", truncated ? "true" : "false"],
                 ["background", effectiveBackground],
                 ["plugins", plugins.join(",")],
@@ -751,6 +760,7 @@ var AEV_PresetPreview = (function () {
         writeIndexJson: writeIndexJson,
         renderJson: renderJson,
         BUILTIN_BACKGROUNDS: BUILTIN_BACKGROUNDS,
-        MAX_FRAMES: MAX_FRAMES
+        DEFAULT_FPS: DEFAULT_FPS,
+        frameLimit: frameLimit
     };
 })();
