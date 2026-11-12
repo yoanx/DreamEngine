@@ -89,6 +89,7 @@ for (const name of [
 ]) {
   copyRequired(resolve(TOOLS_SRC, name), resolve(RELEASE, "tools", name));
 }
+copyRequired(resolve(TOOLS_SRC, "templates"), resolve(RELEASE, "tools/templates"));
 copyRequired(
   resolve(TOOLS_SRC, "install_dreamengine.ps1"),
   resolve(RELEASE, "installer/install_dreamengine.ps1"),

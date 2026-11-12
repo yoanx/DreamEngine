@@ -1,6 +1,9 @@
 ﻿# Shared After Effects render-template compatibility helpers.
-# The packaged DreamEnginePNG.aep is only a fallback resource; rendering must
-# use a project created by the selected AE major version.
+# Packaged per-version AEPs avoid first-run template generation. AE only
+# guarantees forward project compatibility: use the closest packaged template
+# that is not newer than the selected AE.
+
+$script:AeRenderTemplateHelperDir = $PSScriptRoot
 
 function Get-AeRenderMajorYear {
   param([string]$Ae)
@@ -37,6 +40,36 @@ function Get-AeRenderTemplatePath {
   return Join-Path $Probe ("render_templates\DreamEnginePNG-ae{0}-v1.aep" -f $year)
 }
 
+function Get-AePackagedRenderTemplatePath {
+  param([string]$Ae)
+
+  $year = Get-AeRenderMajorYear -Ae $Ae
+  $templateDir = Join-Path $script:AeRenderTemplateHelperDir "templates"
+  if (-not (Test-Path -LiteralPath $templateDir)) { return "" }
+
+  $best = $null
+  $bestYear = -1
+  $bestVersion = -1
+  foreach ($file in @(Get-ChildItem -LiteralPath $templateDir -File -Filter "DreamEnginePNG-ae*.aep" -ErrorAction SilentlyContinue)) {
+    $match = [regex]::Match(
+      $file.Name,
+      '^DreamEnginePNG-ae(?<year>\d{4})-v(?<version>\d+)\.aep$',
+      [System.Text.RegularExpressions.RegexOptions]::IgnoreCase
+    )
+    if (-not $match.Success) { continue }
+    $candidateYear = [int]$match.Groups["year"].Value
+    $candidateVersion = [int]$match.Groups["version"].Value
+    if ($candidateYear -gt $year) { continue }
+    if ($candidateYear -gt $bestYear -or
+        ($candidateYear -eq $bestYear -and $candidateVersion -gt $bestVersion)) {
+      $best = $file.FullName
+      $bestYear = $candidateYear
+      $bestVersion = $candidateVersion
+    }
+  }
+  return $(if ($best) { $best } else { "" })
+}
+
 function Write-AeTemplateUtf8 {
   param([string]$Path, [string]$Text)
   [System.IO.File]::WriteAllText(
@@ -62,6 +95,8 @@ function Resolve-AeRenderTemplate {
       (Get-Item -LiteralPath $template).Length -gt 0) {
     return $template
   }
+  $packaged = Get-AePackagedRenderTemplatePath -Ae $Ae
+  if ($packaged) { return $packaged }
   if (-not (Test-Path -LiteralPath $BuilderScript)) {
     throw "Missing AE template builder: $BuilderScript"
   }
