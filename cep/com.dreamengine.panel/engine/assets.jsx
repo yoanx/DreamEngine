@@ -20,7 +20,7 @@
 // ============================================================
 
 var AEV_Assets = (function () {
-    var VERSION = "photo-v3";
+    var VERSION = "photo-v4";
     var cache = {};
     var temporaryDeps = [];
 
@@ -168,14 +168,17 @@ var AEV_Assets = (function () {
     }
 
     /**
-     * 文字图层内部保持预设应用时的原始文档状态；居中通过父级嵌套图层的
-     * transform 完成，避免修改 TextDocument 后触发预设重新铺满整帧。
+     * 文字必须先在自身预合成内移入安全边界。父级嵌套层再去居中时为时已晚：
+     * 超出 DE_asset_text 的像素已经被预合成边界裁掉，右侧无法恢复。
+     * 只改图层位置，不改 TextDocument，避免应用预设后重新铺排文字。
      */
     function centerTextAsset(asset, nested, size) {
         var left = Infinity, top = Infinity, right = -Infinity, bottom = -Infinity;
+        var textLayers = [];
         for (var i = 1; i <= asset.numLayers; i++) {
             var layer = asset.layer(i);
             if (!(layer instanceof TextLayer)) continue;
+            textLayers.push(layer);
             var rect = layer.sourceRectAtTime(0, false);
             var transform = layer.property("ADBE Transform Group");
             var position = transform.property("ADBE Position").value;
@@ -186,12 +189,25 @@ var AEV_Assets = (function () {
             bottom = Math.max(bottom, position[1] + rect.top + rect.height - anchor[1]);
         }
         if (left === Infinity) return;
+        var dx = Math.round(size * 0.5) - (left + right) / 2;
+        var dy = Math.round(size * 0.5) - (top + bottom) / 2;
+        for (var t = 0; t < textLayers.length; t++) {
+            var textTransform = textLayers[t].property("ADBE Transform Group")
+                .property("ADBE Position");
+            var textPosition = textTransform.value;
+            var nextPosition = [
+                textPosition[0] + dx,
+                textPosition[1] + dy
+            ];
+            if (textPosition.length > 2) nextPosition.push(textPosition[2]);
+            textTransform.setValue(nextPosition);
+        }
+        // 让父级预合成与素材预合成使用同一坐标系，避免再次叠加位移。
         var nestedTransform = nested.property("ADBE Transform Group");
         var nestedAnchor = nestedTransform.property("ADBE Anchor Point").value;
-        nestedTransform.property("ADBE Position").setValue([
-            Math.round(size * 0.5) - (left + right) / 2 + nestedAnchor[0],
-            Math.round(size * 0.5) - (top + bottom) / 2 + nestedAnchor[1]
-        ]);
+        var nestedPosition = [nestedAnchor[0], nestedAnchor[1]];
+        if (nestedAnchor.length > 2) nestedPosition.push(nestedAnchor[2]);
+        nestedTransform.property("ADBE Position").setValue(nestedPosition);
     }
 
     function buildSolid(size) {

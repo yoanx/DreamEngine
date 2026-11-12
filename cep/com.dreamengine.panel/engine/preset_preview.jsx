@@ -37,8 +37,7 @@ var AEV_PresetPreview = (function () {
         { id: "photo", name: "DreamEngine 默认图" },
         { id: "text", name: "文字（Dream / Engine）" },
         { id: "solid", name: "纯色" },
-        { id: "shape", name: "形状（圆形）" },
-        { id: "pattern", name: "高对比条纹" }
+        { id: "shape", name: "形状（圆形）" }
     ];
 
     function config() {
@@ -88,7 +87,7 @@ var AEV_PresetPreview = (function () {
         return dir;
     }
 
-    /** 面板的背景下拉：内置 5 种 + 用户上传的图片 */
+    /** 面板的背景下拉：内置 4 种 + 用户上传的图片 */
     function backgroundsJson() {
         var items = [];
         for (var i = 0; i < BUILTIN_BACKGROUNDS.length; i++) {

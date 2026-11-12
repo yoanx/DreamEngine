@@ -377,7 +377,6 @@ function registerIpc() {
       { id: "text", label: "文字" },
       { id: "solid", label: "纯色" },
       { id: "shape", label: "形状" },
-      { id: "pattern", label: "条纹" },
     ];
     const extra = [];
     try {
