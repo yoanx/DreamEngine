@@ -102,8 +102,12 @@ $loader = Join-Path $here "run_plugin_preset_loader.jsx"
 if (-not (Test-Path $loader)) { $loader = Join-Path $ext "tools\run_plugin_preset_loader.jsx" }
 $sourceScript = Join-Path $here "run_plugin_preset_preview.jsx"
 if (-not (Test-Path $sourceScript)) { $sourceScript = Join-Path $ext "tools\run_plugin_preset_preview.jsx" }
-$renderTemplate = Join-Path $here "DreamEnginePNG.aep"
-if (-not (Test-Path $renderTemplate)) { $renderTemplate = Join-Path $ext "tools\DreamEnginePNG.aep" }
+$templateHelper = Join-Path $here "ae_render_template.ps1"
+if (-not (Test-Path $templateHelper)) { $templateHelper = Join-Path $ext "tools\ae_render_template.ps1" }
+$templateBuilder = Join-Path $here "build_png_template.jsx"
+if (-not (Test-Path $templateBuilder)) { $templateBuilder = Join-Path $ext "tools\build_png_template.jsx" }
+$templateLoader = Join-Path $here "run_template_builder_loader.jsx"
+if (-not (Test-Path $templateLoader)) { $templateLoader = Join-Path $ext "tools\run_template_builder_loader.jsx" }
 
 $utf8 = New-Object System.Text.UTF8Encoding($false)
 function Write-Utf8($path, $text) {
@@ -189,6 +193,10 @@ $watchdogPath = Join-Path $PSScriptRoot "ae_watchdog.ps1"
 if (-not (Test-Path $watchdogPath)) { $watchdogPath = Join-Path $ext "tools\ae_watchdog.ps1" }
 if (-not (Test-Path $watchdogPath)) { Fail "缺少 AE 报错检测模块：$watchdogPath" }
 . $watchdogPath
+if (-not (Test-Path $templateHelper)) { Fail "缺少 AE 版本模板模块：$templateHelper" }
+if (-not (Test-Path $templateBuilder)) { Fail "缺少 AE 渲染模板生成脚本：$templateBuilder" }
+if (-not (Test-Path $templateLoader)) { Fail "缺少 AE 渲染模板加载器：$templateLoader" }
+. $templateHelper
 
 function Add-PresetBlacklist {
   param(
@@ -420,11 +428,6 @@ if (-not (Test-Path $sourceScript)) {
   Write-State -Phase "failed" -Message "找不到离线渲染脚本"
   exit 1
 }
-if (-not (Test-Path $renderTemplate)) {
-  Write-Host "[错误] 找不到 PNG 渲染模板：$renderTemplate" -ForegroundColor Red
-  Write-State -Phase "failed" -Message "找不到 PNG 渲染模板"
-  exit 1
-}
 if (-not (Test-Path $ext)) {
   Write-Host "[错误] 没找到已安装的 DreamEngine 扩展：$ext" -ForegroundColor Red
   Write-Host "请先运行安装包里的安装脚本。"
@@ -471,11 +474,8 @@ $runnerSource = Join-Path $runnerDir "run_plugin_preset_preview.jsx"
 $runnerTemplate = Join-Path $runnerDir "DreamEnginePNG.aep"
 Copy-Item -Force $loader $runnerLoader
 Copy-Item -Force $sourceScript $runnerSource
-Copy-Item -Force $renderTemplate $runnerTemplate
 $jsx = $runnerLoader
-$renderTemplate = $runnerTemplate
 Write-Utf8 $sourcePathFile $runnerSource
-Write-Utf8 $renderTemplatePath $renderTemplate
 
 # ---------- 背景：未指定就跟随面板最后一次用的 ----------
 if (-not $Background) {
@@ -611,6 +611,20 @@ if ($running.Count -gt 0) {
   Write-State -Phase "rendering" -Message "After Effects 已退出，准备渲染"
 } else {
   Write-State -Phase "rendering" -Message "准备渲染"
+}
+
+$aeYear = Get-AeRenderMajorYear -Ae $AE
+Write-State -Phase "rendering" -Message ("正在准备 After Effects {0} 兼容渲染模板…" -f $aeYear)
+try {
+  $versionedTemplate = Resolve-AeRenderTemplate -Ae $AE -Probe $probe `
+    -BuilderScript $templateBuilder -LoaderScript $templateLoader -TimeoutSec 120
+  Copy-Item -Force $versionedTemplate $runnerTemplate
+  $renderTemplate = $runnerTemplate
+  Write-Utf8 $renderTemplatePath $renderTemplate
+} catch {
+  Write-Host ("[错误] After Effects {0} 渲染模板准备失败：{1}" -f $aeYear, $_.Exception.Message) -ForegroundColor Red
+  Write-State -Phase "failed" -Message ("After Effects {0} 渲染模板准备失败：{1}" -f $aeYear, $_.Exception.Message)
+  exit 1
 }
 
 Write-Host ""

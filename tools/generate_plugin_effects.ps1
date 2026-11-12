@@ -180,13 +180,21 @@ $sourceScriptPath = Join-Path $PSScriptRoot "run_plugin_preview.jsx"
 if (-not (Test-Path $sourceScriptPath)) {
   $sourceScriptPath = Join-Path $Extension "tools\run_plugin_preview.jsx"
 }
-$renderTemplate = Join-Path $PSScriptRoot "DreamEnginePNG.aep"
-if (-not (Test-Path $renderTemplate)) {
-  $renderTemplate = Join-Path $Extension "tools\DreamEnginePNG.aep"
-}
 $watchdogPath = Join-Path $PSScriptRoot "ae_watchdog.ps1"
 if (-not (Test-Path $watchdogPath)) {
   $watchdogPath = Join-Path $Extension "tools\ae_watchdog.ps1"
+}
+$templateHelperPath = Join-Path $PSScriptRoot "ae_render_template.ps1"
+if (-not (Test-Path $templateHelperPath)) {
+  $templateHelperPath = Join-Path $Extension "tools\ae_render_template.ps1"
+}
+$templateBuilderPath = Join-Path $PSScriptRoot "build_png_template.jsx"
+if (-not (Test-Path $templateBuilderPath)) {
+  $templateBuilderPath = Join-Path $Extension "tools\build_png_template.jsx"
+}
+$templateLoaderPath = Join-Path $PSScriptRoot "run_template_builder_loader.jsx"
+if (-not (Test-Path $templateLoaderPath)) {
+  $templateLoaderPath = Join-Path $Extension "tools\run_template_builder_loader.jsx"
 }
 
 # Hub 用这三个标记文件把“本次任务类型”传给 AE 内脚本；每次启动先清掉上次残留。
@@ -367,15 +375,24 @@ if (-not (Test-Path $sourceScriptPath)) {
   Write-State -Phase "failed" -Round 0 -Message "扩展里缺少插件渲染脚本：$sourceScriptPath"
   exit 1
 }
-if (-not (Test-Path $renderTemplate)) {
-  Write-State -Phase "failed" -Round 0 -Message "扩展里缺少 PNG 渲染模板：$renderTemplate"
-  exit 1
-}
 if (-not (Test-Path $watchdogPath)) {
   Write-State -Phase "failed" -Round 0 -Message "扩展里缺少 AE 报错检测模块：$watchdogPath"
   exit 1
 }
+if (-not (Test-Path $templateHelperPath)) {
+  Write-State -Phase "failed" -Round 0 -Message "扩展里缺少 AE 版本模板模块：$templateHelperPath"
+  exit 1
+}
+if (-not (Test-Path $templateBuilderPath)) {
+  Write-State -Phase "failed" -Round 0 -Message "扩展里缺少 AE 渲染模板生成脚本：$templateBuilderPath"
+  exit 1
+}
+if (-not (Test-Path $templateLoaderPath)) {
+  Write-State -Phase "failed" -Round 0 -Message "扩展里缺少 AE 渲染模板加载器：$templateLoaderPath"
+  exit 1
+}
 . $watchdogPath
+. $templateHelperPath
 
 function Add-PluginBlacklist {
   param(
@@ -439,10 +456,8 @@ $runnerSource = Join-Path $runnerDir "run_plugin_preview.jsx"
 $runnerTemplate = Join-Path $runnerDir "DreamEnginePNG.aep"
 Copy-Item -Force $scriptPath $runnerLoader
 Copy-Item -Force $sourceScriptPath $runnerSource
-Copy-Item -Force $renderTemplate $runnerTemplate
 $scriptPath = $runnerLoader
 $sourceScriptPath = $runnerSource
-$renderTemplate = $runnerTemplate
 
 if (Test-AeRunning) {
   Write-State -Phase "failed" -Round 0 -Message "请先保存工程并关闭 After Effects"
@@ -453,7 +468,6 @@ Write-Utf8NoBom -Path $limitPath -Text ([string]$Limit)
 Write-Utf8NoBom -Path $backgroundPath -Text ([string]$Background)
 Write-Utf8NoBom -Path $maxItemsPath -Text ([string]$MaxItems)
 Write-Utf8NoBom -Path $sourcePathFile -Text $sourceScriptPath
-Write-Utf8NoBom -Path $renderTemplatePath -Text $renderTemplate
 
 # ---------- 只扫描插件效果目录：专用 AE 跑一次，等 RESULT 后写 meta 收尾 ----------
 if ($CatalogOnly) {
@@ -587,6 +601,21 @@ if ($CatalogOnly) {
   Write-State -Phase "done" -Round 1 -Message ("插件目录已更新（" + $catalogCount + " 条）") `
     -Total $catalogCount -Current $catalogCount -Remaining 0
   exit 0
+}
+
+$aeYear = Get-AeRenderMajorYear -Ae $Ae
+Write-State -Phase "starting" -Round 0 `
+  -Message ("正在准备 After Effects {0} 兼容渲染模板…" -f $aeYear)
+try {
+  $versionedTemplate = Resolve-AeRenderTemplate -Ae $Ae -Probe $Probe `
+    -BuilderScript $templateBuilderPath -LoaderScript $templateLoaderPath -TimeoutSec 120
+  Copy-Item -Force $versionedTemplate $runnerTemplate
+  $renderTemplate = $runnerTemplate
+  Write-Utf8NoBom -Path $renderTemplatePath -Text $renderTemplate
+} catch {
+  Write-State -Phase "failed" -Round 0 `
+    -Message ("After Effects {0} 渲染模板准备失败：{1}" -f $aeYear, $_.Exception.Message)
+  exit 1
 }
 
 $sessionOk = 0

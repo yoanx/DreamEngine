@@ -38,6 +38,8 @@ npm test          # Node 22+ 内置 test runner，无需 Electron / After Effect
 
 - 插件效果目录扫描：`tools/generate_plugin_effects.ps1 -CatalogOnly`，产物是
   `DreamEngineProbe/plugin_effect_catalog.tsv` + `.meta.json`，只读清单、不渲染。
+- 效果与预设渲染共用所选 AE 的版本化 PNG 模板；首次使用某个 AE 主版本时由该 AE
+  生成 `DreamEngineProbe/render_templates/DreamEnginePNG-ae<年份>-v1.aep`，后续直接复用。
 - AE 外部预设索引：Hub 读取所选 AE 的 `Support Files\Presets` 和
   `文档\Adobe\After Effects <年份>\User Presets`，写
   `DreamEngineProbe/preset_catalog.json`；只建索引、不复制 `.ffx`。

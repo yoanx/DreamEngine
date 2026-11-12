@@ -68,6 +68,7 @@ test("Hub 的 PowerShell 脚本带 UTF-8 BOM，兼容 Windows PowerShell 5", () 
     "ae_crash_guard.ps1",
     "manual_probe.ps1",
     "dump_plugin_effect_params.ps1",
+    "ae_render_template.ps1",
     "generate_plugin_presets.ps1",
     "generate_plugin_effects.ps1",
     "install_dreamengine.ps1",
@@ -129,6 +130,9 @@ test("安装器资源包含面板、字体、L1、离线渲染工具和安装脚
   assert.ok(existsSync(resolve(release, "tools/generate_plugin_effects.ps1")));
   assert.ok(existsSync(resolve(release, "tools/run_plugin_preview.jsx")));
   assert.ok(existsSync(resolve(release, "tools/run_plugin_preview_loader.jsx")));
+  assert.ok(existsSync(resolve(release, "tools/ae_render_template.ps1")));
+  assert.ok(existsSync(resolve(release, "tools/build_png_template.jsx")));
+  assert.ok(existsSync(resolve(release, "tools/run_template_builder_loader.jsx")));
   assert.ok(existsSync(resolve(release, "installer/install_dreamengine.ps1")));
   assert.ok(existsSync(resolve(release, "installer/uninstall_dreamengine.ps1")));
 });

@@ -596,6 +596,70 @@
     return aeOptions().some((entry) => entry.value === exe) ? exe : "";
   }
 
+  function aeYearForExe(exe) {
+    const target = String(exe || "").replace(/\//g, "\\").toLowerCase();
+    if (!target) return 0;
+    const installed =
+      state && state.snapshot && state.snapshot.ae && Array.isArray(state.snapshot.ae.installed)
+        ? state.snapshot.ae.installed
+        : [];
+    const match = installed.find(
+      (entry) => String(entry.exe || "").replace(/\//g, "\\").toLowerCase() === target,
+    );
+    const year = Number(match && match.version) || Number((target.match(/(20\d{2})/) || [])[1]);
+    return Number.isFinite(year) ? year : 0;
+  }
+
+  async function ensureEffectCatalogForSelectedAe() {
+    if (flow.kind !== "effect") return true;
+    const config = readConfirmConfig();
+    const year = aeYearForExe(config.ae);
+    if (!year) return true;
+    const meta = state && state.snapshot ? state.snapshot.catalogMeta : null;
+    const catalogYear = Number(meta && meta.aeMajor) || 0;
+    if (catalogYear === year) return true;
+
+    setText("flowRunPhase", "准备效果目录…");
+    setText("flowRunHint", `正在用 After Effects ${year} 重新扫描效果目录…`);
+    try {
+      const started = await window.hub.scanPluginEffects({
+        ae: config.ae,
+        aeGuard: aeGuardEnabled(),
+      });
+      if (!started || started.ok === false) {
+        setText("flowRunHint", "效果目录扫描启动失败：" + explainStartError(started));
+        return false;
+      }
+      let finalState = null;
+      for (let i = 0; i < 300; i += 1) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        const snapshot = await window.hub.pluginEffectsSnapshot();
+        const current = snapshot && snapshot.state ? snapshot.state : snapshot;
+        if (!current) continue;
+        finalState = current;
+        if (["done", "failed", "cancelled"].includes(String(current.phase || ""))) break;
+      }
+      if (!finalState || String(finalState.phase || "") !== "done") {
+        setText(
+          "flowRunHint",
+          "效果目录扫描未完成：" + String((finalState && finalState.message) || "请查看日志"),
+        );
+        return false;
+      }
+      if (typeof refreshAeState === "function") await refreshAeState();
+      if (typeof loadEffects === "function") await loadEffects();
+      const refreshed = state && state.snapshot ? state.snapshot.catalogMeta : null;
+      if (Number(refreshed && refreshed.aeMajor) !== year) {
+        setText("flowRunHint", `After Effects ${year} 的效果目录仍未生效，请重试`);
+        return false;
+      }
+      return true;
+    } catch (error) {
+      setText("flowRunHint", "效果目录扫描失败：" + String((error && error.message) || error));
+      return false;
+    }
+  }
+
   async function fillBackgroundSelect() {
     const node = el("flowBackground");
     if (!node) return;
@@ -929,6 +993,7 @@
     setText("flowRunHint", "渲染进行中，切到别的页签也会继续。");
     flow.run.startedAt = Date.now();
 
+    if (!(await ensureEffectCatalogForSelectedAe())) return;
     const options = optionsForStart(itemsOverride);
     let result = null;
     try {

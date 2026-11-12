@@ -507,12 +507,9 @@
         writeIndex();
         appendLog("INDEX_CLEAN", "", "removed_incomplete=" + removedIncomplete);
     }
-    function renderSingle(item) {
-        var sheetIndex = nextSheet++;
-        appendLog("BEGIN", item.matchName, "sheet=" + sheetIndex);
-        var raw = "";
+    function renderSingleRaw(item, sheetIndex) {
         try {
-            raw = AEV_PreviewGen.renderBatch([item.matchName], sheetIndex, {
+            return AEV_PreviewGen.renderBatch([item.matchName], sheetIndex, {
                 outputRoot: "extension",
                 extensionPath: EXT,
                 singleCell: true,
@@ -523,7 +520,19 @@
                 background: backgroundValue()
             });
         } catch (eRender) {
-            raw = '{"status":"error","reason":"throw:' + eRender + '"}';
+            return '{"status":"error","reason":"throw:' + eRender + '"}';
+        }
+    }
+    function renderSingle(item) {
+        var sheetIndex = nextSheet++;
+        appendLog("BEGIN", item.matchName, "sheet=" + sheetIndex);
+        var raw = renderSingleRaw(item, sheetIndex);
+        // AE 2021 has produced a transient empty queue for the first isolated
+        // render of some built-in effects; the same item succeeds immediately
+        // on a second queue pass. Retry only this concrete failure.
+        if (raw.indexOf('"reason":"no_frames"') >= 0) {
+            appendLog("RETRY", item.matchName, "reason=no_frames");
+            raw = renderSingleRaw(item, sheetIndex);
         }
         var ok = raw.indexOf('"status":"ok"') >= 0;
         if (ok && raw.indexOf(item.matchName + "|") >= 0) ok = false;
