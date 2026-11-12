@@ -69,6 +69,14 @@ function list(paths) {
     const frameSrc = hit
       ? hit.frameSrc || String(hit.src || "").replace(/_0000\.png$/i, "_%04d.png")
       : "";
+    let stillThumb = hit && hit.stillSrc ? path.join(paths.dataDir, hit.stillSrc) : "";
+    if (!stillThumb && frameSrc && Number(hit && hit.frames) > 1) {
+      const middle = Math.max(0, Math.floor((Number(hit.frames) || 1) / 2));
+      stillThumb = path.join(
+        paths.dataDir,
+        frameSrc.replace("%04d", String(middle).padStart(4, "0")),
+      );
+    }
     const fileName = path.basename(full);
     items.push({
       path: full,
@@ -82,7 +90,7 @@ function list(paths) {
       duration: hit ? Number(hit.duration) || 0 : 0,
       fps: hit ? Number(hit.fps) || 0 : 0,
       offline: hit ? !!hit.plugin : false,
-      thumb: hit && hit.src ? path.join(paths.dataDir, hit.src) : "",
+      thumb: stillThumb || (hit && hit.src ? path.join(paths.dataDir, hit.src) : ""),
       framePattern: frameSrc ? path.join(paths.dataDir, frameSrc) : "",
       external: false,
       source: "",

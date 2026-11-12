@@ -1,7 +1,7 @@
 {
   "name": "dreamengine-hub",
-  "version": "0.2.0",
-  "releaseVersion": "0.2.0-beta.6",
+  "version": "0.3.0",
+  "releaseVersion": "0.3.0",
   "private": true,
   "license": "MIT",
   "description": "DreamEngine Hub —— 不依赖 After Effects 的控制台：添加预设、离线渲染预览、安装与诊断",

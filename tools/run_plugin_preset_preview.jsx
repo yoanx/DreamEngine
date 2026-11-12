@@ -273,6 +273,11 @@
         var data = null;
         try { data = eval("(" + raw + ")"); } catch (eParse) { data = null; }
         if (data && data.status === "ok") {
+            if (forcedPath && blacklist[presetPath]) {
+                delete blacklist[presetPath];
+                writeText(BLACKLIST, PS.blacklistTsv(blacklist));
+                writeText(PANEL_BLACKLIST, PS.blacklistJson(blacklist));
+            }
             var rowOut = [
                 String(name).replace(/\t/g, " "),
                 String(presetPath).replace(/\t/g, " "),

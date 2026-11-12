@@ -392,7 +392,6 @@ var AEV_Library = (function () {
     card.className = "effect-card" + (item.stale ? " stale" : "");
     card.setAttribute("role", "button");
     card.setAttribute("tabindex", "0");
-    card.title = item.matchName + L("card.addHint");
     card.setAttribute("aria-label", AEV_ViewModel.resolveName(item, state.lang));
 
     var thumb = document.createElement("div");
@@ -415,7 +414,7 @@ var AEV_Library = (function () {
       var skipReason = state.pluginBlacklist[item.matchName];
       if (skipReason) {
         placeholder.textContent = state.lang === "zh" ? "已跳过" : "Skipped";
-        card.title += " · " + (state.lang === "zh" ? "已跳过：" : "skipped: ") + skipReason;
+        card.title = (state.lang === "zh" ? "已跳过：" : "skipped: ") + skipReason;
       } else if (item.plugin !== "内置") {
         placeholder.textContent = state.lang === "zh" ? "待离线生成" : "Offline render";
       } else {
@@ -1268,7 +1267,6 @@ var AEV_Library = (function () {
       card.className = "preset-card";
       card.setAttribute("role", "button");
       card.setAttribute("tabindex", "0");
-      card.title = item.path + L("preset.applyHint");
 
       var thumb = document.createElement("div");
       thumb.className = "preset-thumb";

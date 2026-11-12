@@ -318,7 +318,9 @@ if ($PresetList) {
     } catch {
       $selectedInvalid = $true
     }
-    if (-not $selectedInvalid -and -not (Test-PresetPathAllowed $selectedFull)) { $selectedInvalid = $true }
+    if (-not $selectedInvalid -and -not $Force -and -not (Test-PresetPathAllowed $selectedFull)) {
+      $selectedInvalid = $true
+    }
     if (-not $selectedInvalid -and $selectedFull -notmatch '(?i)\.ffx$') { $selectedInvalid = $true }
     if (-not $selectedInvalid -and -not (Test-Path -LiteralPath $selectedFull)) { $selectedInvalid = $true }
     if ($selectedInvalid) {
@@ -447,7 +449,7 @@ if ($OnlyPreset) {
     Write-State -Phase "failed" -Message "单独渲染路径无效"
     exit 1
   }
-  if (-not (Test-PresetPathAllowed $OnlyPreset) -or
+  if ((-not $Force -and -not (Test-PresetPathAllowed $OnlyPreset)) -or
       -not (Test-Path -LiteralPath $OnlyPreset) -or
       $OnlyPreset -notmatch '(?i)\.ffx$') {
     Write-State -Phase "failed" -Message "单独渲染只接受预设库或已同步 AE 预设中的 .ffx"
@@ -505,6 +507,9 @@ function Build-PluginIndex {
     if ($r.Count -ge 10) { [void][double]::TryParse($r[9], [ref]$duration) }
     $fps = 0
     if ($r.Count -ge 11) { [void][int]::TryParse($r[10], [ref]$fps) }
+    $frames = [int]$r[3]
+    $stillFrame = [Math]::Max(0, [Math]::Floor($frames / 2))
+    $stillName = "thumbs/" + $base + "_" + $stillFrame.ToString("D4") + ".png"
     if (-not $byPath.ContainsKey($r[1])) { $order += $r[1] }
     $byPath[$r[1]] = [ordered]@{
       name = $r[0]
@@ -512,7 +517,9 @@ function Build-PluginIndex {
       sheet = $sheet
       src = "thumbs/" + $base + "_0000.png"
       frameSrc = "thumbs/" + $base + "_%04d.png"
-      frames = [int]$r[3]
+      stillSrc = $stillName
+      stillFrame = $stillFrame
+      frames = $frames
       animated = ($r[4] -eq "true")
       keyStart = [double]$r[5]
       keyEnd = [double]$r[6]
