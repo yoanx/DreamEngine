@@ -183,6 +183,15 @@ test("效果预览包导出后导入另一个库：合并、同名覆盖、不�
     byBuiltin.get("ADBE Glo2").frameSrc.replace("%04d", "0000"),
   );
   assert.equal(fs.readFileSync(importedFrame, "utf8"), "builtin-0");
+
+  const firstImportFolder = imported.folder;
+  const repeated = await previewPackage.importEffectPreviews(target.paths, zipFile);
+  assert.equal(repeated.ok, true);
+  assert.deepEqual(
+    fs.readdirSync(path.join(target.paths.dataDir, firstImportFolder), { recursive: true }),
+    [],
+  );
+  assert.equal(fs.readFileSync(path.join(target.paths.dataDir, "thumbs/preset_keep_0000.png"), "utf8"), "preset");
 });
 
 test("导出效果预览包支持按插件筛选", async () => {

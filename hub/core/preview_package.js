@@ -23,6 +23,26 @@ function writeJson(file, value) {
   fs.writeFileSync(file, JSON.stringify(value, null, 1), "utf8");
 }
 
+function writeJsonAtomic(file, value) {
+  const temp = `${file}.${process.pid}.${crypto.randomBytes(4).toString("hex")}.tmp`;
+  fs.writeFileSync(temp, JSON.stringify(value, null, 1), "utf8");
+  fs.renameSync(temp, file);
+}
+
+function itemFiles(item) {
+  const files = new Set();
+  for (const value of [item && item.src, item && item.webpSrc, item && item.stillSrc]) {
+    const relative = relativePath(value);
+    if (relative) files.add(relative);
+  }
+  const pattern = relativePath(item && item.frameSrc);
+  if (pattern) {
+    if (!pattern.includes("%04d")) files.add(pattern);
+    else for (const file of expandPattern(pattern, item.frames)) files.add(file);
+  }
+  return files;
+}
+
 function relativePath(value) {
   const raw = String(value || "").replace(/\\/g, "/").replace(/^\/+/, "");
   if (!raw) return "";
@@ -319,6 +339,7 @@ async function importEffectPreviews(paths, zipFile) {
     const targetFolder = `thumbs/import_${importId}`;
     const fileMap = new Map();
     const usedNames = new Set();
+    const copies = [];
     for (const value of Array.isArray(manifest.files) ? manifest.files : []) {
       const sourceRelative = relativePath(value);
       if (!sourceRelative) continue;
@@ -327,8 +348,7 @@ async function importEffectPreviews(paths, zipFile) {
       const name = uniqueImportName(fileMap, path.basename(sourceRelative), usedNames);
       const targetRelative = `${targetFolder}/${name}`;
       const target = dataFile(paths, targetRelative);
-      fs.mkdirSync(path.dirname(target), { recursive: true });
-      fs.copyFileSync(source, target);
+      copies.push([source, target]);
       fileMap.set(sourceRelative, targetRelative);
     }
 
@@ -339,8 +359,46 @@ async function importEffectPreviews(paths, zipFile) {
     const builtinResult = mergeDoc(localBuiltin, remapDoc(manifest.builtin, fileMap));
     const pluginResult = mergeDoc(localPlugin, remapDoc(manifest.plugin, fileMap));
 
-    writeJson(builtinFile, builtinResult.doc);
-    writeJson(pluginFile, pluginResult.doc);
+    const oldDocs = [localBuiltin, localPlugin];
+    const replacedNames = new Set([
+      ...(manifest.builtin && manifest.builtin.items || []),
+      ...(manifest.plugin && manifest.plugin.items || []),
+    ].map((item) => String(item.matchName || "")));
+    const oldFiles = new Set();
+    for (const doc of oldDocs) for (const item of doc.items || []) {
+      if (replacedNames.has(String(item.matchName || ""))) {
+        for (const file of itemFiles(item)) oldFiles.add(file);
+      }
+    }
+    const copied = [];
+    let builtinCommitted = false;
+    try {
+      for (const [source, target] of copies) {
+        fs.mkdirSync(path.dirname(target), { recursive: true });
+        fs.copyFileSync(source, target);
+        copied.push(target);
+      }
+      writeJsonAtomic(builtinFile, builtinResult.doc);
+      builtinCommitted = true;
+      writeJsonAtomic(pluginFile, pluginResult.doc);
+    } catch (error) {
+      if (builtinCommitted) {
+        try { writeJsonAtomic(builtinFile, localBuiltin); } catch { /* keep original error */ }
+      }
+      for (const file of copied) {
+        try { fs.unlinkSync(file); } catch { /* keep original error */ }
+      }
+      throw error;
+    }
+    const retained = new Set();
+    for (const doc of [builtinResult.doc, pluginResult.doc]) for (const item of doc.items || []) {
+      for (const file of itemFiles(item)) retained.add(file);
+    }
+    for (const relative of oldFiles) {
+      if (retained.has(relative) || !relative.startsWith("thumbs/import_")) continue;
+      const file = dataFile(paths, relative);
+      if (file) { try { fs.unlinkSync(file); } catch { /* cleanup is retryable */ } }
+    }
     return {
       ok: true,
       added: builtinResult.incoming + pluginResult.incoming,
