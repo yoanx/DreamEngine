@@ -163,14 +163,6 @@ var AEV_PreviewGen = (function () {
         return "{" + parts.join(",") + "}";
     }
 
-    function currentMajor() {
-        try {
-            return parseInt(String(app.version || ""), 10) || 0;
-        } catch (e) {
-            return 0;
-        }
-    }
-
     function usableBackground(path, extensionPath) {
         var text = String(path || "");
         if (!text) return "";
@@ -780,12 +772,12 @@ var AEV_PreviewGen = (function () {
      * 落在扩展目录里才能被相对路径加载。jsx 侧手工拼 JSON 是本项目既定做法
      * （catalog.jsx 同样如此），不引入 JSON 库。
      *
-     * entriesTsv 每行 7 列：
-     *   matchName \t sheet \t cell \t frames \t frameTemplate \t aeMajor \t key
+     * entriesTsv 每行最多 6 列：
+     *   matchName \t sheet \t cell \t frames \t frameTemplate \t key
      * key 是已有预览的指纹；只有新渲染条目才留空并由当前背景重新计算。
      * frameTemplate 为空表示单文件预览（src = thumbs/batch_XXX.png）
      *
-     * 同时把同样的条目写一份 data/previews.tsv（多带 cacheKey、aeMajor 两列）：
+     * 同时把同样的条目写一份 data/previews.tsv（多带 cacheKey）：
      * json 给 CEF 读，tsv 给 ExtendScript 读——ExtendScript 没有 JSON.parse，
      * 校验缓存是否过期必须在 AE 侧做，所以需要这份可被 split 的副本。
      */
@@ -809,8 +801,8 @@ var AEV_PreviewGen = (function () {
                 cell: parseInt(parts[2], 10) || 0,
                 frames: parseInt(parts[3], 10) || 1,
                 frameTemplate: parts.length > 4 ? parts[4] : "",
-                aeMajor: parts.length > 5 ? (parseInt(parts[5], 10) || 0) : 0,
-                key: parts.length > 6 ? parts[6] : ""
+                // 兼容旧调用方传入的七列格式（第六列是 AE 主版本）。
+                key: parts.length > 6 ? parts[6] : (parts.length > 5 ? parts[5] : "")
             });
         }
         if (rows.length === 0) return result("error", [["reason", "empty_manifest"]]);
@@ -830,15 +822,9 @@ var AEV_PreviewGen = (function () {
         var items = [];
         var sheetsSeen = {};
         var sheets = [];
-        var manifestMajor = 0;
-        var mixedMajors = false;
-        var indexRows = ["matchName\tsheet\tcell\tframes\tframeTemplate\tkey\taeMajor"];
+        var indexRows = ["matchName\tsheet\tcell\tframes\tframeTemplate\tkey"];
         for (var r = 0; r < rows.length; r++) {
             var row = rows[r];
-            if (row.aeMajor) {
-                if (manifestMajor && row.aeMajor !== manifestMajor) mixedMajors = true;
-                else manifestMajor = row.aeMajor;
-            }
             var fileName = "batch_" + pad(row.sheet, 3) + ".png";
             var src = row.frameTemplate ? "" : ("thumbs/" + fileName);
             var frameSrc = row.frameTemplate || "";
@@ -852,7 +838,6 @@ var AEV_PreviewGen = (function () {
             parts2.push('"fps":' + previewFps);
             parts2.push('"duration":' + (row.frames / previewFps));
             parts2.push('"effectPreviewVersion":2');
-            parts2.push('"aeMajor":' + row.aeMajor);
             if (key) parts2.push('"key":' + jsonText(key));
             if (src) parts2.push('"src":' + jsonText(src));
             if (frameSrc) parts2.push('"frameSrc":' + jsonText(frameSrc));
@@ -863,8 +848,7 @@ var AEV_PreviewGen = (function () {
                 String(row.cell),
                 String(row.frames),
                 row.frameTemplate,
-                key,
-                String(row.aeMajor)
+                key
             ].join("\t"));
 
             if (!sheetsSeen[String(row.sheet)]) {
@@ -880,8 +864,7 @@ var AEV_PreviewGen = (function () {
             }
         }
 
-        var manifest = '{"version":2,"aeMajor":' + (mixedMajors ? 0 : manifestMajor) +
-            ',"cellSize":' + cellSize +
+        var manifest = '{"version":2,"cellSize":' + cellSize +
             ',"columns":' + columns + ',"width":' + width + ',"height":' + height +
             ',"sheets":[' + sheets.join(",") + '],"items":[' + items.join(",") + "]}";
 
@@ -933,11 +916,8 @@ var AEV_PreviewGen = (function () {
             var matchName = parts[0];
             var frames = parseInt(parts[3], 10) || 1;
             var storedKey = parts[5];
-            var rowMajor = parts.length > 6 ? (parseInt(parts[6], 10) || 0) : 0;
             checked++;
             if (!storedKey) continue;
-            // 旧版本预览继续作为回退图使用，不参与当前版本的配方失效判断。
-            if (!rowMajor || rowMajor !== currentMajor()) continue;
             var currentKey = itemKey(matchName, cellSize, frames, background);
             if (currentKey && currentKey !== storedKey) stale.push(matchName);
         }

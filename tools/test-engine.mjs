@@ -666,8 +666,8 @@ function makeReadFs(text) {
   return FileMock;
 }
 
-test("staleList 用指纹判定过期，无指纹的旧条目视为有效", () => {
-  const header = "matchName\tsheet\tcell\tframes\tframeTemplate\tkey\taeMajor";
+test("staleList 按指纹判定过期，不按 AE 版本跳过条目", () => {
+  const header = "matchName\tsheet\tcell\tframes\tframeTemplate\tkey";
   // 先算出一条「当前配方下仍然有效」的真指纹
   const seed = loadModules([
     `${ENGINE}/render_config.jsx`,
@@ -692,7 +692,7 @@ test("staleList 用指纹判定过期，无指纹的旧条目视为有效", () =
   );
   const report = JSON.parse(ctx.AEV_PreviewGen.staleList("X:/ext"));
   assert.equal(report.checked, 4);
-  assert.deepEqual(report.stale, ["ADBE Glo2"], "只应把指纹对不上的那条判为过期");
+  assert.deepEqual(report.stale, ["ADBE Glo2", "ADBE Twist"], "旧 AE 版本的缓存也按指纹检查");
 });
 
 test("writeManifest 同步写 previews.tsv，供 AE 侧校验缓存", () => {
@@ -702,7 +702,7 @@ test("writeManifest 同步写 previews.tsv，供 AE 侧校验缓存", () => {
   assert.match(code, /indexRows/);
   assert.match(code, /function itemKey/);
   assert.match(code, /function staleList/);
-  assert.match(code, /aeMajor/);
+  assert.doesNotMatch(code, /aeMajor/);
 });
 
 test("writeManifest 保留旧条目指纹，只给新渲染条目计算新指纹", () => {
@@ -748,17 +748,15 @@ test("L1 包里的 manifest 与 previews.tsv 条目一致，且都带指纹", ()
   const manifest = JSON.parse(read("dist/L1/manifest.json"));
   const lines = read("dist/L1/previews.tsv").trim().split(/\r?\n/);
   const header = lines.shift().split("\t");
-  assert.deepEqual(header, [
+  assert.deepEqual(header.slice(0, 6), [
     "matchName",
     "sheet",
     "cell",
     "frames",
     "frameTemplate",
     "key",
-    "aeMajor",
   ]);
   assert.equal(lines.length, manifest.items.length, "两份索引的条目数必须一致");
-  assert.ok(manifest.aeMajor > 0, "L1 包必须记录预览来源 AE 主版本");
 
   const byName = new Map(manifest.items.map((item) => [item.matchName, item]));
   let renderFrameKept = 0;
@@ -771,7 +769,6 @@ test("L1 包里的 manifest 与 previews.tsv 条目一致，且都带指纹", ()
     assert.ok(item, `previews.tsv 里的 ${cells[0]} 不在 manifest 中`);
     assert.ok(cells[5] && cells[5].length > 0, `${cells[0]} 在 previews.tsv 里缺指纹`);
     assert.equal(cells[5], item.key, `${cells[0]} 两份索引的指纹必须一致`);
-    assert.equal(Number(cells[6]), Number(item.aeMajor || manifest.aeMajor), `${cells[0]} 预览版本不一致`);
 
     // frames 列是**渲染帧数**，manifest 的 frames 是存储帧数。
     // 打包把静态格子从 6 帧压成 1 帧后，渲染帧数必须保留下来——
@@ -1076,14 +1073,13 @@ test("面板把过期预览排进生成队列，而不是当成已缓存", () =>
   );
 });
 
-test("面板默认显示当前 AE 效果清单，并按 AE 主版本选择预览", () => {
+test("面板显示当前 AE 效果清单，并选用最后一个有效预览", () => {
   const html = read("cep/com.dreamengine.panel/index.html");
   const library = read("cep/com.dreamengine.panel/js/library.js");
   assert.match(html, /id="showAll"[^>]*checked/);
   assert.match(library, /previewVariants/);
-  assert.match(library, /catalogMajor/);
+  assert.doesNotMatch(library, /catalogMajor|preview\.aeMajor/);
   assert.match(library, /choosePreview\(/);
-  assert.match(library, /aeMajor:/);
 });
 
 test("viewmodel 给过期条目打标记，图仍然照常显示", () => {
@@ -1106,20 +1102,23 @@ test("viewmodel 给过期条目打标记，图仍然照常显示", () => {
   assert.equal(missing.stale, false);
 });
 
-test("预览选择当前 AE 主版本优先，缺失时静默回退其他版本", () => {
+test("多个预览存在时选择最后一个有效项，不检查 AE 版本", () => {
   const ctx = loadModules(["cep/com.dreamengine.panel/js/viewmodel.js"], { window: {} });
   const view = ctx.AEV_ViewModel;
   const variants = [
     { matchName: "ADBE Glo2", aeMajor: 21, src: "old.png" },
     { matchName: "ADBE Glo2", aeMajor: 23, src: "current.png" },
   ];
-  assert.equal(view.choosePreview(variants, 23).src, "current.png");
-  assert.equal(view.choosePreview(variants, 22).src, "current.png");
+  assert.equal(view.choosePreview(variants).src, "current.png");
   assert.equal(
-    view.choosePreview([{ matchName: "ADBE Twirl", aeMajor: 21, src: "fallback.png" }], 23).src,
-    "fallback.png",
+    view.choosePreview([
+      { matchName: "ADBE Twirl", src: "first.png" },
+      { matchName: "ADBE Twirl" },
+      { matchName: "ADBE Twirl", src: "last.png" },
+    ]).src,
+    "last.png",
   );
-  assert.equal(view.choosePreview([], 23), null);
+  assert.equal(view.choosePreview([]), null);
 });
 
 test("排序：按名称首字母（中文按拼音）", () => {

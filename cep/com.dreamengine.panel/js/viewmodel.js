@@ -426,21 +426,16 @@ var AEV_ViewModel = (function () {
     };
   }
 
-  /**
-   * 同一 matchName 可能同时存在多个 AE 版本生成的预览。
-   * 当前主版本精确命中优先；没有时静默回退到现有其他版本。
-   */
-  function choosePreview(variants, aeMajor) {
-    var exact = null;
-    var fallback = null;
+  /** 同一效果存在多个预览时，使用合并索引中最后一个有效条目。 */
+  function choosePreview(variants) {
+    var selected = null;
     var rows = variants || [];
     for (var i = 0; i < rows.length; i++) {
       var preview = rows[i];
       if (!preview || !(preview.src || preview.frameSrc)) continue;
-      fallback = preview;
-      if (Number(preview.aeMajor) === Number(aeMajor)) exact = preview;
+      selected = preview;
     }
-    return exact || fallback;
+    return selected;
   }
 
   function filterItems(items, state) {

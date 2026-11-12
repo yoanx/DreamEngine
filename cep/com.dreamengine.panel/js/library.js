@@ -7,8 +7,6 @@ var AEV_Library = (function () {
     names: {},
     previews: {},
     previewVariants: {},
-    catalogVersion: "",
-    catalogMajor: 0,
     effectBackground: "",
     manifest: null,
     catalog: [],
@@ -180,21 +178,9 @@ var AEV_Library = (function () {
     state.previews = {};
     for (var matchName in state.previewVariants) {
       if (!state.previewVariants.hasOwnProperty(matchName)) continue;
-      var preview = AEV_ViewModel.choosePreview(
-        state.previewVariants[matchName],
-        state.catalogMajor
-      );
+      var preview = AEV_ViewModel.choosePreview(state.previewVariants[matchName]);
       if (preview) state.previews[matchName] = preview;
     }
-  }
-
-  function isExactPreview(matchName) {
-    var preview = state.previews[matchName];
-    return !!(
-      preview &&
-      state.catalogMajor &&
-      Number(preview.aeMajor) === Number(state.catalogMajor)
-    );
   }
 
   function rebuildItems() {
@@ -931,9 +917,6 @@ var AEV_Library = (function () {
             var sheet = sheetByIndex[preview.sheet] || {};
             preview.src = sheet.src || "";
           }
-          preview.aeMajor = preview.aeMajor === undefined
-            ? Number(manifestData.aeMajor) || 0
-            : Number(preview.aeMajor) || 0;
           addPreviewVariant(preview);
         }
 
@@ -956,7 +939,6 @@ var AEV_Library = (function () {
               if (!pluginPreview.src && pluginPreview.frameSrc) {
                 pluginPreview.src = pluginPreview.frameSrc.replace("%04d", "0000");
               }
-              pluginPreview.aeMajor = Number(pluginPreview.aeMajor) || 0;
               addPreviewVariant(pluginPreview);
               state.pluginPreviewCount++;
             }
@@ -978,11 +960,6 @@ var AEV_Library = (function () {
                   return;
                 }
                 state.catalog = catalogData.effects;
-                state.catalogVersion = String(catalogData.aeVersion || "");
-                state.catalogMajor =
-                  Number(catalogData.aeMajor) ||
-                  parseInt(state.catalogVersion, 10) ||
-                  0;
                 selectPreviews();
                 // 分类顺序 = AE 菜单里的顺序（catalog 里各类首次出现的次序）
                 state.categoryOrder = AEV_ViewModel.categoryOrder(state.catalog);
