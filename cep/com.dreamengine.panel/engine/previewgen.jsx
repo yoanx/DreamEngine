@@ -642,6 +642,7 @@ var AEV_PreviewGen = (function () {
                                 // 插件效果不打关键帧（animateAny 内部会自己跳过）
                                 AEV_Recipe.animateAny(effectGroup, durationSeconds, matchName);
                             }
+                            AEV_Recipe.disableOriginalMix(effectGroup, matchName);
                         }
                     }
                 } catch (eRecipe) {

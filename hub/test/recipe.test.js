@@ -1,10 +1,10 @@
 /* ============================================================
  * recipe.jsx 纯逻辑断言（在 Node vm 里加载 ExtendScript）
  *
- * 只验证 P0 实机结论对应的 Twitch 修复：
+ * 验证预览配方与 P0 实机结论对应的 Twitch 修复：
  *   · RECIPES 把 Enable 组后的 Blur 静态置 1
  *   · STATIC_RECIPES 让 animate() 不碰属性（P0 只验证了静态写入）
- *   · 不改 RECIPE_VERSION，避免全量内置缓存失效
+ *   · 内置效果配方变化时检查缓存版本已更新
  *
  * 运行：npm test（或 node --test test/recipe.test.js）
  * ============================================================ */
@@ -78,12 +78,85 @@ test("Videocopilot Twitch 只做静态写入，animate 不碰属性", () => {
   assert.equal(touched, false);
 });
 
-test("配方版本不因 Twitch 修复而 bump", () => {
-  assert.equal(recipe.RECIPE_VERSION, 5);
+test("新内置效果配方使用已采集的 AE 参数名", () => {
+  assert.equal(recipe.RECIPE_VERSION, 13);
   const twitch = recipe.recipes["Videocopilot Twitch"];
   assert.equal(twitch.length, 1);
   assert.equal(twitch[0].names[0], "Blur");
   assert.equal(twitch[0].value, 1);
+
+  for (const [matchName, expected] of Object.entries({
+    "ADBE Fractal Noise": ["对比度", "缩放", "复杂度"],
+    "ADBE Lens Flare": ["光晕亮度", "镜头类型", "与原始图像混合"],
+    "ADBE Optics Compensation": ["视场 (FOV)", "反转镜头扭曲"],
+    "ADBE Posterize Time": ["帧速率"],
+    "ADBE Vibrance": ["自然饱和度", "饱和度"],
+    "ADBE Invert": ["与原始图像混合"],
+    "ADBE Tritone": ["与原始图像混合"],
+    "ADBE Magnify": ["放大率", "大小"],
+    "ADBE Posterize": ["级别"],
+    "ADBE Median": ["半径"],
+    "ADBE Bevel Edges": ["边缘厚度", "灯光强度"],
+    "ADBE Bilateral": ["半径", "阈值", "彩色化"],
+    "ADBE Dust & Scratches": ["半径", "阈值"],
+    "ADBE Noise HLS Auto2": ["杂色", "亮度", "颗粒大小"],
+    "ADBE Spherize": ["半径"],
+    "ADBE Noise2": ["杂色数量", "杂色类型"],
+    "CC Bubbles": ["Bubble Amount", "Bubble Speed", "Wobble Amplitude", "Bubble Size"],
+    "ADBE Scatter": ["散布数量", "颗粒", "散布随机性"],
+    "ADBE Smart Blur": ["半径", "阈值"],
+    "ADBE Equalize": ["色调均化量"],
+    "ADBE Emboss": ["起伏", "对比度", "与原始图像混合"],
+    "ADBE Color Emboss": ["起伏", "对比度", "与原始图像混合"],
+    "ADBE Block Dissolve": ["过渡完成", "块宽度", "块高度"],
+    "ADBE Linear Wipe": ["过渡完成", "羽化"],
+    "ADBE Radial Wipe": ["过渡完成", "羽化"],
+    "ADBE Venetian Blinds": ["过渡完成", "宽度", "羽化"],
+    "CC Jaws": ["Completion", "Height", "Width"],
+    "CC Light Wipe": ["Completion", "Intensity", "Color from Source"],
+    "CC Ball Action": ["Scatter", "Grid Spacing", "Ball Size"],
+    "CC Pixel Polly": ["Force", "Gravity", "Grid Spacing", "Direction Randomness"],
+    "CC Mr. Mercury": ["Birth Rate", "Velocity", "Longevity (sec)", "Gravity", "Blob Birth Size", "Blob Death Size"],
+    "APC Foam": ["产生速率", "大小", "初始速度", "湍流", "摇摆量"],
+    "CC Particle World": ["Birth Rate", "Longevity (sec)", "Velocity", "Gravity", "Scatter", "Max Opacity"],
+    "CC Particle Systems II": ["Birth Rate", "Longevity (sec)", "Velocity", "Gravity", "Max Opacity"],
+  })) {
+    assert.deepEqual(Array.from(recipe.recipes[matchName], (step) => step.names[0]), expected);
+  }
+  assert.equal(recipe.isStaticRecipe("ADBE Posterize Time"), true);
+  assert.equal(recipe.isStaticRecipe("ADBE Noise HLS Auto2"), true);
+  assert.equal(recipe.isStaticRecipe("CC Particle World"), true);
+  assert.equal(recipe.isStaticRecipe("CC Particle Systems II"), true);
+  assert.equal(recipe.recipes["ADBE Lens Flare"][0].value, 110);
+  assert.equal(recipe.recipes["ADBE Optics Compensation"][0].value, 24);
+  assert.equal(recipe.recipes["CC Light Rays"][0].value, 85);
+  assert.equal(recipe.recipes["CC Star Burst"][0].value, 110);
+  assert.equal(recipe.recipes["ADBE Vibrance"][0].value, 12);
+  assert.equal(recipe.recipes["ADBE Magnify"][0].value, 125);
+  assert.equal(recipe.recipes["ADBE Posterize"][0].value, 16);
+  assert.equal(recipe.recipes["ADBE Median"][0].value, 2);
+  assert.equal(recipe.recipes["CC Scatterize"][0].value, 60);
+  assert.equal(recipe.recipes["CC Bubbles"][0].value, 110);
+  assert.equal(recipe.recipes["ADBE Linear Wipe"][0].value, 50);
+  assert.equal(recipe.recipes["ADBE Emboss"][2].value, 0);
+  assert.equal(recipe.recipes["ADBE Bevel Edges"][0].value, 0.18);
+  assert.equal(recipe.recipes["ADBE Bilateral"][1].value, 5);
+  assert.equal(recipe.recipes["ADBE Dust & Scratches"][0].value, 4);
+  assert.equal(recipe.recipes["ADBE Noise HLS Auto2"][0].value, 3);
+  assert.equal(recipe.recipes["ADBE Noise HLS Auto2"][1].value, 350);
+});
+
+test("只把内置效果的原图混合控件设为 0", () => {
+  const blend = { name: "Blend With Original", numProperties: 0, setValue(value) { this.value = value; } };
+  const other = { name: "Contrast", numProperties: 0, setValue(value) { this.value = value; } };
+  const group = makeGroup([blend, other]);
+  assert.equal(recipe.disableOriginalMix(group, "CC Star Burst"), 1);
+  assert.equal(blend.value, 0);
+  assert.equal(other.value, undefined);
+
+  const pluginBlend = { name: "Blend With Original", numProperties: 0, setValue(value) { this.value = value; } };
+  assert.equal(recipe.disableOriginalMix(makeGroup([pluginBlend]), "S_Glow"), 0);
+  assert.equal(pluginBlend.value, undefined);
 });
 
 test("覆盖表：解析 number / array / boolean、scene、预设与禁用行", () => {

@@ -18,7 +18,7 @@ var AEV_Recipe = (function () {
     var MAX_DEPTH = 3;
     var PRESENTATION_TIME_RATIO = 0.5;
     /** 配方版本：改配方语义时 +1，所有缓存随之失效 */
-    var RECIPE_VERSION = 5;
+    var RECIPE_VERSION = 13;
 
     /** 表达式控件族与音频族的分类名（中英文都要认，汉化版分类名是中文） */
     var NO_PREVIEW_CATEGORIES = [
@@ -83,6 +83,10 @@ var AEV_Recipe = (function () {
             { names: ["边缘厚度", "Edge Thickness"], value: 8 },
             { names: ["灯光强度", "Light Intensity"], value: 0.6 }
         ],
+        "ADBE Bevel Edges": [
+            { names: ["边缘厚度", "Edge Thickness"], value: 0.18 },
+            { names: ["灯光强度", "Light Intensity"], value: 0.55 }
+        ],
         "CC Radial Fast Blur": [{ names: ["Amount", "数量"], value: 60 }],
         "CC Lens": [{ names: ["Size", "大小"], value: 145 }],
         "CC Bender": [{ names: ["Amount", "数量"], value: 60 }],
@@ -139,8 +143,9 @@ var AEV_Recipe = (function () {
             { names: ["Ray Length"], value: 160 }
         ],
         "CC Light Rays": [
-            { names: ["Intensity"], value: 130 },
-            { names: ["Radius"], value: 240 }
+            { names: ["Intensity"], value: 85 },
+            { names: ["Radius"], value: 140 },
+            { names: ["Warp Softness"], value: 55 }
         ],
         "CC Light Sweep": [
             { names: ["Width"], value: 280 },
@@ -151,8 +156,13 @@ var AEV_Recipe = (function () {
             { names: ["Completion"], value: 0.5 },
             { names: ["Tiles"], value: 6 }
         ],
-        "CC Star Burst": [{ names: ["Scatter"], value: 180 }],
-        "CC Scatterize": [{ names: ["Scatter"], value: 120 }],
+        "CC Star Burst": [
+            { names: ["Scatter"], value: 110 },
+            { names: ["Speed"], value: 0.8 },
+            { names: ["Grid Spacing"], value: 8 },
+            { names: ["Size"], value: 85 }
+        ],
+        "CC Scatterize": [{ names: ["Scatter"], value: 60 }],
         "CC Cylinder": [{ names: ["Radius (%)"], value: 70 }],
         "CC Sphere": [{ names: ["Radius"], value: 140 }],
         "CC Glue Gun": [
@@ -185,6 +195,147 @@ var AEV_Recipe = (function () {
             { names: ["颜色 1"], value: [0.1, 0.3, 0.6] },
             { names: ["颜色 2"], value: [0.9, 0.4, 0.2] }
         ],
+        "ADBE Fractal Noise": [
+            { names: ["对比度", "Contrast"], value: 120 },
+            { names: ["缩放", "Scale"], value: 90 },
+            { names: ["复杂度", "Complexity"], value: 4 }
+        ],
+        "ADBE Lens Flare": [
+            { names: ["光晕亮度", "Flare Brightness"], value: 110 },
+            { names: ["镜头类型", "Lens Type"], value: 2 },
+            { names: ["与原始图像混合", "Blend With Original"], value: 30 }
+        ],
+        "ADBE Optics Compensation": [
+            { names: ["视场 (FOV)", "Field Of View"], value: 24 },
+            { names: ["反转镜头扭曲", "Reverse Lens Distortion"], value: 0 }
+        ],
+        "ADBE Posterize Time": [{ names: ["帧速率", "Frame Rate"], value: 12 }],
+        "ADBE Vibrance": [
+            { names: ["自然饱和度", "Vibrance"], value: 12 },
+            { names: ["饱和度", "Saturation"], value: 4 }
+        ],
+        "ADBE Invert": [{ names: ["与原始图像混合", "Blend With Original"], value: 0 }],
+        "ADBE Tritone": [{ names: ["与原始图像混合", "Blend With Original"], value: 0 }],
+        "ADBE Magnify": [
+            { names: ["放大率", "Magnification"], value: 125 },
+            { names: ["大小", "Size"], value: 140 }
+        ],
+        "ADBE Posterize": [{ names: ["级别", "Level"], value: 16 }],
+        "ADBE Median": [{ names: ["半径", "Radius"], value: 2 }],
+        "ADBE Bilateral": [
+            { names: ["半径", "Radius"], value: 35 },
+            { names: ["阈值", "Threshold"], value: 5 },
+            { names: ["彩色化", "Colorize"], value: 1 }
+        ],
+        "ADBE Dust & Scratches": [
+            { names: ["半径", "Radius"], value: 4 },
+            { names: ["阈值", "Threshold"], value: 0.08 }
+        ],
+        "ADBE Noise HLS Auto2": [
+            { names: ["杂色", "Noise"], value: 3 },
+            { names: ["亮度", "Lightness"], value: 350 },
+            { names: ["颗粒大小", "Grain Size"], value: 2 }
+        ],
+        "ADBE Spherize": [{ names: ["半径", "Radius"], value: 650 }],
+        "ADBE Noise2": [
+            { names: ["杂色数量", "Amount Of Noise"], value: 8 },
+            { names: ["杂色类型", "Noise Type"], value: 1 }
+        ],
+        "CC Bubbles": [
+            { names: ["Bubble Amount"], value: 110 },
+            { names: ["Bubble Speed"], value: 1.2 },
+            { names: ["Wobble Amplitude"], value: 30 },
+            { names: ["Bubble Size"], value: 6 }
+        ],
+        "ADBE Scatter": [
+            { names: ["散布数量", "Scatter Amount"], value: 35 },
+            { names: ["颗粒", "Grain"], value: 2 },
+            { names: ["散布随机性", "Scatter Randomness"], value: 0.15 }
+        ],
+        "ADBE Smart Blur": [
+            { names: ["半径", "Radius"], value: 4 },
+            { names: ["阈值", "Threshold"], value: 18 }
+        ],
+        "ADBE Equalize": [{ names: ["色调均化量", "Amount To Equalize"], value: 45 }],
+        "ADBE Emboss": [
+            { names: ["起伏", "Relief"], value: 18 },
+            { names: ["对比度", "Contrast"], value: 65 },
+            { names: ["与原始图像混合", "Blend With Original"], value: 0 }
+        ],
+        "ADBE Color Emboss": [
+            { names: ["起伏", "Relief"], value: 18 },
+            { names: ["对比度", "Contrast"], value: 65 },
+            { names: ["与原始图像混合", "Blend With Original"], value: 0 }
+        ],
+        "ADBE Block Dissolve": [
+            { names: ["过渡完成", "Transition Completion"], value: 50 },
+            { names: ["块宽度", "Block Width"], value: 28 },
+            { names: ["块高度", "Block Height"], value: 28 }
+        ],
+        "ADBE Linear Wipe": [
+            { names: ["过渡完成", "Transition Completion"], value: 50 },
+            { names: ["羽化", "Feather"], value: 18 }
+        ],
+        "ADBE Radial Wipe": [
+            { names: ["过渡完成", "Transition Completion"], value: 50 },
+            { names: ["羽化", "Feather"], value: 18 }
+        ],
+        "ADBE Venetian Blinds": [
+            { names: ["过渡完成", "Transition Completion"], value: 50 },
+            { names: ["宽度", "Width"], value: 24 },
+            { names: ["羽化", "Feather"], value: 6 }
+        ],
+        "CC Jaws": [
+            { names: ["Completion"], value: 0.5 },
+            { names: ["Height"], value: 0.3 },
+            { names: ["Width"], value: 8 }
+        ],
+        "CC Light Wipe": [
+            { names: ["Completion"], value: 50 },
+            { names: ["Intensity"], value: 80 },
+            { names: ["Color from Source"], value: 0 }
+        ],
+        "CC Ball Action": [
+            { names: ["Scatter"], value: 20 },
+            { names: ["Grid Spacing"], value: 8 },
+            { names: ["Ball Size"], value: 80 }
+        ],
+        "CC Pixel Polly": [
+            { names: ["Force"], value: 80 },
+            { names: ["Gravity"], value: 0.8 },
+            { names: ["Grid Spacing"], value: 20 },
+            { names: ["Direction Randomness"], value: 0.2 }
+        ],
+        "CC Mr. Mercury": [
+            { names: ["Birth Rate"], value: 0.8 },
+            { names: ["Velocity"], value: 0.35 },
+            { names: ["Longevity (sec)"], value: 1.5 },
+            { names: ["Gravity"], value: 0.25 },
+            { names: ["Blob Birth Size"], value: 0.15 },
+            { names: ["Blob Death Size"], value: 0.5 }
+        ],
+        "APC Foam": [
+            { names: ["产生速率", "Birth Rate"], value: 4 },
+            { names: ["大小", "Size"], value: 0.3 },
+            { names: ["初始速度", "Initial Velocity"], value: 0.2 },
+            { names: ["湍流", "Turbulence"], value: 0.2 },
+            { names: ["摇摆量", "Wobble Amount"], value: 0.04 }
+        ],
+        "CC Particle World": [
+            { names: ["Birth Rate"], value: 1 },
+            { names: ["Longevity (sec)"], value: 1.5 },
+            { names: ["Velocity"], value: 0.35 },
+            { names: ["Gravity"], value: 0.2 },
+            { names: ["Scatter"], value: 12 },
+            { names: ["Max Opacity"], value: 60 }
+        ],
+        "CC Particle Systems II": [
+            { names: ["Birth Rate"], value: 2 },
+            { names: ["Longevity (sec)"], value: 1.5 },
+            { names: ["Velocity"], value: 0.35 },
+            { names: ["Gravity"], value: 0.25 },
+            { names: ["Max Opacity"], value: 0.6 }
+        ],
 
         // ---- 第三方：P0 实机验证 ----
         // Twitch 默认所有 Enable 开关都是 0，预览就是空素材；Blur 是 Enable
@@ -199,7 +350,11 @@ var AEV_Recipe = (function () {
      * 没有实机验证过，保持静态最稳，也避免 6 帧里开关反复闪。
      */
     var STATIC_RECIPES = {
-        "Videocopilot Twitch": true
+        "ADBE Noise HLS Auto2": true,
+        "Videocopilot Twitch": true,
+        "ADBE Posterize Time": true,
+        "CC Particle World": true,
+        "CC Particle Systems II": true
     };
 
     function isStaticRecipe(matchName) {
@@ -435,6 +590,38 @@ var AEV_Recipe = (function () {
             }
         }
         return null;
+    }
+
+    function disableOriginalMix(effectGroup, matchName) {
+        if (!isBuiltinMatch(matchName)) return 0;
+        var names = ["与原始图像混合", "Blend With Original", "Blend with Original", "Blend w. Original"];
+        var changed = 0;
+        function walk(group, depth) {
+            if (depth > MAX_DEPTH) return;
+            var count = 0;
+            try { count = group.numProperties; } catch (e) { return; }
+            for (var i = 1; i <= count; i++) {
+                var prop = null;
+                try { prop = group.property(i); } catch (e2) { continue; }
+                if (!prop) continue;
+                var children = 0;
+                try { children = prop.numProperties || 0; } catch (e3) {}
+                if (children > 0) {
+                    walk(prop, depth + 1);
+                    continue;
+                }
+                var name = "";
+                try { name = String(prop.name || ""); } catch (e4) {}
+                for (var n = 0; n < names.length; n++) {
+                    if (name === names[n] && setIfWritable(prop, 0)) {
+                        changed++;
+                        break;
+                    }
+                }
+            }
+        }
+        walk(effectGroup, 0);
+        return changed;
     }
 
     /* ---------- 手动覆盖表：effect_overrides.tsv ---------- */
@@ -1535,6 +1722,7 @@ var AEV_Recipe = (function () {
         pluginMainParam: pluginMainParam,
         isIntensityName: isIntensityName,
         isBuiltinMatch: isBuiltinMatch,
+        disableOriginalMix: disableOriginalMix,
         recipes: RECIPES,
         staticRecipes: STATIC_RECIPES,
         isStaticRecipe: isStaticRecipe,
