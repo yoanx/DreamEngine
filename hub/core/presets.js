@@ -46,12 +46,22 @@ function loadPreviewIndex(paths) {
   return merged;
 }
 
+/** AE 自带预设跨版本会改安装路径，但同名内容沿用同一预览。 */
+function isDefaultAePresetPath(file) {
+  return /\/adobe after effects \d{4}\/support files\/presets\//i.test(norm(file));
+}
+
 /**
  * 列出预设库（递归：与 tools/generate_plugin_presets.ps1 的 -Recurse 保持一致）。
  * @param {ReturnType<import("./paths").createPaths>} paths
  */
 function list(paths) {
   const index = loadPreviewIndex(paths);
+  const defaultByName = new Map();
+  for (const item of index.values()) {
+    if (!item || !isDefaultAePresetPath(item.path)) continue;
+    defaultByName.set(String(item.name || "").toLowerCase(), item);
+  }
   let rootExists = false;
   try {
     rootExists = fs.statSync(paths.presets).isDirectory();
@@ -65,7 +75,13 @@ function list(paths) {
     const key = norm(full);
     if (seen.has(key)) return;
     seen.add(key);
-    const hit = index.get(key);
+    const fileName = path.basename(full);
+    const name = fileName.replace(/\.ffx$/i, "");
+    const hit =
+      index.get(key) ||
+      (extra && extra.sourceKind === "install"
+        ? defaultByName.get(name.toLowerCase())
+        : undefined);
     const frameSrc = hit
       ? hit.frameSrc || String(hit.src || "").replace(/_0000\.png$/i, "_%04d.png")
       : "";
@@ -77,11 +93,10 @@ function list(paths) {
         frameSrc.replace("%04d", String(middle).padStart(4, "0")),
       );
     }
-    const fileName = path.basename(full);
     items.push({
       path: full,
       fileName,
-      name: fileName.replace(/\.ffx$/i, ""),
+      name,
       size: stat.size,
       mtime: stat.mtimeMs,
       rendered: !!hit,
