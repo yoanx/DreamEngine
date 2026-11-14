@@ -19,6 +19,23 @@ var AEV_PreviewGen = (function () {
         animatedPreview: { frameCount: 24, fps: 24 },
         render: { pngOutputTemplate: "DreamEngine PNG Sequence" }
     };
+    var effectCategoryCache = null;
+
+    /** app.effects 分类缓存：Sapphire 转场必须按分类识别，不能逐名字拼白名单。 */
+    function categoryForMatchName(matchName) {
+        if (!effectCategoryCache) {
+            effectCategoryCache = {};
+            try {
+                var effects = app.effects;
+                for (var i = 0; i < effects.length; i++) {
+                    var info = effects[i];
+                    var mn = String(info.matchName || "");
+                    if (mn) effectCategoryCache[mn] = String(info.category || "");
+                }
+            } catch (eEffects) {}
+        }
+        return effectCategoryCache[String(matchName || "")] || "";
+    }
 
     function config() {
         if (typeof DREAM_ENGINE_RENDER_CONFIG !== "undefined" && DREAM_ENGINE_RENDER_CONFIG) {
@@ -517,8 +534,9 @@ var AEV_PreviewGen = (function () {
                 // AE 里图层 1 在最上面，后 add 的盖在前面，所以按「背景 → 图案 → 效果层」
                 // 的顺序添加，就得到 [effect, pattern, bg] 这个目标叠层。
                 var layout = { base: "photo", needBg: false, needSource: false };
+                var category = categoryForMatchName(matchName);
                 if (typeof AEV_Recipe !== "undefined") {
-                    layout = AEV_Recipe.layoutFor(AEV_Recipe.sceneFor(matchName));
+                    layout = AEV_Recipe.layoutFor(AEV_Recipe.sceneFor(matchName, category));
                 }
                 if (layout.needBg) {
                     // 背景层刻意用「纯色」而不是 photo：遮罩/填充把上层吃掉一部分时，
@@ -621,6 +639,12 @@ var AEV_PreviewGen = (function () {
                             // 默认值是「无」，不接的话效果等于没加。
                             if (layout.needSource) {
                                 AEV_Recipe.bindLayers(effectGroup, 2);
+                            }
+                            if (AEV_Recipe.isSapphireTransition &&
+                                    AEV_Recipe.isSapphireTransition(matchName, category) &&
+                                    AEV_Recipe.enableAutoTrans) {
+                                var autoTrans = AEV_Recipe.enableAutoTrans(effectGroup);
+                                traceOverride("sapphire|auto_trans|" + matchName + "|" + autoTrans);
                             }
                             // 手动覆盖/预设保持静态；只有显式配方才做自动关键帧。
                             if (applied && applied.mode === "recipe") {

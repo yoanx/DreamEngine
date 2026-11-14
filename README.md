@@ -18,7 +18,7 @@
   <img alt="Windows" src="https://img.shields.io/badge/platform-Windows-4f6f8f?style=flat-square&amp;logo=windows&amp;logoColor=white">
   <img alt="After Effects 2021+" src="https://img.shields.io/badge/After%20Effects-2021%2B-5f8a74?style=flat-square">
   <img alt="CEP 11" src="https://img.shields.io/badge/CEP-11-6b7f95?style=flat-square">
-  <img alt="DreamEngine Hub 0.3.0" src="https://img.shields.io/badge/Hub-0.3.0-6f8f9a?style=flat-square">
+  <img alt="DreamEngine Hub 0.3.0-beta.1" src="https://img.shields.io/badge/Hub-0.3.0--beta.1-6f8f9a?style=flat-square">
   <img alt="DreamEngine Panel 0.3.0" src="https://img.shields.io/badge/Panel-0.3.0-7f9c88?style=flat-square">
 </p>
 
@@ -26,9 +26,9 @@
 
 ## 下载与安装
 
-当前版本：**DreamEngine 0.3.0**
+当前版本：**DreamEngine 0.3.0 / v0.3.0-beta.1**
 
-从 [GitHub Releases](https://github.com/yoanx/DreamEngine/releases/tag/v0.3.0) 下载：
+从 [GitHub Releases](https://github.com/yoanx/DreamEngine/releases/tag/v0.3.0-beta.1) 下载：
 
 - `DreamEngine-Hub-Setup-0.3.0.exe`
 - `SHA256SUMS.txt`
@@ -93,6 +93,7 @@ Hub 是不依赖 AE 主进程的独立管理程序，主要用于：
 
 - “插件效果”页会自动读取当前 AE 的插件清单，逐条隔离渲染，并支持停止、断点继续和崩溃黑名单。
 - “插件效果”页可先“扫描插件目录”，按插件/分类/名称勾选指定效果，只渲染所选条目；勾选“强制重渲”可重新渲染已生成或已跳过的效果。
+- Sapphire Transitions 系列会自动使用前景 / 背景两层输入并开启 Auto Trans，生成完整转场动画；S_Transition Builder 仍需载入具体转场预设后才能预览。
 - 预设页支持多选预设，只渲染所选；也可一键选择当前筛选下所有未渲染的预设。
 - 文本 / 动画类 AE 预设（AE 自带的 Text、Behaviors、Transitions 等）不新增效果，预览会先自动落在合成里的文本层上；没有文本层时自动改用「文字」素材渲染，不再误报「应用失败」。
 - 插件预设通过独立的 AE 实例渲染，避免破坏正在使用的 AE 会话。

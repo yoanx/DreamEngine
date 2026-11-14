@@ -422,6 +422,11 @@ var AEV_Recipe = (function () {
         "adbe fill", "adbe ramp", "4colorgradient", "scribble fill", "eyedropper fill"
     ];
 
+    /** Sapphire 标准转场都是 Foreground + Background 两层输入，且默认停留在起点。 */
+    function isSapphireTransition(matchName, category) {
+        return lower(category).indexOf("sapphire transitions") === 0;
+    }
+
     /**
      * 推断场景类型（设计文档 §4.3 的八类枚举）。
      * 只靠 matchName 与可选 category 判断——previewgen 手里只有 matchName，
@@ -438,6 +443,8 @@ var AEV_Recipe = (function () {
         if (cat === "text" || cat === "文本") return "text";
         if (/(^|\W)(text|numbers|typewriter|word)/.test(mn)) return "text";
         if (cat === "3d channel" || cat === "3d 通道") return "3d-camera";
+
+        if (isSapphireTransition(matchName, category)) return "two-layer-input";
 
         // 两层输入要排在别的规则前面：这些效果单层时完全看不出变化
         for (var i = 0; i < TWO_LAYER_PATTERNS.length; i++) {
@@ -1693,13 +1700,32 @@ var AEV_Recipe = (function () {
         return bound;
     }
 
+    /**
+     * Sapphire 转场默认 Auto Trans=No（菜单值 1），只把菜单切到最大值，
+     * 让插件按合成首尾帧自动完成转场。不要顺手写 Percent 参数。
+     */
+    function enableAutoTrans(effectGroup) {
+        var prop = findByName(effectGroup, ["Auto Trans"]);
+        if (!prop) return false;
+        var minValue = 1;
+        var maxValue = 2;
+        try {
+            if (prop.hasMin) minValue = Number(prop.minValue);
+            if (prop.hasMax) maxValue = Number(prop.maxValue);
+        } catch (eRange) {}
+        if (!(maxValue > minValue)) return false;
+        return setNumberSafely(prop, maxValue);
+    }
+
     return {
         RECIPE_VERSION: RECIPE_VERSION,
         isNoPreview: isNoPreview,
+        isSapphireTransition: isSapphireTransition,
         sceneFor: sceneFor,
         layoutFor: layoutFor,
         assetKindFor: assetKindFor,
         bindLayers: bindLayers,
+        enableAutoTrans: enableAutoTrans,
         cacheKey: cacheKey,
         hashString: hashString,
         presentationTime: presentationTime,

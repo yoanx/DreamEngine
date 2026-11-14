@@ -18,7 +18,7 @@
   <img alt="Windows" src="https://img.shields.io/badge/platform-Windows-4f6f8f?style=flat-square&amp;logo=windows&amp;logoColor=white">
   <img alt="After Effects 2021+" src="https://img.shields.io/badge/After%20Effects-2021%2B-5f8a74?style=flat-square">
   <img alt="CEP 11" src="https://img.shields.io/badge/CEP-11-6b7f95?style=flat-square">
-  <img alt="DreamEngine Hub 0.3.0" src="https://img.shields.io/badge/Hub-0.3.0-6f8f9a?style=flat-square">
+  <img alt="DreamEngine Hub 0.3.0-beta.1" src="https://img.shields.io/badge/Hub-0.3.0--beta.1-6f8f9a?style=flat-square">
   <img alt="DreamEngine Panel 0.3.0" src="https://img.shields.io/badge/Panel-0.3.0-7f9c88?style=flat-square">
 </p>
 
@@ -26,9 +26,9 @@
 
 ## Download and install
 
-Current release: **DreamEngine 0.3.0**
+Current release: **DreamEngine 0.3.0 / v0.3.0-beta.1**
 
-Download from [GitHub Releases](https://github.com/yoanx/DreamEngine/releases/tag/v0.3.0):
+Download from [GitHub Releases](https://github.com/yoanx/DreamEngine/releases/tag/v0.3.0-beta.1):
 
 - `DreamEngine-Hub-Setup-0.3.0.exe`
 - `SHA256SUMS.txt`
@@ -93,6 +93,7 @@ Preset categories and preset favorites are shared between the panel and Hub.
 
 - The Plugin Effects page reads the current AE plugin catalog and renders entries in isolated instances with cancellation, resume, and crash blacklisting.
 - On the Plugin Effects page you can scan the plugin catalog and select specific effects by plugin, category, or name; only the selected entries are rendered. Enable "force rerender" to render entries that already have previews or were skipped.
+- Sapphire Transitions effects automatically use foreground and background inputs with Auto Trans enabled to render the complete transition. The S_Transition Builder still requires a loaded transition preset before it can be previewed.
 - The preset page supports multi-selection and renders only the chosen presets; one click can select all unrendered presets in the current filter.
 - Text and animation AE presets (such as AE's built-in Text, Behaviors, and Transitions categories) add no effects. Their previews are applied to a text layer in the composition, or rendered on the built-in Text substrate when no text layer exists, instead of being reported as "failed to apply".
 - Plugin presets render in dedicated AE instances to avoid destabilizing the active AE session.

@@ -159,6 +159,53 @@ test("只把内置效果的原图混合控件设为 0", () => {
   assert.equal(pluginBlend.value, undefined);
 });
 
+test("Sapphire Transitions 使用两层输入并只开启 Auto Trans", () => {
+  assert.equal(recipe.sceneFor("S_Dissolve", "Sapphire Transitions"), "two-layer-input");
+  assert.equal(recipe.sceneFor("S_Glow", "Sapphire Lighting"), "footage-2d");
+  assert.equal(recipe.isSapphireTransition("S_WipeCircle", "Sapphire Transitions"), true);
+  assert.equal(recipe.isSapphireTransition("S_Glow", "Sapphire Lighting"), false);
+
+  const writes = [];
+  const auto = {
+    name: "Auto Trans",
+    numProperties: 0,
+    hasMin: true,
+    minValue: 1,
+    hasMax: true,
+    maxValue: 2,
+    value: 1,
+    setValue(value) {
+      this.value = value;
+      writes.push(value);
+    },
+  };
+  const percent = {
+    name: "Dissolve Percent",
+    numProperties: 0,
+    value: 0,
+    setValue(value) {
+      writes.push(value);
+    },
+  };
+
+  assert.equal(recipe.enableAutoTrans(makeGroup([auto, percent])), true);
+  assert.equal(auto.value, 2);
+  assert.deepEqual(writes, [2], "不能顺手写 Dissolve Percent");
+});
+
+test("Sapphire 场景分类和 Auto Trans 已接入效果渲染", () => {
+  const previewgen = fs.readFileSync(
+    path.join(__dirname, "..", "..", "cep", "com.dreamengine.panel", "engine", "previewgen.jsx"),
+    "utf8",
+  );
+  assert.match(previewgen, /var category = categoryForMatchName\(matchName\)/);
+  assert.match(
+    previewgen,
+    /layout = AEV_Recipe\.layoutFor\(AEV_Recipe\.sceneFor\(matchName, category\)\)/,
+  );
+  assert.match(previewgen, /AEV_Recipe\.enableAutoTrans\(effectGroup\)/);
+});
+
 test("覆盖表：解析 number / array / boolean、scene、预设与禁用行", () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "de-recipe-override-"));
   const dir = path.join(root, "DreamEngine");
