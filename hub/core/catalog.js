@@ -14,6 +14,7 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
+const effectIdentity = require("./effect_identity");
 
 const CATALOG_HEADER = [
   "matchName",
@@ -52,13 +53,22 @@ function readNames(paths) {
 }
 
 /** plugin_manifest.json：已生成预览的 matchName 集合 */
-function readRendered(paths) {
-  const set = new Set();
+function readRenderedIndex(paths) {
+  const names = new Set();
+  const keys = new Set();
   const doc = readJson(paths.pluginManifest);
   for (const item of (doc && doc.items) || []) {
-    if (item && item.matchName) set.add(item.matchName);
+    if (!item || !item.matchName) continue;
+    names.add(item.matchName);
+    const key = effectIdentity.normalizePreviewKey(item.previewKey) ||
+      effectIdentity.previewKey(item.plugin, item.displayName);
+    if (key) keys.add(key);
   }
-  return set;
+  return { names, keys };
+}
+
+function readRendered(paths) {
+  return readRenderedIndex(paths).names;
 }
 
 /** plugin_blacklist.json：matchName -> reason */
@@ -77,7 +87,7 @@ function statusFor(excluded, noPreview, blacklist, rendered, matchName) {
   if (blacklist.has(matchName)) {
     return { status: "blacklisted", reason: blacklist.get(matchName) || "crash" };
   }
-  if (rendered.has(matchName)) return { status: "rendered", reason: "" };
+  if (rendered) return { status: "rendered", reason: "" };
   return { status: "pending", reason: "" };
 }
 
@@ -196,13 +206,16 @@ function readCatalog(paths) {
   if (!catalogRows.ok) return empty;
 
   const names = readNames(paths);
-  const rendered = readRendered(paths);
+  const rendered = readRenderedIndex(paths);
   const blacklist = readBlacklist(paths);
   const items = [];
 
   for (const row of catalogRows.rows) {
     const matchName = row.matchName;
-    const state = statusFor(row.excluded, row.noPreview, blacklist, rendered, matchName);
+    const previewKey = effectIdentity.previewKey(row.plugin, row.displayName);
+    const isRendered = rendered.names.has(matchName) ||
+      (!!previewKey && rendered.keys.has(previewKey));
+    const state = statusFor(row.excluded, row.noPreview, blacklist, isRendered, matchName);
     const nameRecord = names.get(matchName) || {};
 
     items.push({
@@ -214,6 +227,7 @@ function readCatalog(paths) {
       categoryEn: String(nameRecord.categoryEn || ""),
       categoryZh: String(nameRecord.categoryZh || ""),
       plugin: row.plugin,
+      previewKey: effectIdentity.previewKey(row.plugin, row.displayName),
       status: state.status,
       reason: state.status === "excluded" ? row.reason || "excluded" : state.reason,
       frames: 24,
@@ -303,6 +317,9 @@ function writeSelection(paths, items) {
         matchName,
         String(Number(item.frames) || 24),
         String(item.plugin || "其它插件").replace(/[\t\r\n]/g, " "),
+        String(item.displayName || item.nameZh || item.nameEn || item.matchName || "")
+          .replace(/[\t\r\n]/g, " "),
+        String(item.previewKey || "").replace(/[\t\r\n]/g, " "),
       ].join("\t"),
     );
   }

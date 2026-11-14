@@ -14,7 +14,8 @@
  *   · 归类以名字表和 AE 分类为准：名字表标了「内置」的目录条目，以及落在 AE 内置分类
  *     （沉浸式视频、生成等）里且插件未知的条目，都归回「AE 内置」分组 —— 扫描的
  *     matchName 前缀启发式会漏判 Keylight、VISINF 颗粒、Mettle VR 效果等 AE 自带效果
- *   · 内置严格按 manifest.items 顺序；插件按 catalog TSV 行序（manifest 独有项追加）
+ *   · 内置严格按 L1 manifest 顺序，再用统一渲染器生成的内置预览覆盖；
+ *     第三方插件只收录当前 catalog TSV 行，不在当前目录中的旧预览计为 orphaned
  *   · 内置效果默认 24fps；插件预览读取 manifest 自己记录的 fps/duration
  *   · 收藏按 matchName 存在 <userRoot>/effect_favorites.json（effect_favorites.js 读写）；
  *     条目的 renderable/generated 标记让 UI 知道「能不能渲染 / 能不能取消渲染」
@@ -28,6 +29,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const catalog = require("./catalog");
+const effectIdentity = require("./effect_identity");
 const effectFavorites = require("./effect_favorites");
 const effectOverrides = require("./effect_overrides");
 
@@ -199,6 +201,10 @@ function pluginMeta(row, entry, names) {
     String(record.pluginHint || "") ||
     trimmed(entry && entry.plugin) ||
     "其它插件";
+  const previewKey = effectIdentity.previewKey(
+    plugin,
+    catalogDisplayName || trimmed(entry && entry.displayName) || matchName,
+  );
 
   return {
     matchName,
@@ -211,6 +217,7 @@ function pluginMeta(row, entry, names) {
     categoryZh: String(record.categoryZh || ""),
     categoryEn: String(record.categoryEn || ""),
     plugin,
+    previewKey,
   };
 }
 
@@ -393,16 +400,54 @@ function list(paths) {
     if (item) builtinItems.push(decorate(item, true, false));
   }
 
-  /* 插件：遍历 catalog TSV 全部行（跳过 excluded / no_preview），
-     有预览的给渲染条目，没预览的给占位条目；manifest 独有项按清单顺序追加。
+  /* 插件：只遍历当前 catalog TSV 行（跳过 excluded / no_preview），
+     有预览的给渲染条目，没预览的给占位条目。
      名字表标了「内置」的目录条目（Keylight、VISINF 颗粒等）归回 AE 内置分组，
      不受扫描启发式漏判影响。 */
   const pluginEntries = (pluginDoc && pluginDoc.items) || [];
+  const rowByMatchName = new Map();
+  for (const row of catalogRows.rows) {
+    if (row && row.matchName && !rowByMatchName.has(row.matchName)) {
+      rowByMatchName.set(row.matchName, row);
+    }
+  }
+  let migratedPreviewIndex = false;
+  for (const entry of pluginEntries) {
+    if (!entry || !entry.matchName) continue;
+    const row = rowByMatchName.get(entry.matchName);
+    if (!row) continue;
+    const key = effectIdentity.previewKey(row.plugin, row.displayName);
+    if (!entry.displayName) {
+      entry.displayName = row.displayName || row.matchName;
+      migratedPreviewIndex = true;
+    }
+    if (!effectIdentity.normalizePreviewKey(entry.previewKey) && key) {
+      entry.previewKey = key;
+      migratedPreviewIndex = true;
+    }
+  }
+  if (migratedPreviewIndex) {
+    try {
+      fs.writeFileSync(paths.pluginManifest, JSON.stringify(pluginDoc, null, 1), "utf8");
+    } catch {
+      /* Migration is best effort; in-memory matching still works this run. */
+    }
+  }
   const entryByMatchName = new Map();
+  const entryByPreviewKey = new Map();
   for (const entry of pluginEntries) {
     if (entry && entry.matchName && !entryByMatchName.has(entry.matchName)) {
       entryByMatchName.set(entry.matchName, entry);
     }
+    if (!entry) continue;
+    let key = effectIdentity.normalizePreviewKey(entry.previewKey);
+    if (!key) {
+      const row = rowByMatchName.get(entry.matchName);
+      key = row
+        ? effectIdentity.previewKey(row.plugin, row.displayName)
+        : effectIdentity.previewKey(entry.plugin, entry.displayName);
+    }
+    if (key && !entryByPreviewKey.has(key)) entryByPreviewKey.set(key, entry);
   }
   const pluginPreviewNames = new Set(entryByMatchName.keys());
   const dedupedBuiltinItems = builtinItems.filter(
@@ -413,12 +458,19 @@ function list(paths) {
   const builtinExtra = [];
   const pluginItems = [];
   const seen = new Set();
+  const usedEntries = new Set();
   const addCatalogRow = (row, fromCatalog) => {
     const matchName = String((row && row.matchName) || "");
     if (!matchName) return;
-    const entry = entryByMatchName.get(matchName) || null;
     const record = names.get(matchName) || {};
+    let entry = entryByMatchName.get(matchName) || null;
+    const previewKey = effectIdentity.previewKey(row.plugin, row.displayName || matchName);
+    if (!entry && previewKey) {
+      const byKey = entryByPreviewKey.get(previewKey);
+      if (byKey && !usedEntries.has(byKey.matchName)) entry = byKey;
+    }
     const meta = pluginMeta(row, entry, names);
+    if (entry) usedEntries.add(entry.matchName);
     const item = catalogItemFor(meta, entry, pluginDoc, dataDir, blacklist, staticNames);
     /* generated 只认 plugin_manifest 命中；L1 内置预览是面板渲染的，不算生成 */
     const generated = !!entry;
@@ -429,7 +481,7 @@ function list(paths) {
     const builtinCategory =
       unknownPlugin && !!trimmed(row && row.category) && builtinCats.has(trimmed(row && row.category));
     const isBuiltin = isBuiltinCatalogRecord(record) || builtinCategory;
-    /* 内置效果已接入统一效果渲染器；第三方 manifest 独有项仍不可重渲 */
+    /* 内置效果已接入统一效果渲染器；第三方条目只来自当前 catalog。 */
     const renderable = !!fromCatalog || isBuiltin;
     decorate(item, renderable, generated);
     if (isBuiltin) {
@@ -447,11 +499,27 @@ function list(paths) {
     if (row.excluded || row.noPreview) continue;
     addCatalogRow(row, true);
   }
+  /* 内置效果不在第三方 catalog 中；统一渲染器生成的新预览仍属于当前内置效果。 */
   for (const entry of pluginEntries) {
-    if (!entry || !entry.matchName || seen.has(entry.matchName)) continue;
+    if (!entry || !entry.matchName || usedEntries.has(entry.matchName) || seen.has(entry.matchName)) {
+      continue;
+    }
+    const record = names.get(entry.matchName) || {};
+    const builtinEntry =
+      String(entry.plugin || "") === "内置" || isBuiltinCatalogRecord(record);
+    if (!builtinEntry) continue;
     seen.add(entry.matchName);
-    addCatalogRow({ matchName: entry.matchName }, false);
+    usedEntries.add(entry.matchName);
+    addCatalogRow({
+      matchName: entry.matchName,
+      displayName: entry.displayName || record.nameEn || entry.matchName,
+      category: record.categoryZh || record.categoryEn || "",
+      plugin: "内置",
+    }, false);
   }
+  const orphaned = pluginEntries.filter(
+    (entry) => entry && entry.matchName && !usedEntries.has(entry.matchName),
+  ).length;
 
   const items = [...dedupedBuiltinItems, ...builtinExtra, ...pluginItems];
 
@@ -500,6 +568,7 @@ function list(paths) {
       plugin: pluginCount,
       rendered: renderedCount,
       pending: pendingCount,
+      orphaned,
       categories: categorySet.size,
       plugins: pluginSet.size,
     },
@@ -611,6 +680,14 @@ function removeBlacklistRecord(file, matchName) {
 function clearPreview(paths, matchName) {
   const name = typeof matchName === "string" ? matchName.trim() : "";
   if (!name) return { ok: false, reason: "invalid_match_name", removed: 0, deleted: 0 };
+  let previewKey = "";
+  const catalogRows = catalog.readCatalogRows(paths);
+  for (const row of catalogRows.rows) {
+    if (row && row.matchName === name) {
+      previewKey = effectIdentity.previewKey(row.plugin, row.displayName);
+      break;
+    }
+  }
 
   let doc;
   try {
@@ -619,9 +696,17 @@ function clearPreview(paths, matchName) {
     return { ok: false, reason: "no_manifest", removed: 0, deleted: 0 };
   }
   const items = Array.isArray(doc.items) ? doc.items : [];
-  const removedItems = items.filter((item) => item && item.matchName === name);
+  const sameIdentity = (item) => {
+    if (!item) return false;
+    if (item.matchName === name) return true;
+    if (!previewKey) return false;
+    const itemKey = effectIdentity.normalizePreviewKey(item.previewKey) ||
+      effectIdentity.previewKey(item.plugin, item.displayName);
+    return itemKey === previewKey;
+  };
+  const removedItems = items.filter(sameIdentity);
   if (!removedItems.length) return { ok: false, reason: "not_found", removed: 0, deleted: 0 };
-  const remaining = items.filter((item) => !(item && item.matchName === name));
+  const remaining = items.filter((item) => !sameIdentity(item));
 
   /* 候选文件 = 被删条目引用的图片；仍被剩余条目 / sheet 引用的跳过（共用拼图） */
   const candidates = new Set();
@@ -677,12 +762,24 @@ function clearPreview(paths, matchName) {
   }
 
   /* plugin_previews.tsv 实际落在 dataDir（部分版本在 probe），两处都清一次 */
-  removeTsvRows(path.join(paths.dataDir, "plugin_previews.tsv"), name);
-  removeTsvRows(path.join(paths.probe, "plugin_previews.tsv"), name);
-  removeTsvRows(path.join(paths.probe, "plugin_blacklist.tsv"), name);
-  removeBlacklistRecord(path.join(paths.dataDir, "plugin_blacklist.json"), name);
+  const removedNames = Array.from(new Set(
+    removedItems.map((item) => String(item.matchName || "")).filter(Boolean),
+  ));
+  if (!removedNames.includes(name)) removedNames.push(name);
+  for (const removedName of removedNames) {
+    removeTsvRows(path.join(paths.dataDir, "plugin_previews.tsv"), removedName);
+    removeTsvRows(path.join(paths.probe, "plugin_previews.tsv"), removedName);
+    removeTsvRows(path.join(paths.probe, "plugin_blacklist.tsv"), removedName);
+    removeBlacklistRecord(path.join(paths.dataDir, "plugin_blacklist.json"), removedName);
+  }
 
   return { ok: true, removed: removedItems.length, deleted };
 }
 
-module.exports = { list, clearPreview, createPluginResolver, FPS };
+module.exports = {
+  list,
+  clearPreview,
+  createPluginResolver,
+  previewKey: effectIdentity.previewKey,
+  FPS,
+};

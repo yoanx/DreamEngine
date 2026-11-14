@@ -18,7 +18,7 @@
   <img alt="Windows" src="https://img.shields.io/badge/platform-Windows-4f6f8f?style=flat-square&amp;logo=windows&amp;logoColor=white">
   <img alt="After Effects 2021+" src="https://img.shields.io/badge/After%20Effects-2021%2B-5f8a74?style=flat-square">
   <img alt="CEP 11" src="https://img.shields.io/badge/CEP-11-6b7f95?style=flat-square">
-  <img alt="DreamEngine Hub 0.3.0-beta.1" src="https://img.shields.io/badge/Hub-0.3.0--beta.1-6f8f9a?style=flat-square">
+  <img alt="DreamEngine Hub 0.3.0-beta.2" src="https://img.shields.io/badge/Hub-0.3.0--beta.2-6f8f9a?style=flat-square">
   <img alt="DreamEngine Panel 0.3.0" src="https://img.shields.io/badge/Panel-0.3.0-7f9c88?style=flat-square">
 </p>
 
@@ -26,9 +26,9 @@
 
 ## 下载与安装
 
-当前版本：**DreamEngine 0.3.0 / v0.3.0-beta.1**
+当前版本：**DreamEngine 0.3.0 / v0.3.0-beta.2**
 
-从 [GitHub Releases](https://github.com/yoanx/DreamEngine/releases/tag/v0.3.0-beta.1) 下载：
+从 [GitHub Releases](https://github.com/yoanx/DreamEngine/releases/tag/v0.3.0-beta.2) 下载：
 
 - `DreamEngine-Hub-Setup-0.3.0.exe`
 - `SHA256SUMS.txt`
@@ -87,6 +87,7 @@ Hub 是不依赖 AE 主进程的独立管理程序，主要用于：
 - 内置效果与「渲染 → 插件效果」里扫描到的第三方效果统一列出：已生成预览的悬停播放，还没生成的显示为「待渲染」占位。
 - 左侧按来源分组（AE 内置 / BCC / Sapphire / Red Giant / RE:Vision / Video Copilot / 其它插件），每组可展开或折叠，折叠状态会被记住；分类与分组都来自当前 AE 的扫描结果。
 - 分类同步当前 AE：内置效果用双语名字表里的 AE 分类，插件效果用插件目录扫描到的 AE 分类。
+- 插件预览按「插件 + 效果显示名」复用；插件升级或 `matchName` 改变时不要求重新渲染，当前版本已不存在的旧预览只计为历史预览。
 - 「同步 AE 分类」会重新扫描插件效果目录（只扫描、不渲染），刷新分类后自动回到效果库。
 
 **离线预览渲染**

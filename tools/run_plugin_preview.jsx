@@ -204,7 +204,9 @@
             out.push({
                 matchName: p[0],
                 frames: previewFrames,
-                plugin: p[2] || CATALOG_PLUGIN_FALLBACK
+                plugin: p[2] || CATALOG_PLUGIN_FALLBACK,
+                displayName: p[3] || p[0],
+                previewKey: p[4] || AEV_ViewModel.previewKey(p[2] || CATALOG_PLUGIN_FALLBACK, p[3] || p[0])
             });
         }
         return out;
@@ -251,7 +253,9 @@
                 result.todo.push({
                     matchName: info.matchName,
                     frames: frames,
-                    plugin: pluginName
+                    plugin: pluginName,
+                    displayName: info.displayName || info.matchName,
+                    previewKey: AEV_ViewModel.previewKey(pluginName, info.displayName || info.matchName)
                 });
             }
         }
@@ -440,6 +444,9 @@
             previewVersion: 2,
             frameTemplate: tmpl,
             plugin: item.plugin,
+            displayName: item.displayName || item.matchName,
+            previewKey: item.previewKey ||
+                AEV_ViewModel.previewKey(item.plugin, item.displayName || item.matchName),
             x: layout.x,
             y: layout.y,
             columns: layout.columns,

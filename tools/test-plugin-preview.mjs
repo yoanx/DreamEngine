@@ -453,6 +453,7 @@ test("离线脚本：逐条 singleCell + 心跳 + 独立索引，绝不碰主 ma
   assert.match(jsx, /Folder\.userData\.fsName \+ "\/Adobe\/CEP\/extensions\/com\.dreamengine\.panel"/);
   assert.match(jsx, /Folder\.myDocuments\.fsName \+ "\/DreamEngineProbe"/);
   assert.match(jsx, /matchName\\tdisplayName\\tcategory\\tplugin\\texcluded\\treason\\tnoPreview/);
+  assert.match(jsx, /previewKey: AEV_ViewModel\.previewKey/);
   assert.match(jsx, /plugin_max_items\.txt/);
   assert.match(jsx, /pending=" \+ finalProgress\.pending/);
 });

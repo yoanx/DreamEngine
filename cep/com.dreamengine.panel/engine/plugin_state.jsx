@@ -16,7 +16,7 @@
 
 var AEV_PluginState = (function () {
     var VERSION = 1;
-    var ENTRY_HEADER = "matchName\tsheet\tframes\tframeTemplate\tplugin\tx\ty\tcolumns\twidth\theight\tduration\tfps\tpreviewVersion";
+    var ENTRY_HEADER = "matchName\tsheet\tframes\tframeTemplate\tplugin\tx\ty\tcolumns\twidth\theight\tduration\tfps\tpreviewVersion\tdisplayName\tpreviewKey";
     var BLACKLIST_HEADER = "matchName\treason";
 
     function jsonText(value) {
@@ -156,7 +156,9 @@ var AEV_PluginState = (function () {
                 height: parseInt(p[9], 10) || 0,
                 duration: parseFloat(p[10]) || 0,
                 fps: parseInt(p[11], 10) || 0,
-                previewVersion: parseInt(p[12], 10) || 0
+                previewVersion: parseInt(p[12], 10) || 0,
+                displayName: p[13] || "",
+                previewKey: p[14] || ""
             });
         }
         return out;
@@ -179,7 +181,9 @@ var AEV_PluginState = (function () {
                 String(e.height || 0),
                 String(e.duration || 0),
                 String(e.fps || 0),
-                String(e.previewVersion || 0)
+                String(e.previewVersion || 0),
+                String(e.displayName || "").replace(/\t/g, " "),
+                String(e.previewKey || "").replace(/\t/g, " ")
             ].join("\t"));
         }
         return lines.join("\r\n");
@@ -190,7 +194,8 @@ var AEV_PluginState = (function () {
         var out = [];
         var replaced = false;
         for (var i = 0; i < entries.length; i++) {
-            if (entries[i].matchName === item.matchName) {
+            if (entries[i].matchName === item.matchName ||
+                    (item.previewKey && entries[i].previewKey === item.previewKey)) {
                 out.push(item);
                 replaced = true;
             } else {
@@ -239,7 +244,11 @@ var AEV_PluginState = (function () {
         var force = !!(opts.force);
         var skip = opts.skip || {};
         var done = {};
-        for (var i = 0; i < entries.length; i++) done[entries[i].matchName] = true;
+        var doneKeys = {};
+        for (var i = 0; i < entries.length; i++) {
+            done[entries[i].matchName] = true;
+            if (entries[i].previewKey) doneKeys[entries[i].previewKey] = true;
+        }
         var out = [];
         var max = limit > 0 ? limit : todo.length;
         for (var t = 0; t < todo.length && out.length < max; t++) {
@@ -247,13 +256,16 @@ var AEV_PluginState = (function () {
             if (!item || !item.matchName) continue;
             if (skip[item.matchName]) continue;
             if (!force) {
-                if (done[item.matchName]) continue;
+                if (done[item.matchName] ||
+                        (item.previewKey && doneKeys[item.previewKey])) continue;
                 if (blacklist && blacklist[item.matchName]) continue;
             }
             out.push({
                 matchName: item.matchName,
                 frames: item.frames || 6,
-                plugin: item.plugin || "其它插件"
+                plugin: item.plugin || "其它插件",
+                displayName: item.displayName || item.matchName,
+                previewKey: item.previewKey || ""
             });
         }
         return out;
@@ -286,16 +298,21 @@ var AEV_PluginState = (function () {
             };
         }
         var done = {};
+        var doneKeys = {};
         var blocked = blacklist || {};
         var total = 0;
         var finished = 0;
         var blacklisted = 0;
-        for (var i = 0; i < entries.length; i++) done[entries[i].matchName] = true;
+        for (var i = 0; i < entries.length; i++) {
+            done[entries[i].matchName] = true;
+            if (entries[i].previewKey) doneKeys[entries[i].previewKey] = true;
+        }
         for (var t = 0; t < todo.length; t++) {
             var item = todo[t];
             if (!item || !item.matchName) continue;
             total++;
-            if (done[item.matchName]) finished++;
+            if (done[item.matchName] ||
+                    (item.previewKey && doneKeys[item.previewKey])) finished++;
             else if (blocked[item.matchName]) blacklisted++;
         }
         return {
@@ -342,6 +359,8 @@ var AEV_PluginState = (function () {
             parts.push('"sliceColumns":' + itemColumns + ',"sliceCellSize":' + cellSize);
             parts.push('"sliceWidth":' + itemWidth + ',"sliceHeight":' + itemHeight);
             parts.push('"plugin":' + jsonText(e.plugin || "其它插件"));
+            if (e.displayName) parts.push('"displayName":' + jsonText(e.displayName));
+            if (e.previewKey) parts.push('"previewKey":' + jsonText(e.previewKey));
             if (tmpl) parts.push('"frameSrc":' + jsonText(tmpl));
             if (firstFrame) parts.push('"src":' + jsonText(firstFrame));
             if (e.webpSrc) parts.push('"webpSrc":' + jsonText(e.webpSrc));

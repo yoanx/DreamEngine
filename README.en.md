@@ -18,7 +18,7 @@
   <img alt="Windows" src="https://img.shields.io/badge/platform-Windows-4f6f8f?style=flat-square&amp;logo=windows&amp;logoColor=white">
   <img alt="After Effects 2021+" src="https://img.shields.io/badge/After%20Effects-2021%2B-5f8a74?style=flat-square">
   <img alt="CEP 11" src="https://img.shields.io/badge/CEP-11-6b7f95?style=flat-square">
-  <img alt="DreamEngine Hub 0.3.0-beta.1" src="https://img.shields.io/badge/Hub-0.3.0--beta.1-6f8f9a?style=flat-square">
+  <img alt="DreamEngine Hub 0.3.0-beta.2" src="https://img.shields.io/badge/Hub-0.3.0--beta.2-6f8f9a?style=flat-square">
   <img alt="DreamEngine Panel 0.3.0" src="https://img.shields.io/badge/Panel-0.3.0-7f9c88?style=flat-square">
 </p>
 
@@ -26,9 +26,9 @@
 
 ## Download and install
 
-Current release: **DreamEngine 0.3.0 / v0.3.0-beta.1**
+Current release: **DreamEngine 0.3.0 / v0.3.0-beta.2**
 
-Download from [GitHub Releases](https://github.com/yoanx/DreamEngine/releases/tag/v0.3.0-beta.1):
+Download from [GitHub Releases](https://github.com/yoanx/DreamEngine/releases/tag/v0.3.0-beta.2):
 
 - `DreamEngine-Hub-Setup-0.3.0.exe`
 - `SHA256SUMS.txt`
@@ -87,6 +87,7 @@ Preset categories and preset favorites are shared between the panel and Hub.
 - Lists built-in effects and the third-party effects from the Plugin Effects catalog together: entries with a preview play on hover, entries without one show a pending placeholder.
 - The sidebar groups entries by source (AE Built-in / BCC / Sapphire / Red Giant / RE:Vision / Video Copilot / Other); each group can be expanded or collapsed and the collapsed state is remembered. Categories and groups come from the current AE scan.
 - Categories follow the current AE: built-in effects use the localized AE categories from the bilingual name table, plugin effects use the categories from the plugin catalog scan.
+- Plugin previews are reused by plugin plus effect display name. A plugin upgrade or `matchName` change does not require a rerender; stale previews for effects no longer installed are counted separately as historical previews.
 - "Sync AE categories" re-scans the plugin effect catalog (scan only, no rendering) and refreshes the categories.
 
 **Offline preview rendering**

@@ -406,9 +406,25 @@ var AEV_ViewModel = (function () {
     return "其它插件";
   }
 
-  function buildItem(effect, namesByName, previewByMatchName, staleByName) {
+  function previewKey(plugin, displayName) {
+    var pluginPart = String(plugin === undefined || plugin === null ? "" : plugin)
+      .replace(/^\s+|\s+$/g, "").replace(/\s+/g, " ").toLowerCase();
+    var namePart = String(displayName === undefined || displayName === null ? "" : displayName)
+      .replace(/^\s+|\s+$/g, "").replace(/\s+/g, " ").toLowerCase();
+    return pluginPart && namePart ? pluginPart + "::" + namePart : "";
+  }
+
+  function previewKeyFor(effect) {
+    return previewKey(inferPlugin(effect), effect && effect.displayName);
+  }
+
+  function buildItem(effect, namesByName, previewByMatchName, staleByName, previewByKey) {
     var nameRecord = namesByName[effect.matchName] || {};
-    var preview = previewByMatchName[effect.matchName] || null;
+    var key = previewKeyFor(effect);
+    var preview =
+      previewByMatchName[effect.matchName] ||
+      (previewByKey && key ? previewByKey[key] : null) ||
+      null;
     var hasPreview = !!(preview && (preview.src || preview.frameSrc));
     return {
       matchName: effect.matchName,
@@ -419,6 +435,7 @@ var AEV_ViewModel = (function () {
       nameZh: nameRecord.nameZh,
       nameEn: nameRecord.nameEn,
       plugin: inferPlugin(effect),
+      previewKey: key,
       hasPreview: hasPreview,
       // 图还在，但配方/素材变了 —— 继续显示旧图，同时排进下一次生成
       stale: !!(hasPreview && staleByName && staleByName[effect.matchName]),
@@ -473,6 +490,8 @@ var AEV_ViewModel = (function () {
     previewRank: previewRank,
     interleaveByCategory: interleaveByCategory,
     inferPlugin: inferPlugin,
+    previewKey: previewKey,
+    previewKeyFor: previewKeyFor,
     resolveName: resolveName,
     resolveCategory: resolveCategory,
     spriteSlice: spriteSlice,

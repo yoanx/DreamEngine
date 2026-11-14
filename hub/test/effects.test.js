@@ -3,7 +3,7 @@
  *
  * 全部使用临时目录构造四份数据文件，不读写真实用户目录，
  * 也不需要 Electron 或 After Effects：
- *   · 内置（L1 manifest）+ 插件（plugin_manifest）合并顺序与计数
+ *   · 内置（L1 manifest）+ 当前插件目录合并顺序与计数
  *   · 目录里待渲染 / 黑名单条目显示为占位（hasPreview:false）
  *   · 扫描启发式漏判的 AE 自带效果归回「AE 内置」分组
  *   · 收藏按 matchName 读写
@@ -106,11 +106,12 @@ test("effects.list：内置 + 插件合并、计数与占位状态", () => {
   const lib = effects.list(paths);
 
   assert.equal(lib.ok, true);
-  assert.equal(lib.counts.total, 7);
+  assert.equal(lib.counts.total, 6);
   assert.equal(lib.counts.builtin, 3);
-  assert.equal(lib.counts.plugin, 4);
-  assert.equal(lib.counts.rendered, 4);
+  assert.equal(lib.counts.plugin, 3);
+  assert.equal(lib.counts.rendered, 3);
   assert.equal(lib.counts.pending, 3);
+  assert.equal(lib.counts.orphaned, 1);
 
   const byName = new Map(lib.items.map((item) => [item.matchName, item]));
   assert.deepEqual(byName.get("ADBE Gaussian Blur").name, "高斯模糊");
@@ -128,6 +129,10 @@ test("effects.list：内置 + 插件合并、计数与占位状态", () => {
   assert.equal(glow.duration, 1);
   assert.equal(glow.webpSrc, path.join(paths.dataDir, "frames/bcc.webp"));
   assert.equal(glow.stillSrc, path.join(paths.dataDir, "frames/bcc_still.webp"));
+  const migrated = JSON.parse(fs.readFileSync(paths.pluginManifest, "utf8")).items
+    .find((entry) => entry.matchName === "BCC_GLOW");
+  assert.equal(migrated.displayName, "BCC Glow");
+  assert.equal(migrated.previewKey, "bcc::bcc glow");
 
   /* 目录里还没渲染的条目：占位、可渲染、待渲染 */
   const pending = byName.get("BCC_PENDING");
@@ -146,10 +151,50 @@ test("effects.list：内置 + 插件合并、计数与占位状态", () => {
   assert.equal(keylight.source, "builtin");
   assert.equal(keylight.plugin, "内置");
 
+  /* 当前目录没有的旧预览只作为历史数据，不混入当前效果数 */
+  assert.equal(byName.has("BCC_OTHER"), false);
+
   /* 内置严格按 manifest 顺序 */
   assert.deepEqual(
     lib.items.slice(0, 2).map((item) => item.matchName),
     ["ADBE Gaussian Blur", "ADBE Ramp"],
+  );
+});
+
+test("effects.list：matchName 改变但插件内同名时复用预览", () => {
+  const { paths } = makeWorkspace();
+  const manifest = JSON.parse(fs.readFileSync(paths.pluginManifest, "utf8"));
+  manifest.items[0].displayName = "BCC Glow";
+  manifest.items[0].previewKey = effects.previewKey("BCC", "BCC Glow");
+  writeJson(paths.pluginManifest, manifest);
+  fs.writeFileSync(
+    paths.pluginCatalog,
+    [
+      CATALOG_HEADER,
+      "BCC_GLOW_V2\tBCC Glow\t光效\tBCC\t0\t\t0",
+    ].join("\r\n") + "\r\n",
+    "utf8",
+  );
+
+  const lib = effects.list(paths);
+  const current = lib.items.find((item) => item.matchName === "BCC_GLOW_V2");
+
+  assert.equal(current.hasPreview, true);
+  assert.equal(current.generated, true);
+  assert.equal(current.previewKey, "bcc::bcc glow");
+  assert.equal(lib.items.some((item) => item.matchName === "BCC_GLOW"), false);
+  assert.equal(lib.counts.plugin, 1);
+  assert.equal(lib.counts.rendered, 3);
+  assert.equal(lib.counts.orphaned, 1);
+
+  const cleared = effects.clearPreview(paths, "BCC_GLOW_V2");
+  assert.equal(cleared.ok, true);
+  assert.equal(cleared.removed, 1);
+  assert.equal(
+    JSON.parse(fs.readFileSync(paths.pluginManifest, "utf8")).items.some(
+      (entry) => entry.matchName === "BCC_GLOW",
+    ),
+    false,
   );
 });
 

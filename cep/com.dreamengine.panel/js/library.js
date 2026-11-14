@@ -6,6 +6,7 @@ var AEV_Library = (function () {
     showAll: true,
     names: {},
     previews: {},
+    previewsByKey: {},
     previewVariants: {},
     effectBackground: "",
     manifest: null,
@@ -176,18 +177,27 @@ var AEV_Library = (function () {
 
   function selectPreviews() {
     state.previews = {};
+    state.previewsByKey = {};
     for (var matchName in state.previewVariants) {
       if (!state.previewVariants.hasOwnProperty(matchName)) continue;
       var preview = AEV_ViewModel.choosePreview(state.previewVariants[matchName]);
-      if (preview) state.previews[matchName] = preview;
+      if (preview) {
+        state.previews[matchName] = preview;
+        if (preview.previewKey) {
+          state.previewsByKey[preview.previewKey] = preview;
+        }
+      }
     }
   }
 
   function rebuildItems() {
     var installed = {};
+    var installedByPreviewKey = {};
     var i;
     for (i = 0; i < state.catalog.length; i++) {
       installed[state.catalog[i].matchName] = state.catalog[i];
+      var installedKey = AEV_ViewModel.previewKeyFor(state.catalog[i]);
+      if (installedKey) installedByPreviewKey[installedKey] = state.catalog[i];
     }
 
     var items = [];
@@ -195,7 +205,13 @@ var AEV_Library = (function () {
       for (i = 0; i < state.catalog.length; i++) {
         if (isActiveEffect(state.catalog[i])) {
           items.push(
-            AEV_ViewModel.buildItem(state.catalog[i], state.names, state.previews, state.stale)
+            AEV_ViewModel.buildItem(
+              state.catalog[i],
+              state.names,
+              state.previews,
+              state.stale,
+              state.previewsByKey
+            )
           );
         }
       }
@@ -204,6 +220,10 @@ var AEV_Library = (function () {
       for (i = 0; i < previewKeys.length; i++) {
         var matchName = previewKeys[i];
         var effect = installed[matchName];
+        var preview = state.previews[matchName];
+        if (!effect && preview && preview.previewKey) {
+          effect = installedByPreviewKey[preview.previewKey];
+        }
         if (!effect) {
           var nameRecord = state.names[matchName] || {};
           effect = {
@@ -212,8 +232,14 @@ var AEV_Library = (function () {
             category: ""
           };
         }
-        var item = AEV_ViewModel.buildItem(effect, state.names, state.previews, state.stale);
-        item.installed = !!installed[matchName];
+        var item = AEV_ViewModel.buildItem(
+          effect,
+          state.names,
+          state.previews,
+          state.stale,
+          state.previewsByKey
+        );
+        item.installed = !!installed[effect.matchName];
         items.push(item);
       }
     }

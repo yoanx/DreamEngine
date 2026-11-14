@@ -1802,10 +1802,11 @@ function effectCounts() {
   const plugin = Number(counts.plugin) || Math.max(0, total - builtin);
   const rendered =
     Number(counts.rendered) || state.effects.filter((item) => effectHasPreview(item)).length;
+  const orphaned = Number(counts.orphaned) || 0;
   const categories =
     Number(counts.categories) ||
     new Set(state.effects.map((item) => effectCategoryKey(item)).filter(Boolean)).size;
-  return { total, builtin, plugin, rendered, categories };
+  return { total, builtin, plugin, rendered, orphaned, categories };
 }
 
 function paintEffectHint(shown) {
@@ -1823,6 +1824,7 @@ function paintEffectHint(shown) {
     `已生成预览 ${counts.rendered}`,
     `${counts.categories} 个分类`,
   ];
+  if (counts.orphaned) parts.push(`历史预览 ${counts.orphaned}`);
   if (state.effectSelection.size) parts.push(`已选 ${state.effectSelection.size}`);
   const filtering =
     !!state.effectQuery.trim() ||

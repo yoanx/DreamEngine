@@ -89,6 +89,33 @@ test("readCatalog: 合并 rendered / blacklisted / excluded / noPreview", () => 
   assert.equal(byName.get("S_Blur").frames, 24);
 });
 
+test("readCatalog: matchName 改变但稳定预览键相同时仍算已生成", () => {
+  const { paths } = makeWorkspace();
+  fs.writeFileSync(
+    paths.pluginCatalog,
+    [
+      "matchName\tdisplayName\tcategory\tplugin\texcluded\treason\tnoPreview",
+      "BCC_GLOW_V2\tBCC Glow\tBCC Lighting\tBCC\t0\t\t0",
+    ].join("\r\n"),
+    "utf8",
+  );
+  fs.writeFileSync(
+    paths.pluginManifest,
+    JSON.stringify({
+      version: 1,
+      items: [{
+        matchName: "BCC_GLOW",
+        displayName: "BCC Glow",
+        previewKey: "bcc::bcc glow",
+      }],
+    }),
+    "utf8",
+  );
+
+  const result = catalog.readCatalog(paths);
+  assert.equal(result.items[0].status, "rendered");
+});
+
 test("filterSelection: 默认跳过已生成/黑名单，force 时放行", () => {
   const items = [
     { matchName: "A", status: "pending", selectable: true },
@@ -145,7 +172,10 @@ test("writeSelection: 无表头、tab 分隔、CRLF", () => {
   ]);
   assert.equal(count, 2);
   const text = fs.readFileSync(paths.pluginSelection, "utf8");
-  assert.equal(text, "S_Glow\t6\tSapphire\r\nS_Blur\t24\tSapphire\r\n");
+  assert.equal(
+    text,
+    "S_Glow\t6\tSapphire\tS_Glow\t\r\nS_Blur\t24\tSapphire\tS_Blur\t\r\n",
+  );
 });
 
 test("presets.list: 递归扫描子目录", () => {

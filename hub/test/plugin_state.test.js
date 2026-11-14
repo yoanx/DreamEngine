@@ -58,9 +58,21 @@ check("planRun 旧 4 参调用：跳过已完成/黑名单", () => {
     run.map((item) => item.matchName),
     ["a", "d"],
   );
-  assert.deepEqual(run[0], { matchName: "a", frames: 8, plugin: "Sapphire" });
+  assert.deepEqual(run[0], {
+    matchName: "a",
+    frames: 8,
+    plugin: "Sapphire",
+    displayName: "a",
+    previewKey: "",
+  });
   // 旧填充默认值：frames -> 6，plugin -> 其它插件
-  assert.deepEqual(run[1], { matchName: "d", frames: 6, plugin: "其它插件" });
+  assert.deepEqual(run[1], {
+    matchName: "d",
+    frames: 6,
+    plugin: "其它插件",
+    displayName: "d",
+    previewKey: "",
+  });
 });
 
 check("planRun 旧调用限流 + limit 0/负数 = 不限流", () => {
@@ -202,6 +214,36 @@ check("buildManifest 保留 WebP 引用字段", () => {
   assert.equal(doc.items[0].webpSrc, "thumbs/webp/ADBE Glo2.webp");
   assert.equal(doc.items[0].stillSrc, "thumbs/webp/stills/ADBE Glo2.webp");
   assert.equal(doc.items[0].stillFrame, 12);
+});
+
+check("预览索引往返稳定键，并按稳定键替换旧 matchName", () => {
+  const first = {
+    matchName: "BCC_GLOW_OLD",
+    displayName: "BCC Glow",
+    previewKey: "bcc::bcc glow",
+    sheet: 1000,
+    frames: 24,
+    fps: 24,
+    duration: 1,
+    previewVersion: 2,
+    frameTemplate: "thumbs/batch_1000_%04d.png",
+    plugin: "BCC",
+  };
+  const roundTrip = PS.readEntries(PS.entriesTsv([first]));
+  assert.equal(roundTrip[0].displayName, "BCC Glow");
+  assert.equal(roundTrip[0].previewKey, "bcc::bcc glow");
+
+  const replaced = PS.addEntry(roundTrip, {
+    ...first,
+    matchName: "BCC_GLOW_V2",
+    sheet: 1001,
+  });
+  assert.equal(replaced.length, 1);
+  assert.equal(replaced[0].matchName, "BCC_GLOW_V2");
+
+  const manifest = JSON.parse(PS.buildManifest(replaced, {}));
+  assert.equal(manifest.items[0].displayName, "BCC Glow");
+  assert.equal(manifest.items[0].previewKey, "bcc::bcc glow");
 });
 
 check("mergePreviewFields 按 matchName 保留 WebP 引用", () => {

@@ -70,4 +70,24 @@ check("isExcludable === (excludeReason !== \"\")", () => {
   }
 });
 
+check("稳定预览键使用插件与显示名，忽略 matchName", () => {
+  const key = VM.previewKey("BCC", "  BCC   Glow ");
+  assert.equal(key, "bcc::bcc glow");
+  assert.equal(
+    VM.previewKeyFor({ matchName: "BCC_GLOW_V2", displayName: "BCC Glow", category: "BCC" }),
+    key,
+  );
+
+  const preview = { matchName: "BCC_GLOW", previewKey: key, src: "thumb.png" };
+  const item = VM.buildItem(
+    { matchName: "BCC_GLOW_V2", displayName: "BCC Glow", category: "BCC" },
+    {},
+    {},
+    {},
+    { [key]: preview },
+  );
+  assert.equal(item.hasPreview, true);
+  assert.equal(item.preview, preview);
+});
+
 console.log("\nviewmodel.test.js: " + passed + " assertions passed");
