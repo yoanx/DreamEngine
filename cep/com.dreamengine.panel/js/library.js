@@ -7,6 +7,9 @@ var AEV_Library = (function () {
     names: {},
     previews: {},
     previewsByKey: {},
+    presetPreviewsByPath: {},
+    presetPreviewsByNameLower: {},
+    presetIndexLoading: false,
     previewVariants: {},
     effectBackground: "",
     manifest: null,
@@ -1147,17 +1150,49 @@ var AEV_Library = (function () {
   function loadPresetIndex(done) {
     loadOptionalJson("data/preset_manifest.json", function (data) {
       state.presetPreviews = {};
+      state.presetPreviewsByPath = {};
+      state.presetPreviewsByNameLower = {};
+      function addPresetPreview(item) {
+        if (!item) return;
+        var name = String(item.name || "");
+        state.presetPreviews[name] = item;
+        state.presetPreviewsByNameLower[name.toLowerCase()] = item;
+        if (item.path && AEV_Prefs && AEV_Prefs.pathKey) {
+          state.presetPreviewsByPath[AEV_Prefs.pathKey(item.path)] = item;
+        }
+      }
       var items = (data && data.items) || [];
       for (var i = 0; i < items.length; i++) {
-        state.presetPreviews[items[i].name] = items[i];
+        addPresetPreview(items[i]);
       }
       loadOptionalJson("data/preset_plugin_manifest.json", function (pluginData) {
         var pluginItems = (pluginData && pluginData.items) || [];
         for (var q = 0; q < pluginItems.length; q++) {
-          state.presetPreviews[pluginItems[q].name] = pluginItems[q];
+          addPresetPreview(pluginItems[q]);
         }
         if (done) done();
       });
+    });
+  }
+
+  function previewForPreset(item) {
+    if (!item) return null;
+    var key = AEV_Prefs && AEV_Prefs.pathKey
+      ? AEV_Prefs.pathKey(item && item.path)
+      : "";
+    return state.presetPreviewsByPath[key] ||
+      state.presetPreviews[item.name] ||
+      state.presetPreviewsByNameLower[String(item.name || "").toLowerCase()] ||
+      null;
+  }
+
+  function refreshPresetPreviews() {
+    if (state.view !== "presets" || !state.extensionPath || state.presetIndexLoading) return;
+    state.presetIndexLoading = true;
+    loadPresetIndex(function () {
+      state.presetIndexLoading = false;
+      frameImages = {};
+      renderPresetList();
     });
   }
 
@@ -1296,7 +1331,7 @@ var AEV_Library = (function () {
 
       var thumb = document.createElement("div");
       thumb.className = "preset-thumb";
-      var preview = state.presetPreviews[item.name];
+      var preview = previewForPreset(item);
       var animated = !!(
         preview && preview.animated !== false && (preview.frames || 1) > 1
       );
@@ -1978,8 +2013,8 @@ var AEV_Library = (function () {
     }
 
     if (view === "presets") {
-      // 预设数据在面板载入时已经读过；这里只渲染缓存，不重新扫描。
-      if (state.presets.length || state.presetFolder) renderPresetList();
+      // 只重读预览索引，不重扫整个预设库：Hub 可能在面板打开期间写入新预览。
+      if (state.presets.length || state.presetFolder) refreshPresetPreviews();
       else loadPresetLibrary();
     }
     // 曲线视图是常驻的曲线模板：进入只重绘，不去读 AE（读只发生在按「应用」时）
@@ -2008,6 +2043,10 @@ var AEV_Library = (function () {
     byId("searchInput").addEventListener("input", function () {
       applySearch(this.value);
       markSearchActive(this.value);
+    });
+    window.addEventListener("focus", refreshPresetPreviews);
+    document.addEventListener("visibilitychange", function () {
+      if (!document.hidden) refreshPresetPreviews();
     });
     bindSearchToggle("searchToggle", "searchInput", "searchField", "searchWrap");
     byId("pluginFilter").addEventListener("change", function () {
