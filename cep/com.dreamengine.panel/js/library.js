@@ -298,7 +298,7 @@ var AEV_Library = (function () {
       thumb.style.backgroundSize = "cover";
       thumb.style.backgroundPosition = "center";
       thumb.style.backgroundImage =
-        'url("data/' + (preview.stillSrc || preview.webpSrc) + '")';
+        'url("' + dataUrl(preview.stillSrc || preview.webpSrc) + '")';
       var animated = document.createElement("img");
       animated.className = "preview-webp";
       animated.alt = "";
@@ -327,7 +327,7 @@ var AEV_Library = (function () {
             animated.onload = function () {
               animated.classList.add("playing");
             };
-            animated.src = "data/" + preview.webpSrc;
+            animated.src = dataUrl(preview.webpSrc);
             if (activePreviewStops.indexOf(stopWebp) < 0) activePreviewStops.push(stopWebp);
           }, 220);
         });
@@ -336,7 +336,7 @@ var AEV_Library = (function () {
       return;
     }
     if (!preview.frameSrc) {
-      thumb.style.backgroundImage = 'url("data/' + preview.src + '")';
+      thumb.style.backgroundImage = 'url("' + dataUrl(preview.src) + '")';
       return;
     }
     var frameCount = preview.frames || 1;
@@ -865,7 +865,10 @@ var AEV_Library = (function () {
     document.documentElement.style.setProperty("--card-text-gap", textGap.toFixed(1) + "px");
 
     var grid = byId(thumbGridId(view));
-    if (grid) grid.classList.toggle("compact", value < THUMB_COMPACT);
+    if (grid) {
+      grid.classList.toggle("compact", value < THUMB_COMPACT);
+      grid.style.gridTemplateColumns = "repeat(auto-fill, " + value + "px)";
+    }
 
     var slider = byId("thumbSize");
     if (slider) {
@@ -1069,7 +1072,15 @@ var AEV_Library = (function () {
 
   /** 帧序列模板 "thumbs/batch_000_%04d.png" -> "data/thumbs/batch_000_0001.png" */
   function framePath(template, index) {
-    return "data/" + String(template).replace("%04d", zeroPad(index, 4));
+    return dataUrl(String(template).replace("%04d", zeroPad(index, 4)));
+  }
+
+  /** 文件系统中的中文目录和空格必须编码后再交给旧版 CEP。 */
+  function dataUrl(relative) {
+    var value = String(relative || "").replace(/\\/g, "/").replace(/^\/+/, "");
+    if (value.indexOf("data/") === 0) value = value.substring(5);
+    if (!value) return "data/";
+    return "data/" + value.split("/").map(encodeURIComponent).join("/");
   }
 
   /* ---------- 帧预加载（消除首次悬停的闪烁） ---------- */
