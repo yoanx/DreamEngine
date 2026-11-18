@@ -40,6 +40,7 @@
     var RETRY_ERRORS_FILE = OUT.fsName + "/plugin_retry_errors.enabled";
     var ACTIVE_BATCH_FILE = OUT.fsName + "/plugin_active_batch.tsv";
     var RENDER_TEMPLATE_FILE = OUT.fsName + "/plugin_render_template_path.txt";
+    var PREVIEW_ROOT_FILE = OUT.fsName + "/plugin_preview_root.txt";
     var BLACKLIST = OUT.fsName + "/plugin_blacklist.tsv";
     var PANEL_BLACKLIST = EXT + "/data/plugin_blacklist.json";
     var ENTRIES = EXT + "/data/plugin_previews.tsv";
@@ -49,6 +50,7 @@
     var FORCE = OUT.fsName + "/plugin_force.enabled";
     var CATALOG_ONLY = OUT.fsName + "/plugin_catalog_only.enabled";
     var BATCH_SIZE = 8;
+    var previewRoot = readPreviewRoot();
 
     function readText(path) {
         var f = new File(path);
@@ -60,6 +62,18 @@
         return text;
     }
 
+    function readPreviewRoot() {
+        var root = String(readText(PREVIEW_ROOT_FILE) || "").replace(/[\r\n]+/g, "");
+        return root || (EXT + "/data/previews");
+    }
+
+    function previewFile(relative) {
+        var value = String(relative || "");
+        if (value.indexOf("previews/") === 0) {
+            return new File(previewRoot + "/" + value.substring(9));
+        }
+        return new File(EXT + "/data/" + value);
+    }
     function writeText(path, text) {
         var f = new File(path);
         f.encoding = "UTF-8";
@@ -434,7 +448,7 @@
         writeText(PANEL_BLACKLIST, PS.blacklistJson(blacklist));
     }
     function recordSuccess(item, sheetIndex, layout) {
-        var tmpl = "thumbs/batch_" + pad3(sheetIndex) + "_%04d.png";
+        var tmpl = "previews/effects/batch_" + pad3(sheetIndex) + "_%04d.png";
         entries = PS.addEntry(entries, {
             matchName: item.matchName,
             sheet: sheetIndex,
@@ -484,17 +498,17 @@
 
     function entryFramesExist(entry) {
         if (entry && entry.webpSrc) {
-            var webp = new File(EXT + "/data/" + entry.webpSrc);
+            var webp = previewFile(entry.webpSrc);
             if (webp.exists) return true;
         }
         var manifestWebp = entry ? manifestWebpForMatchName(entry.matchName) : "";
-        if (manifestWebp && new File(EXT + "/data/" + manifestWebp).exists) return true;
+        if (manifestWebp && previewFile(manifestWebp).exists) return true;
         var template = String(entry && entry.frameTemplate || "");
         if (!template) return true;
         var frames = Math.max(1, parseInt(entry.frames, 10) || 1);
         for (var f = 0; f < frames; f++) {
             var relative = template.replace("%04d", pad4(f));
-            var file = new File(EXT + "/data/" + relative);
+            var file = previewFile(relative);
             if (!file.exists) return false;
         }
         return true;
@@ -519,6 +533,7 @@
             return AEV_PreviewGen.renderBatch([item.matchName], sheetIndex, {
                 outputRoot: "extension",
                 extensionPath: EXT,
+                previewRoot: previewRoot,
                 singleCell: true,
                 targetComp: renderTemplateComp,
                 targetQueueItem: renderTemplateQueue,
@@ -568,6 +583,7 @@
             raw = AEV_PreviewGen.renderBatch(names, sheetIndex, {
                 outputRoot: "extension",
                 extensionPath: EXT,
+                previewRoot: previewRoot,
                 singleCell: false,
                 targetComp: renderTemplateComp,
                 targetQueueItem: renderTemplateQueue,

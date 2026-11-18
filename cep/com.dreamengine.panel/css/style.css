@@ -1396,6 +1396,10 @@ main {
   transition: opacity 120ms ease;
 }
 
+.thumb .preview-webp.still {
+  opacity: 1;
+}
+
 .thumb .preview-webp.playing {
   opacity: 1;
 }

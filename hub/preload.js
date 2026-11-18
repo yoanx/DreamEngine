@@ -32,6 +32,8 @@ contextBridge.exposeInMainWorld("hub", {
   togglePresetFavorite: (target) => ipcRenderer.invoke("categories:toggleFavorite", target),
   getPathForFile: (file) => webUtils.getPathForFile(file),
   reveal: (target) => ipcRenderer.invoke("shell:reveal", target),
+  choosePreviewRoot: () => ipcRenderer.invoke("preview-root:choose"),
+  resetPreviewRoot: () => ipcRenderer.invoke("preview-root:reset"),
   openEffectParamsDir: () => ipcRenderer.invoke("settings:openEffectParams"),
   listBackgrounds: () => ipcRenderer.invoke("backgrounds:list"),
   addBackground: () => ipcRenderer.invoke("backgrounds:add"),

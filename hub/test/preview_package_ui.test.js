@@ -72,12 +72,13 @@ test("从库进入渲染流程时不继承上次的强制重渲选项", () => {
   assert.match(flow, /saved\.config[\s\S]{0,240}flow\.plan\.config\.force\s*=\s*false/);
 });
 
-test("非 WebP 回退预览默认显示中间帧", () => {
+test("非 WebP 回退预览优先显示 stillSrc 或 stillFrame", () => {
   const library = fs.readFileSync(
     path.resolve(HUB, "..", "cep/com.dreamengine.panel/js/library.js"),
     "utf8",
   );
-  assert.match(library, /var still = stillIndex === undefined \? Math\.floor\(frameCount \/ 2\)/);
+  assert.match(library, /var stillUrl = preview\.stillSrc \? dataUrl/);
+  assert.match(library, /var indexedStill = Number\(preview\.stillFrame\)/);
   assert.match(library, /var stillIndex = undefined/);
 });
 

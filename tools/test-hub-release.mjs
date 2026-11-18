@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { basename, join, resolve } from "node:path";
 
 const ROOT = resolve(import.meta.dirname, "..");
 const DIST = resolve(ROOT, "hub/dist");
@@ -56,8 +56,10 @@ for (const required of [
   "resources\\tools\\generate_plugin_effects.ps1",
   "resources\\tools\\run_plugin_preview.jsx",
   "resources\\tools\\run_plugin_preview_loader.jsx",
+  "resources\\tools\\migrate_previews.ps1",
   "resources\\installer\\install_dreamengine.ps1",
   "resources\\installer\\uninstall_dreamengine.ps1",
+  "resources\\installer\\migrate_previews.ps1",
   "DreamEngine Hub.exe",
 ]) {
   assert.ok(listing.includes(required), `Installer is missing ${required}`);
@@ -71,5 +73,6 @@ const report = {
   version: HUB_PACKAGE.version,
 };
 writeFileSync(resolve(DIST, `DreamEngine-Hub-Setup-${HUB_PACKAGE.version}.report.json`), JSON.stringify(report, null, 2) + "\n");
+writeFileSync(resolve(DIST, "SHA256SUMS.txt"), `${hash}  ${basename(INSTALLER)}\n`);
 console.log(`[PASS] Hub installer validated: ${INSTALLER}`);
 console.log(`       ${(report.bytes / 1024 / 1024).toFixed(2)} MB  SHA256 ${hash}`);

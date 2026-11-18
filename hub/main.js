@@ -32,6 +32,7 @@ const catalog = require("./core/catalog");
 const effects = require("./core/effects");
 const effectFavorites = require("./core/effect_favorites");
 const previewPackage = require("./core/preview_package");
+const previewPaths = require("./core/preview_paths");
 const { buildEffectPreviews } = require("./core/effect_preview_builder");
 const update = require("./core/update");
 const packageInfo = require("./package.json");
@@ -128,6 +129,9 @@ async function fetchGithubReleases() {
 
 function snapshot() {
   const versions = findAfterFX();
+  const previewRoot = previewPaths.currentRoot(paths);
+  try { fs.mkdirSync(previewRoot, { recursive: true }); } catch { /* 目录不可用时仍返回路径 */ }
+  const previewSize = previewPaths.storageInfo(paths);
   return {
     ae: {
       running: isAERunning(),
@@ -143,6 +147,8 @@ function snapshot() {
       probe: paths.probe,
       docs: paths.docsDir,
       effectParams: paths.effectParamsRoot,
+      previewRoot,
+      previewSize,
     },
     render: job ? { running: job.isRunning(), state: job.snapshot() } : { running: false, state: null },
     pluginEffects: pluginJob
@@ -429,6 +435,33 @@ function registerIpc() {
     shell.openPath(dir);
     return true;
   });
+  ipcMain.handle("preview-root:choose", async () => {
+    if (aeBusyReason()) return { ok: false, reason: "busy" };
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: "选择预览产物目录",
+      buttonLabel: "使用此目录",
+      properties: ["openDirectory", "createDirectory"],
+    });
+    if (result.canceled || !result.filePaths[0]) {
+      return { ok: false, reason: "cancelled" };
+    }
+    const migrated = previewPaths.migratePreviewRoot(paths, result.filePaths[0]);
+    if (migrated.ok) {
+      previewBuildLastKey = "";
+      migrated.root = previewPaths.currentRoot(paths);
+    }
+    return migrated;
+  });
+
+  ipcMain.handle("preview-root:reset", () => {
+    if (aeBusyReason()) return { ok: false, reason: "busy" };
+    const result = previewPaths.resetPreviewRoot(paths);
+    if (result.ok) {
+      previewBuildLastKey = "";
+      result.root = previewPaths.currentRoot(paths);
+    }
+    return result;
+  });
 
   /* 属性缓存目录：第一次打开时还没有任何缓存，直接建出来免得用户看到「路径不存在」 */
   ipcMain.handle("settings:openEffectParams", () => {
@@ -446,6 +479,7 @@ function registerIpc() {
     const busy = aeBusyReason();
     if (busy) return { ok: false, reason: busy };
     let opts = options || {};
+    opts.previewRoot = previewPaths.currentRoot(paths);
     let selectedPaths = null;
     if (Array.isArray(opts.presetPaths)) {
       selectedPaths = selectedPresetPaths(opts.presetPaths);
@@ -453,6 +487,13 @@ function registerIpc() {
       try {
         fs.mkdirSync(paths.probe, { recursive: true });
         fs.writeFileSync(paths.presetSelection, selectedPaths.join("\r\n") + "\r\n", "utf8");
+        const folderByPath = new Map(
+          presets.list(paths).items.map((item) => [presets.norm(item.path), item.folder || "preset"]),
+        );
+        const folderRows = selectedPaths.map(
+          (presetPath) => `${presetPath}\t${folderByPath.get(presets.norm(presetPath)) || "preset"}`,
+        );
+        fs.writeFileSync(paths.presetFolderMap, folderRows.join("\r\n") + "\r\n", "utf8");
       } catch (error) {
         return { ok: false, reason: "write_failed", detail: String(error.message || error) };
       }
@@ -506,6 +547,7 @@ function registerIpc() {
     if (busy) return { ok: false, reason: busy };
 
     const opts = options || {};
+    opts.previewRoot = previewPaths.currentRoot(paths);
     if (!opts.ae) opts.ae = preferredAe();
     cleanupJobMarkers(paths);
     previewBuildLastKey = "";
@@ -996,6 +1038,7 @@ if (!gotLock) {
   app.whenReady().then(() => {
     paths = buildPaths();
     rememberHubPath(paths);
+    try { previewPaths.migratePreviewLayout(paths); } catch { /* 布局迁移失败不阻塞启动 */ }
     cleanupJobMarkers(paths);
 
     job = new RenderJob({

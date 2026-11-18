@@ -19,6 +19,8 @@ param(
   [string]$Background = "",
   [ValidateSet(12, 24, 30, 60)]
   [int]$Fps = 24,
+  [ValidateSet(360, 720)]
+  [int]$CellSize = 720,
   [int]$Limit = 40,
   [int]$Rounds = 40,
   [int]$Timeout = 240,
@@ -36,7 +38,9 @@ param(
   # 等待用户关闭 AE 的最长秒数，超时即放弃
   [int]$WaitAE = 900,
   # 逐条结果账本（Hub 第 5 步读取；默认 <Probe>\preview_run_results.tsv）
-  [string]$ResultsFile = ""
+  [string]$ResultsFile = "",
+  # 预览产物根目录；空值读取 Hub 的 preview_settings.json
+  [string]$PreviewRoot = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -52,6 +56,7 @@ $presets = Join-Path $docs "DreamEngine\presets"
 $todoPath        = Join-Path $probe "next_preset_plugin_batch.tsv"
 $bgPath          = Join-Path $probe "preset_plugin_background.txt"
 $fpsPath         = Join-Path $probe "preset_plugin_fps.txt"
+$cellSizePath    = Join-Path $probe "preset_preview_cell_size.txt"
 $logPath         = Join-Path $probe "preset_plugin_run.log"
 $entriesPath     = Join-Path $probe "preset_plugin_previews.tsv"
 $blacklistPath   = Join-Path $probe "preset_plugin_blacklist.tsv"
@@ -61,6 +66,17 @@ $forcePath       = Join-Path $probe "preset_plugin_force.txt"
 $pendingPath     = Join-Path $probe "preset_plugin_pending_count.txt"
 $sourcePathFile  = Join-Path $probe "preset_plugin_preview_script_path.txt"
 $renderTemplatePath = Join-Path $probe "preset_render_template_path.txt"
+$previewSettingsPath = Join-Path $docs "DreamEngine\preview_settings.json"
+$previewRootPath = Join-Path $probe "preset_preview_root.txt"
+if (-not $PreviewRoot -and (Test-Path $previewSettingsPath)) {
+  try {
+    $saved = Get-Content $previewSettingsPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    if ($saved.root) { $PreviewRoot = [string]$saved.root }
+  } catch {}
+}
+if (-not $PreviewRoot) { $PreviewRoot = Join-Path $data "previews" }
+$PreviewRoot = [IO.Path]::GetFullPath($PreviewRoot)
+$previewPresetsDir = Join-Path $PreviewRoot "presets"
 
 # 允许的 .ffx 路径：DreamEngine 预设库 + 当前 AE 的安装 Presets / User Presets
 # （Hub 的外部预设索引只索引不复制，渲染时必须放行这些来源）
@@ -436,7 +452,7 @@ if (-not (Test-Path $ext)) {
   Write-State -Phase "failed" -Message "未安装 DreamEngine 扩展"
   exit 1
 }
-if (-not (Test-Path $presets)) {
+if (-not (Test-Path $presets) -and -not $PresetList -and -not $OnlyPreset) {
   Write-Host "[提示] 预设库还是空的：$presets" -ForegroundColor Yellow
   Write-Host "请先在面板的「预设预览」里添加 .ffx 文件。"
   Write-State -Phase "failed" -Message "预设库为空，请先导入 .ffx"
@@ -478,6 +494,9 @@ Copy-Item -Force $loader $runnerLoader
 Copy-Item -Force $sourceScript $runnerSource
 $jsx = $runnerLoader
 Write-Utf8 $sourcePathFile $runnerSource
+Write-Utf8 $previewRootPath $PreviewRoot
+Write-Utf8 $cellSizePath ([string]$CellSize)
+New-Item -ItemType Directory -Force -Path $previewPresetsDir | Out-Null
 
 # ---------- 背景：未指定就跟随面板最后一次用的 ----------
 if (-not $Background) {
@@ -492,6 +511,21 @@ if (-not $Background) {
 }
 
 # ---------- 从 TSV 生成面板读的独立索引（无 BOM，浏览器才能 JSON.parse）----------
+function Get-BestStillFrame {
+  param([string]$Folder, [string]$Base, [int]$Frames)
+  $fallback = [Math]::Max(0, [Math]::Floor($Frames / 2))
+  $dir = if ($Folder) { Join-Path $PreviewRoot ("presets\" + $Folder) } else { Join-Path $PreviewRoot "presets" }
+  if (-not (Test-Path $dir)) { return $fallback }
+  $best = $fallback
+  $bestSize = -1
+  for ($i = 0; $i -lt $Frames; $i++) {
+    $file = Join-Path $dir ($Base + "_" + $i.ToString("D4") + ".png")
+    if (-not (Test-Path $file)) { continue }
+    $size = (Get-Item -LiteralPath $file).Length
+    if ($size -gt $bestSize) { $bestSize = $size; $best = $i }
+  }
+  return $best
+}
 function Build-PluginIndex {
   $byPath = @{}
   $order = @()
@@ -507,16 +541,23 @@ function Build-PluginIndex {
     if ($r.Count -ge 10) { [void][double]::TryParse($r[9], [ref]$duration) }
     $fps = 0
     if ($r.Count -ge 11) { [void][int]::TryParse($r[10], [ref]$fps) }
+    $entryCellSize = 720
+    if ($r.Count -ge 12) { [void][int]::TryParse($r[11], [ref]$entryCellSize) }
+    if ($entryCellSize -ne 360 -and $entryCellSize -ne 720) { $entryCellSize = 720 }
     $frames = [int]$r[3]
-    $stillFrame = [Math]::Max(0, [Math]::Floor($frames / 2))
-    $stillName = "thumbs/" + $base + "_" + $stillFrame.ToString("D4") + ".png"
+    $presetFolder = ""
+    if ($r.Count -ge 13) { $presetFolder = ([string]$r[12]).Trim() }
+    $presetPrefix = if ($presetFolder) { "previews/presets/" + $presetFolder + "/" } else { "previews/presets/" }
+    $stillFrame = Get-BestStillFrame -Folder $presetFolder -Base $base -Frames $frames
+    $stillName = $presetPrefix + $base + "_" + $stillFrame.ToString("D4") + ".png"
     if (-not $byPath.ContainsKey($r[1])) { $order += $r[1] }
     $byPath[$r[1]] = [ordered]@{
       name = $r[0]
       path = $r[1]
       sheet = $sheet
-      src = "thumbs/" + $base + "_0000.png"
-      frameSrc = "thumbs/" + $base + "_%04d.png"
+      folder = $presetFolder
+      src = $presetPrefix + $base + "_0000.png"
+      frameSrc = $presetPrefix + $base + "_%04d.png"
       stillSrc = $stillName
       stillFrame = $stillFrame
       frames = $frames
@@ -529,13 +570,13 @@ function Build-PluginIndex {
       plugins = $plugins
       plugin = $true
       sliceColumns = 1
-      sliceCellSize = 720
-      sliceWidth = 720
-      sliceHeight = 720
+      sliceCellSize = $entryCellSize
+      sliceWidth = $entryCellSize
+      sliceHeight = $entryCellSize
       x = 0
       y = 0
-      width = 720
-      height = 720
+      width = $entryCellSize
+      height = $entryCellSize
     }
   }
   $items = @()
@@ -566,7 +607,7 @@ function Get-RemainingCount {
     } catch {}
   }
   if ($OnlyPreset) {
-    return $(if ($complete.ContainsKey($OnlyPreset) -or $blocked.ContainsKey($OnlyPreset)) { 0 } else { 1 })
+    return $(if ((-not $Force -and $complete.ContainsKey($OnlyPreset)) -or $blocked.ContainsKey($OnlyPreset)) { 0 } else { 1 })
   }
   $missing = 0
   # PresetList 模式只统计所选集合，不把预设库里其它未选的条目算进 remaining
@@ -684,7 +725,7 @@ for ($round = 1; $round -le $maxRounds; $round++) {
     } catch {}
   }
 
-  $all = if ($PresetList -and -not $OnlyPreset) {
+  $all = if ($OnlyPreset) { @($OnlyPreset) } elseif ($PresetList) {
     @($selectedPresets | Sort-Object)
   } else {
     @(Get-ChildItem $presets -Recurse -File -Filter *.ffx -ErrorAction SilentlyContinue |

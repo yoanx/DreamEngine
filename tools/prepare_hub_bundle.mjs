@@ -90,6 +90,8 @@ for (const name of [
   copyRequired(resolve(TOOLS_SRC, name), resolve(RELEASE, "tools", name));
 }
 copyRequired(resolve(TOOLS_SRC, "templates"), resolve(RELEASE, "tools/templates"));
+copyRequired(resolve(ROOT, "hub/installer/migrate_previews.ps1"), resolve(RELEASE, "tools/migrate_previews.ps1"));
+copyRequired(resolve(ROOT, "hub/installer/migrate_previews.ps1"), resolve(RELEASE, "installer/migrate_previews.ps1"));
 copyRequired(
   resolve(TOOLS_SRC, "install_dreamengine.ps1"),
   resolve(RELEASE, "installer/install_dreamengine.ps1"),

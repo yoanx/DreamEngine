@@ -36,6 +36,10 @@ function normalizeFps(value) {
   return [12, 24, 30, 60].includes(fps) ? fps : 24;
 }
 
+function normalizeCellSize(value) {
+  return Number(value) === 360 ? 360 : 720;
+}
+
 class RenderJob {
   /**
    * @param {object} opts
@@ -62,7 +66,7 @@ class RenderJob {
   }
 
   /**
-   * @param {{ae?: string, background?: string, limit?: number, autoClose?: boolean, rounds?: number, onlyPreset?: string}} [options]
+   * @param {{ae?: string, background?: string, limit?: number, cellSize?: number, autoClose?: boolean, rounds?: number, onlyPreset?: string}} [options]
    */
   start(options = {}) {
     if (this.running) return { ok: false, reason: "already_running" };
@@ -72,8 +76,10 @@ class RenderJob {
 
     const args = ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", this.script];
     if (options.ae) args.push("-AE", String(options.ae));
+    if (options.previewRoot) args.push("-PreviewRoot", String(options.previewRoot));
     if (options.background) args.push("-Background", String(options.background));
     if (options.fps !== undefined) args.push("-Fps", String(normalizeFps(options.fps)));
+    if (options.cellSize !== undefined) args.push("-CellSize", String(normalizeCellSize(options.cellSize)));
     if (options.limit) args.push("-Limit", String(Number(options.limit) || 40));
     if (options.rounds) args.push("-Rounds", String(Number(options.rounds) || 40));
     if (options.autoClose) args.push("-AutoClose");

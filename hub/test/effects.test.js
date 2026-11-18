@@ -21,6 +21,7 @@ const path = require("node:path");
 const effects = require("../core/effects");
 const effectFavorites = require("../core/effect_favorites");
 const { createPaths } = require("../core/paths");
+const previewPaths = require("../core/preview_paths");
 
 const CATALOG_HEADER = "matchName\tdisplayName\tcategory\tplugin\texcluded\treason\tnoPreview";
 
@@ -399,4 +400,25 @@ test("版本号正确但帧数不是 24 的预览仍会被判为旧预览", () =
   const item = effects.list(paths).items.find((entry) => entry.matchName === "ADBE Gaussian Blur");
   assert.equal(item.previewCurrent, false);
   assert.equal(item.status, "pending");
+});
+
+test("effects.list 读取自定义预览根目录中的 WebP", () => {
+  const { paths } = makeWorkspace();
+  const customRoot = path.join(paths.userRoot, "custom-previews");
+  previewPaths.writeSettings(paths, customRoot);
+  const pluginDoc = JSON.parse(fs.readFileSync(paths.pluginManifest, "utf8"));
+  pluginDoc.items[0].webpSrc = "previews/effects/webp/BCC/BCC_GLOW.webp";
+  pluginDoc.items[0].stillSrc = "previews/effects/webp/BCC/stills/BCC_GLOW.webp";
+  writeJson(paths.pluginManifest, pluginDoc);
+  const webp = path.join(customRoot, "effects", "webp", "BCC", "BCC_GLOW.webp");
+  const still = path.join(customRoot, "effects", "webp", "BCC", "stills", "BCC_GLOW.webp");
+  fs.mkdirSync(path.dirname(webp), { recursive: true });
+  fs.mkdirSync(path.dirname(still), { recursive: true });
+  fs.writeFileSync(webp, "webp");
+  fs.writeFileSync(still, "webp");
+
+  const item = effects.list(paths).items.find((entry) => entry.matchName === "BCC_GLOW");
+  assert.equal(item.webpSrc, webp);
+  assert.equal(item.stillSrc, still);
+  assert.equal(item.hasPreview, true);
 });

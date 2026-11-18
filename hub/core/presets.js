@@ -11,6 +11,8 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const presetSources = require("./preset_sources");
+const previewPaths = require("./preview_paths");
+const previewNames = require("./preview_names");
 
 /** 统一成小写正斜杠路径做比较：Windows 下大小写与分隔符都会变 */
 function norm(p) {
@@ -85,11 +87,11 @@ function list(paths) {
     const frameSrc = hit
       ? hit.frameSrc || String(hit.src || "").replace(/_0000\.png$/i, "_%04d.png")
       : "";
-    let stillThumb = hit && hit.stillSrc ? path.join(paths.dataDir, hit.stillSrc) : "";
+    let stillThumb = hit && hit.stillSrc ? previewPaths.resolveFile(paths, hit.stillSrc) : "";
     if (!stillThumb && frameSrc && Number(hit && hit.frames) > 1) {
       const middle = Math.max(0, Math.floor((Number(hit.frames) || 1) / 2));
-      stillThumb = path.join(
-        paths.dataDir,
+      stillThumb = previewPaths.resolveFile(
+        paths,
         frameSrc.replace("%04d", String(middle).padStart(4, "0")),
       );
     }
@@ -100,13 +102,15 @@ function list(paths) {
       size: stat.size,
       mtime: stat.mtimeMs,
       rendered: !!hit,
+      renderable: true,
       frames: hit ? hit.frames || 1 : 0,
       animated: hit ? !!hit.animated : false,
       duration: hit ? Number(hit.duration) || 0 : 0,
       fps: hit ? Number(hit.fps) || 0 : 0,
+      cellSize: hit ? Number(hit.sliceCellSize) || Number(hit.cellSize) || 720 : 0,
       offline: hit ? !!hit.plugin : false,
-      thumb: stillThumb || (hit && hit.src ? path.join(paths.dataDir, hit.src) : ""),
-      framePattern: frameSrc ? path.join(paths.dataDir, frameSrc) : "",
+      thumb: stillThumb || (hit && hit.src ? previewPaths.resolveFile(paths, hit.src) : ""),
+      framePattern: frameSrc ? previewPaths.resolveFile(paths, frameSrc) : "",
       external: false,
       source: "",
       sourceKind: "library",
@@ -150,6 +154,7 @@ function list(paths) {
   }
 
   items.sort((a, b) => a.name.localeCompare(b.name, "zh"));
+  previewNames.assignPresetFolders(items);
   return {
     folder: paths.presets,
     exists: rootExists || items.length > 0,

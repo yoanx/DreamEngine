@@ -34,13 +34,16 @@
     var TODO = OUT.fsName + "/next_preset_plugin_batch.tsv";
     var BACKGROUND = OUT.fsName + "/preset_plugin_background.txt";
     var FPS_FILE = OUT.fsName + "/preset_plugin_fps.txt";
+    var CELL_SIZE_FILE = OUT.fsName + "/preset_preview_cell_size.txt";
     var ENTRIES = OUT.fsName + "/preset_plugin_previews.tsv";
     var BLACKLIST = OUT.fsName + "/preset_plugin_blacklist.tsv";
     var FORCE = OUT.fsName + "/preset_plugin_force.txt";
     var PENDING = OUT.fsName + "/preset_plugin_pending_count.txt";
     var RENDER_TEMPLATE_FILE = OUT.fsName + "/preset_render_template_path.txt";
+    var PREVIEW_ROOT_FILE = OUT.fsName + "/preset_preview_root.txt";
+    var FOLDER_MAP_FILE = OUT.fsName + "/preset_folder_map.tsv";
     var PANEL_BLACKLIST = EXT + "/data/preset_plugin_blacklist.json";
-    var ENTRY_HEADER = "# name\tpath\tsheet\tframes\tanimated\tkeyStart\tkeyEnd\tbackground\tplugins\tduration\tfps";
+    var ENTRY_HEADER = "# name\tpath\tsheet\tframes\tanimated\tkeyStart\tkeyEnd\tbackground\tplugins\tduration\tfps\tcellSize\tfolder";
 
     function readText(path) {
         var f = new File(path);
@@ -52,6 +55,26 @@
         return text;
     }
 
+    function readPreviewRoot() {
+        var root = String(readText(PREVIEW_ROOT_FILE) || "").replace(/[\r\n]+/g, "");
+        return root || (EXT + "/data/previews");
+    }
+
+    function pathKey(value) {
+        return String(value || "").replace(/\\/g, "/").toLowerCase();
+    }
+
+    function readFolderMap() {
+        var map = {};
+        var rows = String(readText(FOLDER_MAP_FILE) || "").split(/\r?\n/);
+        for (var i = 0; i < rows.length; i++) {
+            if (!rows[i]) continue;
+            var cells = rows[i].split("\t");
+            if (cells.length < 2 || !cells[0] || !cells[1]) continue;
+            map[pathKey(cells[0])] = String(cells[1]);
+        }
+        return map;
+    }
     function writeText(path, text) {
         var f = new File(path);
         f.encoding = "UTF-8";
@@ -229,7 +252,11 @@
         todo.push(path);
     }
     var background = String(readText(BACKGROUND) || "photo").replace(/^\s+|\s+$/g, "");
+    var folderMap = readFolderMap();
     var renderFps = parseInt(readText(FPS_FILE), 10) || 24;
+    var previewRoot = readPreviewRoot();
+    var previewCellSize = parseInt(readText(CELL_SIZE_FILE), 10) || 720;
+    if (previewCellSize !== 360 && previewCellSize !== 720) previewCellSize = 720;
     if (!background) background = "photo";
     var pendingAtStart = parseInt(readText(PENDING), 10);
     if (!(pendingAtStart >= 0)) pendingAtStart = todo.length;
@@ -252,15 +279,18 @@
         var presetPath = todo[r];
         var sheet = ++maxSheet;
         var name = displayName(presetPath);
+        var presetFolder = folderMap[pathKey(presetPath)] || ("preset_" + sheet);
         appendLog("BEGIN", presetPath, "sheet=" + sheet);
 
         var raw = "";
         try {
             raw = PP.renderJson(presetPath, sheet, {
                 extensionPath: EXT,
+                previewRoot: previewRoot,
                 background: background,
                 fps: renderFps,
-                cellSize: 720,
+                cellSize: previewCellSize,
+                folder: presetFolder,
                 // 专用 AE 实例 + 逐条隔离：插件预设照渲，不在面板进程里冒险
                 allowPlugins: true,
                 targetComp: renderTemplateComp,
@@ -290,7 +320,9 @@
                 String(data.background || background).replace(/\t/g, " "),
                 String(data.plugins || "").replace(/\t/g, " "),
                 String(data.duration || 0),
-                String(data.fps || 0)
+                String(data.fps || 0),
+                String(previewCellSize),
+                String(data.folder || presetFolder)
             ].join("\t");
             appendText(ENTRIES, rowOut + "\r\n");
             appendLog("OK", presetPath, "sheet=" + sheet + " frames=" + data.frames);

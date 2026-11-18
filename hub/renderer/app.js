@@ -711,6 +711,9 @@ function renderPresets() {
     card.className =
       "card" + (item.external ? " external" : "") + (isPresetSelected(item.path) ? " selected" : "");
     card.dataset.path = item.path;
+    card.setAttribute("role", "button");
+    card.setAttribute("tabindex", "0");
+    card.setAttribute("aria-pressed", isPresetSelected(item.path) ? "true" : "false");
 
     const thumb = document.createElement("div");
     thumb.className = "card-thumb";
@@ -769,6 +772,21 @@ function renderPresets() {
       event.preventDefault();
       openPresetMenu(item, event.clientX, event.clientY);
     });
+    card.addEventListener("click", (event) => {
+      const target = event.target;
+      if (target && target.closest && target.closest("button, label, input, a")) return;
+      if (state.presetHoldTriggeredPath === item.path) {
+        state.presetHoldTriggeredPath = "";
+        return;
+      }
+      togglePresetSelected(item);
+    });
+    card.addEventListener("keydown", (event) => {
+      if (event.target !== card) return;
+      if (event.key !== "Enter" && event.key !== " " && event.keyCode !== 13 && event.keyCode !== 32) return;
+      event.preventDefault();
+      togglePresetSelected(item);
+    });
     grid.appendChild(card);
   }
 
@@ -790,6 +808,11 @@ function setPresetSelected(item, selected) {
       ? `已选择 ${state.presetSelection.size} 个预设`
       : "已清空预设选择",
   );
+}
+
+function togglePresetSelected(item) {
+  if (!item) return;
+  setPresetSelected(item, !isPresetSelected(item.path));
 }
 
 function bindPresetSelectCheckbox(thumb, item) {
@@ -823,6 +846,7 @@ function updatePresetSelectionUI() {
   for (const card of document.querySelectorAll("#grid .card")) {
     const selected = state.presetSelection.has(pathKey(card.dataset.path || ""));
     card.classList.toggle("selected", selected);
+    card.setAttribute("aria-pressed", selected ? "true" : "false");
     const box = card.querySelector(".card-select input");
     if (box && box.checked !== selected) box.checked = selected;
   }
@@ -918,6 +942,8 @@ async function renderSelectedPresets() {
       meta: [item.external ? "AE 预设" : "我的预设", item.rendered ? "已生成" : "未生成"].join(" · "),
       status: item.rendered ? "rendered" : "pending",
       presetPath,
+      fps: Number(item.fps) || 0,
+      cellSize: Number(item.cellSize) || 720,
     };
   });
   handoffToPreview("preset", { items, entry: { view: "presets" } });
@@ -987,6 +1013,7 @@ function bindPresetLongPress(card, item) {
     cancelPresetHold();
     state.presetHoldTimer = setTimeout(() => {
       state.presetHoldTimer = null;
+      state.presetHoldTriggeredPath = item.path;
       openPresetDelete(item);
     }, 650);
   });
@@ -1171,6 +1198,7 @@ function updateEffectSelectionUI() {
     const matchName = String((card.dataset && card.dataset.matchName) || "");
     const selected = effectIsSelected(matchName);
     card.classList.toggle("selected", selected);
+    card.setAttribute("aria-pressed", selected ? "true" : "false");
     const box = effectSelectionBox(card);
     if (box && box.checked !== selected) box.checked = selected;
   }
@@ -1536,6 +1564,25 @@ function bindEffectFavoriteButton(thumb, item) {
   thumb.appendChild(button);
 }
 
+function setEffectSelected(item, selected) {
+  const matchName = String((item && item.matchName) || "");
+  if (!matchName || !item.renderable) return;
+  if (selected) state.effectSelection.set(matchName, item);
+  else state.effectSelection.delete(matchName);
+  updateEffectSelectionUI();
+  paintEffectHint(visibleEffects().length);
+  setStatus(
+    state.effectSelection.size
+      ? `已选择 ${state.effectSelection.size} 个效果`
+      : "已清空效果选择",
+  );
+}
+
+function toggleEffectSelected(item) {
+  if (!item || !item.renderable) return;
+  setEffectSelected(item, !effectIsSelected(item.matchName));
+}
+
 function bindEffectSelectCheckbox(thumb, item) {
   if (!item.renderable) return;
   const label = document.createElement("label");
@@ -1550,18 +1597,7 @@ function bindEffectSelectCheckbox(thumb, item) {
   label.addEventListener("pointerdown", swallow);
   label.addEventListener("click", swallow);
   label.addEventListener("dblclick", swallow);
-  box.addEventListener("change", () => {
-    const matchName = String(item.matchName || "");
-    if (box.checked) state.effectSelection.set(matchName, item);
-    else state.effectSelection.delete(matchName);
-    updateEffectSelectionUI();
-    paintEffectHint(visibleEffects().length);
-    setStatus(
-      state.effectSelection.size
-        ? `已选择 ${state.effectSelection.size} 个效果`
-        : "已清空效果选择",
-    );
-  });
+  box.addEventListener("change", () => setEffectSelected(item, box.checked));
   thumb.appendChild(label);
 }
 
@@ -1703,6 +1739,9 @@ function effectCardNode(item) {
   const card = document.createElement("div");
   card.className = "card" + (effectIsSelected(item.matchName) ? " selected" : "");
   card.dataset.matchName = String(item.matchName || "");
+  card.setAttribute("role", "button");
+  card.setAttribute("tabindex", "0");
+  card.setAttribute("aria-pressed", effectIsSelected(item.matchName) ? "true" : "false");
 
   const name = effectDisplayName(item);
   const category = effectCategoryLabel(item);
@@ -1766,6 +1805,17 @@ function effectCardNode(item) {
   });
   card.appendChild(thumb);
   card.appendChild(body);
+  card.addEventListener("click", (event) => {
+    const target = event.target;
+    if (target && target.closest && target.closest("button, label, input, a")) return;
+    toggleEffectSelected(item);
+  });
+  card.addEventListener("keydown", (event) => {
+    if (event.target !== card) return;
+    if (event.key !== "Enter" && event.key !== " " && event.keyCode !== 13 && event.keyCode !== 32) return;
+    event.preventDefault();
+    toggleEffectSelected(item);
+  });
   return card;
 }
 
@@ -2068,6 +2118,8 @@ async function renderSinglePreset(item) {
         meta: [item.external ? "AE 预设" : "我的预设", item.rendered ? "已生成" : "未生成"].join(" · "),
         status: item.rendered ? "rendered" : "pending",
         presetPath: item.path,
+        fps: Number(item.fps) || 0,
+        cellSize: Number(item.cellSize) || 720,
       },
     ],
     entry: { view: "presets" },
@@ -2144,6 +2196,9 @@ function fillSettings(snap) {
   $("setPresets").textContent = snap.paths.presets;
   $("setBg").textContent = snap.paths.backgrounds;
   $("setProbe").textContent = snap.paths.probe;
+  $("setPreviewRoot").textContent = snap.paths.previewRoot || "—";
+  const previewSize = (snap.paths && snap.paths.previewSize) || { bytes: 0, files: 0 };
+  $("setPreviewSize").textContent = (previewSize.bytes ? formatSize(previewSize.bytes) : "0 B") + ` · ${previewSize.files || 0} 个文件`;
   const cacheNode = $("setParamsCache");
   if (cacheNode) cacheNode.textContent = snap.paths.effectParams || "—";
   const guardNode = $("setAeGuard");
@@ -2152,6 +2207,71 @@ function fillSettings(snap) {
       window.PreviewFlow && window.PreviewFlow.aeGuardEnabled
         ? window.PreviewFlow.aeGuardEnabled()
         : true;
+  }
+}
+
+async function choosePreviewRoot() {
+  if (!hubHas("choosePreviewRoot")) {
+    setStatus("主进程尚未提供预览目录设置接口", true);
+    return;
+  }
+  if (anyJobBusy()) {
+    setStatus("请先停止当前渲染任务，再切换预览目录", true);
+    return;
+  }
+  try {
+    const result = await window.hub.choosePreviewRoot();
+    if (!result || !result.ok) {
+      if (result && result.reason === "cancelled") {
+        setStatus("已取消切换预览目录");
+        return;
+      }
+      const messages = {
+        busy: "有渲染任务正在运行，请先停止",
+        nested_root: "新目录不能位于当前预览目录内部，也不能反向包含当前目录",
+        target_unavailable: "目标目录不可用",
+      };
+      const reason = String((result && result.reason) || "");
+      const detail = String((result && result.detail) || "");
+      setStatus("切换预览目录失败：" + (messages[reason] || detail || reason || "未知原因"), true);
+      return;
+    }
+    await refreshAeState();
+    await loadPresets();
+    await loadEffects();
+    setStatus(`预览产物目录已切换到 ${result.root}`);
+  } catch (error) {
+    setStatus("切换预览目录失败：" + String((error && error.message) || error), true);
+  }
+}
+
+async function resetPreviewRoot() {
+  if (!hubHas("resetPreviewRoot")) {
+    setStatus("主进程尚未提供恢复默认预览目录接口", true);
+    return;
+  }
+  if (anyJobBusy()) {
+    setStatus("请先停止当前渲染任务，再恢复默认预览目录", true);
+    return;
+  }
+  try {
+    const result = await window.hub.resetPreviewRoot();
+    if (!result || !result.ok) {
+      const messages = {
+        busy: "有渲染任务正在运行，请先停止",
+        migration_failed: "迁移预览文件失败",
+      };
+      const reason = String((result && result.reason) || "");
+      const detail = String((result && result.detail) || "");
+      setStatus("恢复默认预览目录失败：" + (messages[reason] || detail || reason || "未知原因"), true);
+      return;
+    }
+    await refreshAeState();
+    await loadPresets();
+    await loadEffects();
+    setStatus(`已恢复默认预览目录：${$("setPreviewRoot").textContent}`);
+  } catch (error) {
+    setStatus("恢复默认预览目录失败：" + String((error && error.message) || error), true);
   }
 }
 
@@ -2364,6 +2484,9 @@ function bind() {
   $("btnOpenExt").addEventListener("click", () => window.hub.reveal($("setExtDir").textContent));
   $("btnOpenPresets").addEventListener("click", () => window.hub.reveal($("setPresets").textContent));
   $("btnOpenProbe").addEventListener("click", () => window.hub.reveal($("setProbe").textContent));
+  $("btnChoosePreviewRoot").addEventListener("click", choosePreviewRoot);
+  $("btnResetPreviewRoot").addEventListener("click", resetPreviewRoot);
+  $("btnOpenPreviewRoot").addEventListener("click", () => window.hub.reveal($("setPreviewRoot").textContent));
   $("btnOpenParamsCache").addEventListener("click", async () => {
     if (!hubHas("openEffectParamsDir")) {
       setStatus("主进程尚未提供属性缓存目录接口", true);

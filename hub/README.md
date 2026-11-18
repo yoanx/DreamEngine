@@ -47,6 +47,7 @@ npm test          # Node 22+ 内置 test runner，无需 Electron / After Effect
   勾选外部预设后通过 `-PresetList` 渲染。
 - 只渲染所选效果：Hub 写 `DreamEngineProbe/next_plugin_batch.tsv`（`matchName \t frames \t plugin`），
   再调用 `-Todo <file>`；`-Force` 表示忽略已生成/黑名单并重渲所选。
+- 预设预览可在确认页选择 `360 × 360` 或 `720 × 720`；360 是实际渲染尺寸，不会先生成 720 再缩小。
 - 只渲染所选预设：Hub 写 `DreamEngineProbe/next_preset_selection.tsv`（每行一个绝对路径），
   再调用 `generate_plugin_presets.ps1 -PresetList <file> [-Force]`。
 - 文本 / 变换 / 蒙版类 AE 预设不新增效果，「是否应用成功」不能只数效果：
@@ -58,6 +59,23 @@ npm test          # Node 22+ 内置 test runner，无需 Electron / After Effect
   本身不参与渲染（只给 duplicate 继承输出设置），每轮开始先清残留；成品帧渲染前也会
   清同名旧帧与 `_raw_` 中间帧，避免 AE 弹「文件已存在，是否覆盖」。
 - 选择模式不会写 `plugin_auto_catalog.enabled`，避免 JSX 重建清单覆盖用户选择。
+
+## 预览产物目录
+
+Hub 的「设置 → 预览产物」可以选择一个统一根目录，效果与预设共用：
+
+```text
+<预览根目录>\
+  effects\
+  presets\
+```
+
+- 未设置时继续使用扩展数据目录下的 `data/previews`。
+- 设置页会显示当前预览产物的总占用空间和文件数。
+- 切换目录时会迁移索引中已引用的 PNG / WebP，并同步更新效果与预设索引；迁移失败会回滚，不会把设置切到半完成状态。
+- 安装/升级新版本时也会自动执行同样的迁移，包括随包发布的原始 L1 预览。
+- 索引保存 `previews/effects/...`、`previews/presets/...` 逻辑路径，面板按设置解析实际文件位置。
+- 随安装包发布的内置 L1 原始预览不迁移；Hub 后续生成的 WebP 派生图会跟随预览根目录。
 
 ## 效果库
 

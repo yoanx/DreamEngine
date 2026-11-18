@@ -864,7 +864,7 @@ body.sidebar-resizing {
   .card { transition: none; }
 }
 
-/* 卡片左上角的选择框：只在预设库出现，不影响收藏/分类按钮和长按菜单 */
+/* 卡片左上角的选择框：不影响收藏/分类按钮和长按菜单 */
 .card-select {
   position: absolute;
   z-index: 6;

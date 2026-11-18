@@ -45,6 +45,8 @@ $Source = (Resolve-Path $Source).Path
 $extSrc   = Join-Path $Source "extension"
 $l1Src    = Join-Path $Source "l1"
 $toolsSrc = Join-Path $Source "tools"
+$docs     = [Environment]::GetFolderPath("MyDocuments")
+$userPresets = Join-Path $docs "DreamEngine\presets"
 
 if (-not (Test-Path (Join-Path $extSrc "index.html"))) {
   Fail "安装源不完整：缺少 extension\index.html（源目录：$Source）"
@@ -99,6 +101,8 @@ $KEEP = @(
   "preset_plugin_manifest.json",
   "preset_plugin_blacklist.json",
   "preset_plugin_previews.tsv",
+  "previews",
+  "preview_settings.json",
   "thumbs"
 )
 
@@ -127,6 +131,7 @@ if (Test-Path $dataDst) {
 if (-not $WhatIf) {
   New-Item -ItemType Directory -Force -Path $Target | Out-Null
   New-Item -ItemType Directory -Force -Path $dataDst | Out-Null
+  New-Item -ItemType Directory -Force -Path $userPresets | Out-Null
   Copy-Item -Path (Join-Path $extSrc "*") -Destination $Target -Recurse -Force
 }
 Say "扩展本体已部署" "Green"
@@ -207,6 +212,27 @@ if (-not (Test-Path $l1ManifestSrc)) {
     }
     $deployed = @(Get-ChildItem (Join-Path $dataDst "thumbs") -Recurse -File -ErrorAction SilentlyContinue).Count
     Say "内置预览已部署：$deployed 张图" "Green"
+  }
+}
+
+# ---------- 6.5 迁移旧预览到统一根目录 ----------
+$migrationScript = Join-Path $PSScriptRoot "migrate_previews.ps1"
+$devMigration = Join-Path (Split-Path -Parent $PSScriptRoot) "hub\installer\migrate_previews.ps1"
+if (Test-Path -LiteralPath $devMigration) {
+  $migrationScript = $devMigration
+} elseif (-not (Test-Path -LiteralPath $migrationScript)) {
+  $migrationScript = Join-Path $toolsSrc "migrate_previews.ps1"
+}
+if (-not $WhatIf) {
+  if (Test-Path -LiteralPath $migrationScript) {
+    try {
+      & $migrationScript -DataDir $dataDst -Quiet
+      Say "旧预览已迁移到统一预览根目录" "Green"
+    } catch {
+      Say "预览迁移失败，已保留原预览和索引：$($_.Exception.Message)" "Yellow"
+    }
+  } else {
+    Say "未找到 migrate_previews.ps1，跳过预览迁移" "Yellow"
   }
 }
 

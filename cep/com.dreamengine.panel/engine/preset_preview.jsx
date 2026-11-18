@@ -28,6 +28,9 @@ var AEV_PresetPreview = (function () {
     var DEFAULT_FPS = 24;
     var MAX_SPAN_SECONDS = 6;     // 关键帧跨度上限，避免渲出几百帧
     var MAX_PROPS = 900;          // 属性遍历上限，防止深树拖慢 AE
+    var TEXT_STAGE_WIDTH = 1920;  // AE 自带文字预设的原始设计画布
+    var TEXT_STAGE_HEIGHT = 1080;
+    var EXPRESSION_SPAN_SECONDS = 3;
 
     function frameLimit(fps) {
         return Math.max(1, Math.ceil(MAX_SPAN_SECONDS * Math.max(1, Number(fps) || DEFAULT_FPS)));
@@ -81,8 +84,18 @@ var AEV_PresetPreview = (function () {
         return dir;
     }
 
-    function thumbDir(extensionPath) {
-        var dir = new Folder(String(extensionPath || "") + "/data/thumbs");
+    function safeFolderName(value) {
+        var text = String(value || "").replace(/[^A-Za-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "");
+        return text || "preset";
+    }
+
+    function thumbDir(extensionPath, previewRoot, folderName) {
+        var root = String(previewRoot || "");
+        var base = root
+            ? new Folder(root + "/presets")
+            : new Folder(String(extensionPath || "") + "/data/thumbs");
+        if (!base.exists) base.create();
+        var dir = new Folder(base.fsName + "/" + safeFolderName(folderName));
         if (!dir.exists) dir.create();
         return dir;
     }
@@ -213,8 +226,29 @@ var AEV_PresetPreview = (function () {
      * 而是新增 Text Animator 或直接给属性打关键帧；只数效果会把它们
      * 误判成「没应用」。整树关键帧用 walkKeys 统计（只读 numKeys/keyTime）。
      */
+    /** 统计属性树里启用的非空表达式；只读 expression，不读插件参数值。 */
+    function walkExpressions(group, depth, state) {
+        if (depth > 5 || state.count > MAX_PROPS) return;
+        var n = 0;
+        try { n = group.numProperties; } catch (e) { return; }
+        for (var i = 1; i <= n; i++) {
+            var p = null;
+            try { p = group.property(i); } catch (e2) { continue; }
+            if (!p) continue;
+            state.count++;
+            if (state.count > MAX_PROPS) return;
+            try {
+                if (p.canSetExpression && p.expressionEnabled && String(p.expression || "")) {
+                    state.found++;
+                }
+            } catch (eExpr) {}
+            var sub = 0;
+            try { sub = p.numProperties; } catch (eSub) { sub = 0; }
+            if (sub > 0) walkExpressions(p, depth + 1, state);
+        }
+    }
     function snapshot(comp) {
-        var effects = 0, keyProps = 0;
+        var effects = 0, keyProps = 0, expressions = 0;
         var textAnimators = 0, masks = 0, layers = 0;
         var keys = { min: 1e9, max: -1e9, keys: 0, count: 0 };
         walkLayerTree(comp, function (layer) {
@@ -254,10 +288,15 @@ var AEV_PresetPreview = (function () {
             } catch (e9) {}
             // 整棵属性树的关键帧（含变换 / 文本 / 蒙版）
             walkKeys(layer, 0, keys);
+            // Expressions 分类的预设只写表达式，不新增效果、关键帧或动画器。
+            var expressionState = { count: 0, found: 0 };
+            walkExpressions(layer, 0, expressionState);
+            expressions += expressionState.found;
         });
         return {
             effects: effects,
             keyProps: keyProps,
+            expressions: expressions,
             allKeys: keys.keys,
             textAnimators: textAnimators,
             masks: masks,
@@ -269,6 +308,7 @@ var AEV_PresetPreview = (function () {
     function grew(before, after) {
         return after.effects > before.effects ||
             after.keyProps > before.keyProps ||
+            after.expressions > before.expressions ||
             after.allKeys > before.allKeys ||
             after.textAnimators > before.textAnimators ||
             after.masks > before.masks ||
@@ -289,6 +329,60 @@ var AEV_PresetPreview = (function () {
         return out;
     }
 
+    /**
+     * applyPreset 会替换示例文字，应用前的居中偏移随即失效。
+     * 在预设真正落地后按动画全程的实际文字边界重新居中；若位置有关键帧，
+     * 整条位移轨迹一起平移，不破坏预设本身的相对运动。
+     */
+    function recenterTextLayer(comp, layer, centerX, centerY, endTime) {
+        var minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
+        var transform = null, position = null, anchor = null;
+        try {
+            transform = layer.property("ADBE Transform Group");
+            position = transform.property("ADBE Position");
+            anchor = transform.property("ADBE Anchor Point");
+        } catch (eProps) {
+            return false;
+        }
+        for (var i = 0; i <= 12; i++) {
+            var t = Math.max(0, Number(endTime) || 0) * i / 12;
+            try {
+                comp.time = t;
+                var p = position.value;
+                var a = anchor.value;
+                var rect = layer.sourceRectAtTime(t, false);
+                minX = Math.min(minX, p[0] + rect.left - a[0]);
+                maxX = Math.max(maxX, p[0] + rect.left + rect.width - a[0]);
+                minY = Math.min(minY, p[1] + rect.top - a[1]);
+                maxY = Math.max(maxY, p[1] + rect.top + rect.height - a[1]);
+            } catch (eBounds) {}
+        }
+        if (minX === 1e9 || maxX === -1e9 || minY === 1e9 || maxY === -1e9) return false;
+        var dx = Number(centerX) - (minX + maxX) / 2;
+        var dy = Number(centerY) - (minY + maxY) / 2;
+        var keys = 0;
+        try { keys = Number(position.numKeys) || 0; } catch (eKeys) { keys = 0; }
+        try {
+            if (keys > 0) {
+                for (var k = 1; k <= keys; k++) {
+                    var keyValue = position.keyValue(k);
+                    keyValue[0] = Number(keyValue[0]) + dx;
+                    keyValue[1] = Number(keyValue[1]) + dy;
+                    position.setValueAtTime(position.keyTime(k), keyValue);
+                }
+            } else {
+                var value = position.value;
+                value[0] = Number(value[0]) + dx;
+                value[1] = Number(value[1]) + dy;
+                position.setValue(value);
+            }
+        } catch (eShift) {
+            return false;
+        } finally {
+            try { comp.time = 0; } catch (eTime) {}
+        }
+        return true;
+    }
     /** 清空合成里的图层（换素材重试时用） */
     function clearCompLayers(comp) {
         var guard = 0;
@@ -432,10 +526,15 @@ var AEV_PresetPreview = (function () {
     }
 
     /** 搭背景层：内置素材 comp 或用户上传的图片 */
-    function addBackground(comp, background, size, trash, extensionPath) {
+    function addBackground(comp, background, size, trash, extensionPath, textOnly) {
         var id = String(background || "photo");
         var isCustom = id.indexOf("/") >= 0 || id.indexOf("\\") >= 0;
         if (!isCustom) {
+            if (id === "text" && textOnly) {
+                var solidBg = comp.layers.addSolid([0.07, 0.08, 0.09], "textBg", size, size, 1);
+                solidBg.moveToEnd();
+                return { layer: solidBg, targets: [] };
+            }
             var asset = null;
             try {
                 var resolvedBackground = id === "photo" &&
@@ -506,7 +605,7 @@ var AEV_PresetPreview = (function () {
      *
      * presetPath  .ffx 路径
      * sheetIndex  稳定编号（决定输出文件名 preset_<n>_####.png）
-     * options     { extensionPath, background, cellSize }
+     * options     { extensionPath, previewRoot, background, cellSize, folder }
      */
     function renderJson(presetPath, sheetIndex, options) {
         var opts = options || {};
@@ -516,11 +615,14 @@ var AEV_PresetPreview = (function () {
         var background = String(opts.background || "photo");
         var allowPlugins = !!opts.allowPlugins;
         var extensionPath = String(opts.extensionPath || "");
+        var previewRoot = String(opts.previewRoot || "");
+        var presetFolder = safeFolderName(opts.folder || ("preset_" + pad(sheetIndex, 3)));
         var file = new File(String(presetPath || ""));
         if (!file.exists) return result("error", [["reason", "no_preset"]]);
         if (!extensionPath) return result("error", [["reason", "no_extension_path"]]);
+        var preset = presetInfo(presetPath);
 
-        var folder = thumbDir(extensionPath);
+        var folder = thumbDir(extensionPath, previewRoot, presetFolder);
         if (!folder || !folder.exists) return result("error", [["reason", "no_output_folder"]]);
         if (typeof AEV_Store !== "undefined" && AEV_Store.writePermission() === 0) {
             return result("error", [["reason", "script_write_disabled"]]);
@@ -572,7 +674,7 @@ var AEV_PresetPreview = (function () {
             }
             comp.time = 0; // applyPreset 会把关键帧放在当前时间指示器上
 
-            var backgroundInfo = addBackground(comp, background, size, trash, extensionPath);
+            var backgroundInfo = addBackground(comp, background, size, trash, extensionPath, preset.textOnly);
             var bgLayer = backgroundInfo && backgroundInfo.layer;
             if (!bgLayer) return result("error", [["reason", "bad_background"]]);
 
@@ -603,26 +705,59 @@ var AEV_PresetPreview = (function () {
             var applied = false;
 
             /**
-             * 凑到文本层上：场景里已有文本层就复用（保留用户选的背景），
-             * 没有就换「文字」专用素材。返回 true / false；null 表示没有可用的文本底。
+             * AE 自带文字预设按 1920x1080 设计。先在全尺寸透明舞台应用，
+             * 再缩放到 360/720 方画布中央裁切；直接落到小画布会让路径和位移动出画面。
              */
             function applyOnTextStage() {
-                var stageText = textTargets(comp);
-                if (stageText.length > 0) {
-                    return tryApply(stageText, "textLayers:" + effectiveBackground);
+                var stage = app.project.items.addComp(
+                    "DE_preset_text_stage_" + pad(sheetIndex, 3),
+                    TEXT_STAGE_WIDTH, TEXT_STAGE_HEIGHT, 1, MAX_SPAN_SECONDS + 2, fps
+                );
+                trash.comps.push(stage);
+                var layer = stage.layers.addText("Dream\rEngine");
+                try {
+                    var titleProp = layer.property("ADBE Text Properties").property("ADBE Text Document");
+                    var titleDoc = titleProp.value;
+                    titleDoc.fontSize = 300;
+                    titleDoc.fillColor = [0.93, 0.94, 0.9];
+                    titleProp.setValue(titleDoc);
+                } catch (eStyle) {}
+                stage.time = 0;
+                selectOnly(stage, layer);
+                var before = snapshot(stage);
+                try {
+                    layer.applyPreset(file);
+                } catch (eApply) {
+                    lastError = String(eApply);
+                    attempts.push("textStage1920x1080|error|" + lastError);
+                    return false;
                 }
-                if (String(background) === "text" || effectiveBackground === "text") return null;
-                clearCompLayers(comp);
-                var textAsset = addBackground(comp, "text", size, trash, extensionPath);
-                if (!textAsset || !textAsset.targets || textAsset.targets.length === 0) return null;
-                effectiveBackground = "text";
-                return tryApply(textAsset.targets, "textAsset");
+                var after = snapshot(stage);
+                attempts.push("textStage1920x1080" +
+                    "|effects+" + (after.effects - before.effects) +
+                    "|expr+" + (after.expressions - before.expressions) +
+                    "|keys+" + (after.allKeys - before.allKeys) +
+                    "|animators+" + (after.textAnimators - before.textAnimators) +
+                    "|masks+" + (after.masks - before.masks));
+                if (!grew(before, after)) return false;
+                recenterTextLayer(
+                    stage, layer,
+                    TEXT_STAGE_WIDTH / 2, TEXT_STAGE_HEIGHT / 2,
+                    MAX_SPAN_SECONDS
+                );
+                var nested = comp.layers.add(stage);
+                try {
+                    var nestedTransform = nested.property("ADBE Transform Group");
+                    nestedTransform.property("ADBE Position").setValue([size / 2, size / 2]);
+                    var stageScale = size / TEXT_STAGE_HEIGHT * 100;
+                    nestedTransform.property("ADBE Scale").setValue([stageScale, stageScale]);
+                } catch (eNested) {}
+                return true;
             }
-
             // 纯文本预设不产生效果，而且落在合成层上只会在蒙版上留半套结果
             //（实机：360 度循环落到合成层后 masks+1、keys 不变，被误判成「已应用」，
             //  最后只出一张静态图）。按 ffx 内容先把它直接落到文本层。
-            var preset = presetInfo(presetPath);
+
             if (preset.textOnly) {
                 applied = applyOnTextStage() === true;
             } else {
@@ -658,19 +793,28 @@ var AEV_PresetPreview = (function () {
             }
 
             var range = keyRange(comp);
-            var animated = range.keys > 0 && (range.max - range.min) > 1 / fps;
+            var expressionCount = snapshot(comp).expressions;
+            var keyAnimated = range.keys > 0 && (range.max - range.min) > 1 / fps;
+            // 表达式也会随时间变化，不能因为没有关键帧就只渲一帧。
+            var expressionAnimated = expressionCount > 0;
+            var animated = keyAnimated || expressionAnimated;
             var start = 0;
             var span = 1 / fps;
             var truncated = false;
             var keyStart = 0;
             var keyEnd = 0;
-            if (animated) {
+            if (keyAnimated) {
                 start = range.min;
                 keyStart = range.min;
                 keyEnd = range.max;
                 var end = Math.min(range.max, range.min + MAX_SPAN_SECONDS);
                 truncated = range.max > end;
                 span = Math.max(1 / fps, end - start);
+            } else if (expressionAnimated) {
+                start = 0;
+                keyStart = 0;
+                keyEnd = Math.min(EXPRESSION_SPAN_SECONDS, MAX_SPAN_SECONDS);
+                span = Math.max(1 / fps, keyEnd - start);
             } else {
                 keyStart = 0;
                 keyEnd = 0;
@@ -681,6 +825,7 @@ var AEV_PresetPreview = (function () {
                 comp.duration = Math.max(1 / fps, start + span + 1 / fps);
             } catch (eDur) {}
 
+            var renderStart = Math.max(0, start);
             queueItem = opts.targetQueueItem
                 ? opts.targetQueueItem.duplicate()
                 : app.project.renderQueue.items.add(comp);
@@ -692,14 +837,38 @@ var AEV_PresetPreview = (function () {
             // 模板队列可能处于 DONE；必须先 requeue，DONE 状态禁止改 file。
             queueItem.render = true;
             outputModule.file = new File(folder.fsName + "/" + rawBase + "_[####].png");
-            queueItem.timeSpanStart = start;
+            queueItem.timeSpanStart = renderStart;
             queueItem.timeSpanDuration = span;
+            queueItem.render = false;
+            queueItem.render = true;
             app.project.renderQueue.render();
 
             // 渲染队列按 6 fps 输出；6 秒最多保留 36 帧，避免被压缩成快放
-            rawFiles = folder.getFiles(rawBase + "_*.png");
-            if (!rawFiles || rawFiles.length === 0) {
-                return result("error", [["reason", "no_frames"]]);
+            rawFiles = folder.getFiles(rawBase + "_*.png") || [];
+            if (rawFiles.length === 0) {
+                // AE 2023 偶尔会在模板队列第一次入队时不落文件；重建队列项重试一次。
+                try { if (queueItem && ownsQueueItem) queueItem.remove(); } catch (eRetryRemove) {}
+                queueItem = null;
+                clearKeptFrames();
+                queueItem = opts.targetQueueItem
+                    ? opts.targetQueueItem.duplicate()
+                    : app.project.renderQueue.items.add(comp);
+                var retryOutputModule = queueItem.outputModule(1);
+                if (!opts.targetQueueItem) {
+                    var retryTemplate = applyPngTemplate(retryOutputModule);
+                    if (!retryTemplate) return result("error", [["reason", "no_png_template"]]);
+                }
+                queueItem.render = true;
+                retryOutputModule.file = new File(folder.fsName + "/" + rawBase + "_[####].png");
+                queueItem.timeSpanStart = renderStart;
+                queueItem.timeSpanDuration = span;
+                queueItem.render = false;
+                queueItem.render = true;
+                app.project.renderQueue.render();
+                rawFiles = folder.getFiles(rawBase + "_*.png") || [];
+                if (rawFiles.length === 0) {
+                    return result("error", [["reason", "no_frames"], ["retried", "true"]]);
+                }
             }
             rawFiles.sort(function (a, b) {
                 return String(a.name) < String(b.name) ? -1 : 1;
@@ -729,6 +898,7 @@ var AEV_PresetPreview = (function () {
                 ["truncated", truncated ? "true" : "false"],
                 ["background", effectiveBackground],
                 ["plugins", plugins.join(",")],
+                ["folder", presetFolder],
                 ["files", kept.join(",")]
             ]);
         } catch (e) {

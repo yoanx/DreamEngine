@@ -16,6 +16,8 @@ var AEV_Library = (function () {
     catalog: [],
     items: [],
     extensionPath: "",
+    previewRoot: "",
+    previewDataCache: {},
     // 有图但配方/素材已变、需要重渲的条目（来自 AEV_PreviewGen.staleList）
     stale: {},
     // 插件 L2 预览：被拉黑的效果与已生成数量（独立索引，不进 entries）
@@ -110,9 +112,13 @@ var AEV_Library = (function () {
     return button;
   }
 
-  function loadJson(path, callback) {
+  function loadJson(path, callback, cacheBust) {
     var request = new XMLHttpRequest();
-    request.open("GET", path, true);
+    var url = String(path || "");
+    if (cacheBust) {
+      url += (url.indexOf("?") >= 0 ? "&" : "?") + "_=" + new Date().getTime();
+    }
+    request.open("GET", url, true);
     request.onreadystatechange = function () {
       if (request.readyState !== 4) return;
       if ((request.status === 200 || request.status === 0) && request.responseText) {
@@ -130,9 +136,10 @@ var AEV_Library = (function () {
 
   /** 可选索引：插件 L2 索引/黑名单在首次安装时根本不存在，不能中断 refresh */
   function loadOptionalJson(path, callback) {
+    // 可选索引会由 Hub 在面板运行期间重写；加时间戳避免 CEP 返回旧的本地缓存。
     loadJson(path, function (error, data) {
       callback(error ? null : data);
-    });
+    }, true);
   }
 
   /**
@@ -141,6 +148,12 @@ var AEV_Library = (function () {
    * 模块里的会话缓存（枚举 1371 条的结果）就白丢了。
    * force=true 表示「重新扫描」——用户装了新插件后要能看到。
    */
+  function loadPreviewRoot(callback) {
+    loadOptionalJson("data/preview_settings.json", function (data) {
+      state.previewRoot = String((data && data.root) || "");
+      callback();
+    });
+  }
   function getCatalog(callback, force) {
     Bridge.getExtensionPath(function (extensionPath) {
       if (!extensionPath) {
@@ -292,25 +305,31 @@ var AEV_Library = (function () {
    */
   function attachPreview(thumb, card, preview, isAnimated, stillIndex) {
     var slice = AEV_ViewModel.spriteSlice(preview, state.manifest);
+    var stillUrl = preview.stillSrc ? dataUrl(preview.stillSrc) : "";
     thumb.style.backgroundSize = slice.size;
     thumb.style.backgroundPosition = slice.position;
     if (preview.webpSrc) {
       thumb.style.backgroundSize = "cover";
       thumb.style.backgroundPosition = "center";
-      thumb.style.backgroundImage =
-        'url("' + dataUrl(preview.stillSrc || preview.webpSrc) + '")';
+      stillUrl = stillUrl || dataUrl(preview.webpSrc);
+      thumb.style.backgroundImage = 'url("' + stillUrl + '")';
       var animated = document.createElement("img");
-      animated.className = "preview-webp";
+      animated.className = "preview-webp still";
       animated.alt = "";
+      animated.src = stillUrl;
       thumb.appendChild(animated);
       var webpTimer = null;
+      var showingAnimation = false;
       var stopWebp = function () {
         if (webpTimer) {
           clearTimeout(webpTimer);
           webpTimer = null;
         }
+        showingAnimation = false;
+        animated.onload = null;
         animated.classList.remove("playing");
-        if (animated.getAttribute("src")) animated.removeAttribute("src");
+        animated.classList.add("still");
+        if (animated.getAttribute("src") !== stillUrl) animated.src = stillUrl;
         for (var s = 0; s < activePreviewStops.length; s++) {
           if (activePreviewStops[s] === stopWebp) {
             activePreviewStops.splice(s, 1);
@@ -318,25 +337,31 @@ var AEV_Library = (function () {
           }
         }
       };
+      var startWebp = function () {
+        if (!isAnimated || Number(preview.frames) <= 1) return;
+        if (showingAnimation || webpTimer || Date.now() < previewSuppressUntil) return;
+        webpTimer = setTimeout(function () {
+          webpTimer = null;
+          showingAnimation = true;
+          animated.onload = function () {
+            if (!showingAnimation) return;
+            animated.classList.remove("still");
+            animated.classList.add("playing");
+          };
+          animated.src = dataUrl(preview.webpSrc);
+          if (activePreviewStops.indexOf(stopWebp) < 0) activePreviewStops.push(stopWebp);
+        }, 220);
+      };
       if (isAnimated && Number(preview.frames) > 1) {
-        card.addEventListener("mouseenter", function () {
-          if (Date.now() < previewSuppressUntil) return;
-          if (webpTimer) clearTimeout(webpTimer);
-          webpTimer = setTimeout(function () {
-            webpTimer = null;
-            animated.onload = function () {
-              animated.classList.add("playing");
-            };
-            animated.src = dataUrl(preview.webpSrc);
-            if (activePreviewStops.indexOf(stopWebp) < 0) activePreviewStops.push(stopWebp);
-          }, 220);
-        });
+        card.addEventListener("mouseenter", startWebp);
+        // 滚轮滚动不会重新触发 mouseenter；滚动结束后由全局恢复事件补播。
+        card.addEventListener("aev:resume-preview", startWebp);
         card.addEventListener("mouseleave", stopWebp);
       }
       return;
     }
     if (!preview.frameSrc) {
-      thumb.style.backgroundImage = 'url("' + dataUrl(preview.src) + '")';
+      thumb.style.backgroundImage = 'url("' + (stillUrl || dataUrl(preview.src)) + '")';
       return;
     }
     var frameCount = preview.frames || 1;
@@ -387,10 +412,15 @@ var AEV_Library = (function () {
         if (card.matches(":hover")) startPlaying();
       });
     };
-    var still = stillIndex === undefined ? Math.floor(frameCount / 2) : stillIndex;
+    var indexedStill = Number(preview.stillFrame);
+    var still = stillIndex === undefined
+      ? (isFinite(indexedStill) && indexedStill >= 0 ? indexedStill : Math.floor(frameCount / 2))
+      : stillIndex;
     if (still < 0) still = 0;
     if (still > frameCount - 1) still = frameCount - 1;
-    showFrame(still);
+    // 显式 stillSrc 是索引生成时选出的可见静止帧；优先用它，避免首帧全黑。
+    if (stillUrl) thumb.style.backgroundImage = 'url("' + stillUrl + '")';
+    else showFrame(still);
     if (isAnimated && frameCount > 1) {
       card.addEventListener("mouseenter", function () {
         if (hoverTimer) clearTimeout(hoverTimer);
@@ -399,6 +429,8 @@ var AEV_Library = (function () {
           play();
         }, 220);
       });
+      // 滚动停止后，鼠标可能已经停在卡片上，但不会再发 mouseenter。
+      card.addEventListener("aev:resume-preview", play);
       card.addEventListener("mouseleave", function () {
         if (hoverTimer) {
           clearTimeout(hoverTimer);
@@ -1075,9 +1107,49 @@ var AEV_Library = (function () {
     return dataUrl(String(template).replace("%04d", zeroPad(index, 4)));
   }
 
+  function externalPreviewUrl(root, relative) {
+    var key = root + "/" + relative;
+    if (state.previewDataCache[key]) return state.previewDataCache[key];
+    if (window.cep && window.cep.fs && typeof window.cep.fs.readFile === "function") {
+      var encoding = window.cep.encoding && window.cep.encoding.Base64;
+      if (encoding !== undefined) {
+        var nativePath = key.replace(/\//g, "\\");
+        var result = window.cep.fs.readFile(nativePath, encoding);
+        if (result && result.err === 0 && result.data) {
+          var ext = String(relative).toLowerCase().split(".").pop();
+          var mime = ext === "webp" ? "image/webp"
+            : ext === "png" ? "image/png"
+            : ext === "jpg" || ext === "jpeg" ? "image/jpeg"
+            : ext === "gif" ? "image/gif"
+            : "application/octet-stream";
+          // CEP 的 readFile(Base64) 可能带换行；直接放进 CSS url() 会被
+          // Chromium 判为无效，缩略图就是空的。先去掉所有空白。
+          var base64 = String(result.data).replace(/\s/g, "");
+          var url = "data:" + mime + ";base64," + base64;
+          state.previewDataCache[key] = url;
+          return url;
+        }
+      }
+    }
+    return "file:///" + encodeURI(key).replace(/#/g, "%23");
+  }
+
   /** 文件系统中的中文目录和空格必须编码后再交给旧版 CEP。 */
   function dataUrl(relative) {
     var value = String(relative || "").replace(/\\/g, "/").replace(/^\/+/, "");
+    if (value.indexOf("previews/") === 0) {
+      var previewRelative = value.substring(9).split("/").map(encodeURIComponent).join("/");
+      if (!state.previewRoot) return "data/previews/" + previewRelative;
+      var root = String(state.previewRoot).replace(/\\/g, "/").replace(/\/+$/, "");
+      var extensionRoot = String(state.extensionPath || "").replace(/\\/g, "/").replace(/\/+$/, "");
+      var extensionLower = extensionRoot.toLowerCase();
+      var rootLower = root.toLowerCase();
+      if (extensionRoot && (rootLower === extensionLower + "/data" || rootLower.indexOf(extensionLower + "/data/") === 0)) {
+        var dataSuffix = root.substring(extensionRoot.length + "/data".length).replace(/^\/+/, "");
+        return "data/" + (dataSuffix ? dataSuffix + "/" : "") + previewRelative;
+      }
+      return externalPreviewUrl(root, value.substring(9));
+    }
     if (value.indexOf("data/") === 0) value = value.substring(5);
     if (!value) return "data/";
     return "data/" + value.split("/").map(encodeURIComponent).join("/");
@@ -1100,6 +1172,7 @@ var AEV_Library = (function () {
   var frameImages = {};
   var activePreviewStops = [];
   var previewSuppressUntil = 0;
+  var previewResumeTimer = null;
 
   function stopAllPreviewPlayback() {
     var stops = activePreviewStops;
@@ -1109,9 +1182,27 @@ var AEV_Library = (function () {
     }
   }
 
+  function resumeHoveredPreviews() {
+    var hovered = document.querySelectorAll(".effect-card:hover, .preset-card:hover");
+    for (var i = 0; i < hovered.length; i++) {
+      var event = null;
+      try {
+        event = document.createEvent("CustomEvent");
+        event.initCustomEvent("aev:resume-preview", false, false, null);
+        hovered[i].dispatchEvent(event);
+      } catch (e) {}
+    }
+  }
+
   function suppressPreviewPlayback() {
     previewSuppressUntil = Date.now() + 260;
     stopAllPreviewPlayback();
+    if (previewResumeTimer) clearTimeout(previewResumeTimer);
+    // 等滚动事件安静下来再恢复，避免滚动过程中反复启动/停止动画。
+    previewResumeTimer = setTimeout(function () {
+      previewResumeTimer = null;
+      resumeHoveredPreviews();
+    }, 280);
   }
 
   document.addEventListener("wheel", suppressPreviewPlayback, { passive: true });
@@ -1186,24 +1277,33 @@ var AEV_Library = (function () {
     });
   }
 
+  function hasPresetPreview(preview) {
+    return !!(preview && (preview.webpSrc || preview.frameSrc || preview.src || preview.stillSrc));
+  }
+
   function previewForPreset(item) {
     if (!item) return null;
     var key = AEV_Prefs && AEV_Prefs.pathKey
       ? AEV_Prefs.pathKey(item && item.path)
       : "";
-    return state.presetPreviewsByPath[key] ||
+    var preview = state.presetPreviewsByPath[key] ||
       state.presetPreviews[item.name] ||
       state.presetPreviewsByNameLower[String(item.name || "").toLowerCase()] ||
       null;
+    return hasPresetPreview(preview) ? preview : null;
   }
 
   function refreshPresetPreviews() {
     if (state.view !== "presets" || !state.extensionPath || state.presetIndexLoading) return;
     state.presetIndexLoading = true;
-    loadPresetIndex(function () {
-      state.presetIndexLoading = false;
-      frameImages = {};
-      renderPresetList();
+    // Hub 切换预览根目录后，面板可能仍开着；刷新索引时必须同时重读根目录，
+    // 否则新渲染的 previews/presets/... 会被解析到旧根目录，卡片只剩「未生成」。
+    loadPreviewRoot(function () {
+      loadPresetIndex(function () {
+        state.presetIndexLoading = false;
+        frameImages = {};
+        renderPresetList();
+      });
     });
   }
 
@@ -2173,7 +2273,8 @@ var AEV_Library = (function () {
       }, 120);
     });
 
-    refresh(function (error) {
+    loadPreviewRoot(function () {
+      refresh(function (error) {
       // 面板每次重新载入时只刷新一次；AE 运行期间不再轮询外部文件变化。
       // 同时清一次上一轮异常中断留下的 DE_* 临时对象。
       if (!error && state.extensionPath) {
@@ -2183,6 +2284,7 @@ var AEV_Library = (function () {
       } else {
         loadPresetLibrary(null, true);
       }
+    });
     });
   }
 

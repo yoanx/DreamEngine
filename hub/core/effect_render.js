@@ -51,6 +51,7 @@ class PluginEffectJob {
     // PowerShell 把 -Probe 当成 -Ae 的值 / 报 Missing argument。空值一律不传，
     // 交给 ps1 的默认值（自动选 AE、空背景）。
     if (options.ae) args.push("-Ae", String(options.ae));
+    if (options.previewRoot) args.push("-PreviewRoot", String(options.previewRoot));
     args.push(
       "-Probe",
       this.paths.probe,

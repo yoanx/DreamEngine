@@ -134,3 +134,39 @@ test.after(() => {
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("RenderJob: 预览根目录传 -PreviewRoot", () => {
+  const paths = makePaths();
+  const job = new RenderJob({
+    paths,
+    script: makeScript(paths, "generate_plugin_presets.ps1"),
+  });
+  job.start({ previewRoot: "D:/previews" });
+  assert.ok(hasArg(captured.args, "-PreviewRoot", "D:/previews"));
+  job.stopPolling();
+});
+
+test("PluginEffectJob: 预览根目录传 -PreviewRoot", () => {
+  const paths = makePaths();
+  const job = new PluginEffectJob({
+    paths,
+    script: makeScript(paths, "generate_plugin_effects.ps1"),
+  });
+  job.start({ previewRoot: "D:/previews" });
+  assert.ok(hasArg(captured.args, "-PreviewRoot", "D:/previews"));
+  job.stopPolling();
+});
+
+test("RenderJob: 预设分辨率传 -CellSize，并限制为 360/720", () => {
+  const paths = makePaths();
+  const script = makeScript(paths, "generate_plugin_presets.ps1");
+  const first = new RenderJob({ paths, script });
+  first.start({ cellSize: 360 });
+  assert.ok(hasArg(captured.args, "-CellSize", "360"));
+  first.stopPolling();
+
+  const second = new RenderJob({ paths, script });
+  second.start({ cellSize: 123 });
+  assert.ok(hasArg(captured.args, "-CellSize", "720"));
+  second.stopPolling();
+});

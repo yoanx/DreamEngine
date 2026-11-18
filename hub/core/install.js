@@ -9,6 +9,7 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
+const previewPaths = require("./preview_paths");
 
 /**
  * @param {ReturnType<import("./paths").createPaths>} paths
@@ -26,14 +27,28 @@ function status(paths) {
     /* 没装就没有 manifest.xml */
   }
 
-  let thumbs = 0;
-  try {
-    thumbs = fs
-      .readdirSync(path.join(paths.dataDir, "thumbs"))
-      .filter((name) => /\.png$/i.test(name)).length;
-  } catch {
-    /* 目录不存在 */
-  }
+  const previewFiles = new Set();
+  const countPreviewFiles = (dir) => {
+    let entries;
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      const file = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        countPreviewFiles(file);
+      } else if (entry.isFile() && /\.(?:png|webp|jpe?g)$/i.test(entry.name)) {
+        previewFiles.add(path.resolve(file).toLowerCase());
+      }
+    }
+  };
+  const previewRoot = previewPaths.currentRoot(paths);
+  countPreviewFiles(path.join(paths.dataDir, "thumbs"));
+  countPreviewFiles(path.join(previewRoot, "effects"));
+  countPreviewFiles(path.join(previewRoot, "presets"));
+  const thumbs = previewFiles.size;
 
   // data/ 下这些文件都是运行时产物，数量能反映「渲染干了多少活」
   const runtimeFiles = [

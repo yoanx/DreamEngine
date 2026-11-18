@@ -7,6 +7,7 @@ const sharp = require("sharp");
 
 const builder = require("../core/effect_preview_builder");
 const { createPaths } = require("../core/paths");
+const previewPaths = require("../core/preview_paths");
 
 function writeJson(file, value) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
@@ -72,14 +73,14 @@ test("effect_preview_builder 把拼图帧裁成动画 WebP 并回写 manifest", 
 
   const manifest = JSON.parse(fs.readFileSync(path.join(paths.dataDir, "manifest.json"), "utf8"));
   const item = manifest.items[0];
-  assert.equal(item.webpSrc, "thumbs/webp/内置/ADBE Glo2.webp");
-  assert.equal(item.stillSrc, "thumbs/webp/内置/stills/ADBE Glo2.webp");
-  assert.ok(fs.existsSync(path.join(paths.dataDir, item.webpSrc)));
-  assert.ok(fs.existsSync(path.join(paths.dataDir, item.stillSrc)));
+  assert.equal(item.webpSrc, "previews/effects/webp/builtin/ADBE Glo2.webp");
+  assert.equal(item.stillSrc, "previews/effects/webp/builtin/stills/ADBE Glo2.webp");
+  assert.ok(fs.existsSync(previewPaths.resolveFile(paths, item.webpSrc)));
+  assert.ok(fs.existsSync(previewPaths.resolveFile(paths, item.stillSrc)));
   assert.equal(fs.existsSync(path.join(thumbs, "batch_0000.png")), false);
   assert.equal(fs.existsSync(path.join(thumbs, "batch_0001.png")), false);
 
-  const metadata = await sharp(path.join(paths.dataDir, item.webpSrc), { animated: true }).metadata();
+  const metadata = await sharp(previewPaths.resolveFile(paths, item.webpSrc), { animated: true }).metadata();
   assert.equal(metadata.width, 10);
   assert.equal(metadata.pageHeight, 10);
   assert.ok(metadata.pages <= 2);
@@ -126,10 +127,10 @@ test("同一效果重新渲染时使用稳定文件名并覆盖旧 WebP", async 
   const manifest = JSON.parse(fs.readFileSync(path.join(paths.dataDir, "manifest.json"), "utf8"));
   const second = manifest.items[0].webpSrc;
 
-  assert.equal(first, "thumbs/webp/内置/ADBE Glo2.webp");
+  assert.equal(first, "previews/effects/webp/builtin/ADBE Glo2.webp");
   assert.equal(second, first);
   assert.equal(
-    fs.readdirSync(path.join(thumbs, "webp"), { recursive: true })
+    fs.readdirSync(path.join(previewPaths.currentRoot(paths), "effects", "webp"), { recursive: true })
       .filter((name) => name.endsWith(".webp") && !name.includes("stills")).length,
     1,
   );
@@ -171,7 +172,7 @@ test("静态首帧使用动画的中间帧并记录 stillFrame", async () => {
   const manifest = JSON.parse(fs.readFileSync(path.join(paths.dataDir, "manifest.json"), "utf8"));
   const item = manifest.items[0];
   assert.equal(item.stillFrame, 1);
-  const raw = await sharp(path.join(paths.dataDir, item.stillSrc)).raw().toBuffer();
+  const raw = await sharp(previewPaths.resolveFile(paths, item.stillSrc)).raw().toBuffer();
   assert.deepEqual([...raw.subarray(0, 3)], [0, 0, 255]);
 });
 
@@ -218,8 +219,8 @@ test("预览 WebP 按插件分目录存储", async () => {
   await builder.buildEffectPreviews(paths, { quality: 78 });
 
   const manifest = JSON.parse(fs.readFileSync(paths.pluginManifest, "utf8"));
-  assert.equal(manifest.items[0].webpSrc, "thumbs/webp/BCC/BCC_GLOW.webp");
-  assert.equal(manifest.items[0].stillSrc, "thumbs/webp/BCC/stills/BCC_GLOW.webp");
+  assert.equal(manifest.items[0].webpSrc, "previews/effects/webp/bcc/BCC_GLOW.webp");
+  assert.equal(manifest.items[0].stillSrc, "previews/effects/webp/bcc/stills/BCC_GLOW.webp");
 });
 
 test("WebP 被 Sharp 合并为单页时写入 animated.json", async () => {
@@ -326,7 +327,7 @@ test("被 Hub 归为内置的效果写入内置目录，而不是原始扫描插
   const manifest = JSON.parse(fs.readFileSync(paths.pluginManifest, "utf8"));
   assert.equal(
     manifest.items[0].webpSrc,
-    "thumbs/webp/内置/Mettle SkyBox Chromatic Aberrat.webp",
+    "previews/effects/webp/builtin/Mettle SkyBox Chromatic Aberrat.webp",
   );
 });
 
@@ -366,7 +367,7 @@ test("重新渲染后删除不再引用的旧哈希 WebP", async () => {
   await builder.buildEffectPreviews(paths, { quality: 78 });
 
   assert.equal(fs.existsSync(path.join(thumbs, "webp", "builtin_deadbeefdeadbeef.webp")), false);
-  assert.equal(fs.existsSync(path.join(thumbs, "webp", "内置", "ADBE Glo2.webp")), true);
+  assert.equal(fs.existsSync(previewPaths.resolveFile(paths, "previews/effects/webp/builtin/ADBE Glo2.webp")), true);
 });
 
 test("批次清理删除旧根目录 WebP，但保留插件目录内的命名 WebP", async () => {
@@ -452,7 +453,7 @@ test("已完成条目的 WebP 生成后立即清理自己的 PNG，不等所有�
   assert.equal(fs.existsSync(path.join(thumbs, "batch_0000_0001.png")), false);
   assert.equal(fs.existsSync(path.join(thumbs, "batch_0001_0000.png")), false);
   const manifest = JSON.parse(fs.readFileSync(path.join(paths.dataDir, "manifest.json"), "utf8"));
-  assert.match(manifest.items[0].webpSrc, /^thumbs\/webp\/.+\.webp$/);
+  assert.match(manifest.items[0].webpSrc, /^previews\/effects\/webp\/.+\.webp$/);
   assert.equal(manifest.items[1].webpSrc, undefined);
 });
 
@@ -517,4 +518,48 @@ test("批次清理不会删除尚未写入 manifest 的新 PNG", async () => {
   await builder.buildEffectPreviews(paths, { quality: 78 });
 
   assert.equal(fs.existsSync(orphan), true);
+});
+
+test("effect_preview_builder 将 WebP 写入自定义预览根目录的 effects 子目录", async () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "de-effect-custom-root-"));
+  const paths = createPaths({
+    docsDir: path.join(root, "docs"),
+    appData: path.join(root, "appdata"),
+  });
+  const customRoot = path.join(root, "chosen");
+  previewPaths.writeSettings(paths, customRoot);
+  const thumbs = path.join(paths.dataDir, "thumbs");
+  fs.mkdirSync(thumbs, { recursive: true });
+  await makeSheet(path.join(thumbs, "batch_0000.png"), ["#ff0000", "#00ff00"]);
+  await makeSheet(path.join(thumbs, "batch_0001.png"), ["#0000ff", "#ffff00"]);
+  writeJson(path.join(paths.dataDir, "manifest.json"), {
+    version: 2,
+    cellSize: 10,
+    columns: 2,
+    width: 20,
+    height: 10,
+    sheets: [{ index: 0, src: "thumbs/batch_0000.png", width: 20, height: 10 }],
+    items: [{
+      matchName: "ADBE Glo2",
+      sheet: 0,
+      x: 0,
+      y: 0,
+      width: 10,
+      height: 10,
+      frames: 2,
+      fps: 24,
+      duration: 0.084,
+      frameSrc: "thumbs/batch_%04d.png",
+    }],
+  });
+  writeJson(paths.pluginManifest, { version: 1, items: [], sheets: [] });
+
+  await builder.buildEffectPreviews(paths, { quality: 78 });
+
+  const manifest = JSON.parse(fs.readFileSync(path.join(paths.dataDir, "manifest.json"), "utf8"));
+  const item = manifest.items[0];
+  assert.match(item.webpSrc, /^previews\/effects\/webp\//);
+  assert.match(item.stillSrc, /^previews\/effects\/webp\//);
+  assert.ok(fs.existsSync(previewPaths.resolveFile(paths, item.webpSrc)));
+  assert.ok(fs.existsSync(previewPaths.resolveFile(paths, item.stillSrc)));
 });

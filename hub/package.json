@@ -79,6 +79,7 @@
     }
   },
   "dependencies": {
+    "pinyin-pro": "^3.29.5",
     "sharp": "^0.34.4",
     "yauzl": "^3.2.0",
     "yazl": "^3.3.1"

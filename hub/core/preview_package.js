@@ -6,6 +6,7 @@ const { pipeline } = require("node:stream/promises");
 const yauzl = require("yauzl");
 const yazl = require("yazl");
 const { createPluginResolver } = require("./effects");
+const previewPaths = require("./preview_paths");
 
 const SCHEMA = "dreamengine.effect-previews";
 const VERSION = 1;
@@ -54,11 +55,7 @@ function relativePath(value) {
 }
 
 function dataFile(paths, relative) {
-  const rel = relativePath(relative);
-  if (!rel) return "";
-  const root = path.resolve(paths.dataDir);
-  const full = path.resolve(root, rel.replace(/\//g, path.sep));
-  return full.startsWith(root + path.sep) ? full : "";
+  return previewPaths.resolveFile(paths, relative);
 }
 
 function expandPattern(relative, frames) {
@@ -336,7 +333,7 @@ async function importEffectPreviews(paths, zipFile) {
       new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14) +
       "-" +
       crypto.randomBytes(3).toString("hex");
-    const targetFolder = `thumbs/import_${importId}`;
+    const targetFolder = `previews/effects/import_${importId}`;
     const fileMap = new Map();
     const usedNames = new Set();
     const copies = [];
@@ -395,7 +392,7 @@ async function importEffectPreviews(paths, zipFile) {
       for (const file of itemFiles(item)) retained.add(file);
     }
     for (const relative of oldFiles) {
-      if (retained.has(relative) || !relative.startsWith("thumbs/import_")) continue;
+      if (retained.has(relative) || (!relative.startsWith("previews/effects/import_") && !relative.startsWith("thumbs/import_"))) continue;
       const file = dataFile(paths, relative);
       if (file) { try { fs.unlinkSync(file); } catch { /* cleanup is retryable */ } }
     }

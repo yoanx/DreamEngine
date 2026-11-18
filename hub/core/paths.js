@@ -45,6 +45,8 @@ function createPaths(opts = {}) {
 
     /* 属性缓存：按 插件+分类 分组的 TSV 与 index.json（人工调参的参数树来源，升级安装不得清空） */
     effectParamsRoot: path.join(userRoot, "effect_params"),
+    /* 用户选择的预览产物根目录设置（数据与预设共用） */
+    previewSettings: path.join(userRoot, "preview_settings.json"),
 
     /* 离线渲染的约定目录 */
     probe,
@@ -74,6 +76,7 @@ function createPaths(opts = {}) {
     presetCatalog: path.join(probe, "preset_catalog.json"),
     pluginSelection: path.join(probe, "next_plugin_batch.tsv"),
     presetSelection: path.join(probe, "next_preset_selection.tsv"),
+    presetFolderMap: path.join(probe, "preset_folder_map.tsv"),
     pluginSelectionMarker: path.join(probe, "plugin_selection.enabled"),
     pluginForceMarker: path.join(probe, "plugin_force.enabled"),
     pluginCatalogOnlyMarker: path.join(probe, "plugin_catalog_only.enabled"),

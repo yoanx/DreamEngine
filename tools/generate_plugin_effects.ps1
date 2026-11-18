@@ -22,7 +22,9 @@ param(
   # 强制重渲：忽略已生成索引与黑名单（配合 -Todo / 全量）
   [switch]$Force,
   # 逐条结果账本（Hub 第 5 步读取；默认 <Probe>\preview_run_results.tsv）
-  [string]$ResultsFile = ""
+  [string]$ResultsFile = "",
+  # 预览产物根目录；空值读取 Hub 的 preview_settings.json
+  [string]$PreviewRoot = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -95,6 +97,18 @@ if (-not $Probe) {
 if (-not $Extension) {
   $Extension = Join-Path $env:APPDATA "Adobe\CEP\extensions\com.dreamengine.panel"
 }
+
+$previewSettingsPath = Join-Path (Get-DocsPath) "DreamEngine\preview_settings.json"
+if (-not $PreviewRoot -and (Test-Path $previewSettingsPath)) {
+  try {
+    $saved = Get-Content $previewSettingsPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    if ($saved.root) { $PreviewRoot = [string]$saved.root }
+  } catch {}
+}
+if (-not $PreviewRoot) { $PreviewRoot = Join-Path $Extension "data\previews" }
+$PreviewRoot = [IO.Path]::GetFullPath($PreviewRoot)
+$previewEffectsDir = Join-Path $PreviewRoot "effects"
+$previewRootPath = Join-Path $Probe "plugin_preview_root.txt"
 
 function Get-AfterFXRegistryPaths {
   $keys = @(
@@ -468,6 +482,8 @@ Write-Utf8NoBom -Path $limitPath -Text ([string]$Limit)
 Write-Utf8NoBom -Path $backgroundPath -Text ([string]$Background)
 Write-Utf8NoBom -Path $maxItemsPath -Text ([string]$MaxItems)
 Write-Utf8NoBom -Path $sourcePathFile -Text $sourceScriptPath
+Write-Utf8NoBom -Path $previewRootPath -Text $PreviewRoot
+New-Item -ItemType Directory -Force -Path $previewEffectsDir | Out-Null
 
 # ---------- 只扫描插件效果目录：专用 AE 跑一次，等 RESULT 后写 meta 收尾 ----------
 if ($CatalogOnly) {

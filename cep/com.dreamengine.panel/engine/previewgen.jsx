@@ -155,6 +155,11 @@ var AEV_PreviewGen = (function () {
 
     /** 输出目录：默认写用户目录 cache/thumbs；dev 模式写扩展 data/thumbs */
     function outputFolder(options) {
+        if (options && options.previewRoot) {
+            var root = new Folder(String(options.previewRoot) + "/effects");
+            if (!root.exists) root.create();
+            return root;
+        }
         var mode = options && options.outputRoot ? options.outputRoot : "user";
         if (mode === "extension" && options && options.extensionPath) {
             return new Folder(options.extensionPath + "/data/thumbs");
@@ -396,7 +401,7 @@ var AEV_PreviewGen = (function () {
      * 批量渲染一张 contact sheet。
      * matchNames：本次要渲的 matchName 数组（不超过每网格数）
      * sheetIndex：第几张网，决定输出文件名
-     * options：{ extensionPath, outputRoot, startTime, cellOffset, singleCell,
+     * options：{ extensionPath, previewRoot, outputRoot, startTime, cellOffset, singleCell,
      *            gridColumns, gridRows }
      *   cellOffset —— 本批从网格第几格开始摆。整张新网传 0；
      *   往已有网里补空位时才用得上（要与 manifest 里的 cell 编号一致）。
@@ -805,13 +810,14 @@ var AEV_PreviewGen = (function () {
      * json 给 CEF 读，tsv 给 ExtendScript 读——ExtendScript 没有 JSON.parse，
      * 校验缓存是否过期必须在 AE 侧做，所以需要这份可被 split 的副本。
      */
-    function writeManifest(entriesTsv, extensionPath, background) {
+    function writeManifest(entriesTsv, extensionPath, background, previewRoot) {
         var conf = config();
         var columns = conf.contactSheet.columns;
         var cellSize = conf.contactSheet.cellSize;
         var width = conf.contactSheet.width;
         var height = conf.contactSheet.height;
         var previewFps = conf.animatedPreview.fps || 24;
+        var previewPrefix = previewRoot ? "previews/effects/" : "thumbs/";
 
         var rows = [];
         var lines = String(entriesTsv || "").split(/\r?\n/);
@@ -850,7 +856,7 @@ var AEV_PreviewGen = (function () {
         for (var r = 0; r < rows.length; r++) {
             var row = rows[r];
             var fileName = "batch_" + pad(row.sheet, 3) + ".png";
-            var src = row.frameTemplate ? "" : ("thumbs/" + fileName);
+            var src = row.frameTemplate ? "" : (previewPrefix + fileName);
             var frameSrc = row.frameTemplate || "";
             var key = row.key || itemKey(row.matchName, cellSize, row.frames, background);
             var parts2 = ['"matchName":' + jsonText(row.matchName)];
@@ -883,7 +889,7 @@ var AEV_PreviewGen = (function () {
                     ? ("batch_" + pad(row.sheet, 3) + "_0000.png")
                     : ("batch_" + pad(row.sheet, 3) + ".png");
                 sheets.push("{\"index\":" + row.sheet + ",\"src\":" +
-                            jsonText("thumbs/" + sheetFile) + ",\"width\":" + width +
+                            jsonText(previewPrefix + sheetFile) + ",\"width\":" + width +
                             ",\"height\":" + height + "}");
             }
         }

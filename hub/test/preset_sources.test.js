@@ -70,6 +70,7 @@ test("presets.list: 合并外部预设，即使 DreamEngine 预设库为空", ()
   assert.equal(sample.external, true);
   assert.equal(sample.source, "Trapcode Tao");
   assert.equal(sample.rendered, false);
+  assert.equal(sample.renderable, true);
 });
 
 test("presets.list: 默认预设跨 AE 版本同名时复用预览", () => {

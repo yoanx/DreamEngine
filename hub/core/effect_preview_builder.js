@@ -4,6 +4,8 @@ const sharp = require("sharp");
 
 const { encodeAnimatedWebp } = require("./preview_codec");
 const { createPluginResolver } = require("./effects");
+const previewPaths = require("./preview_paths");
+const previewNames = require("./preview_names");
 
 function readJson(file, fallback) {
   try {
@@ -18,9 +20,7 @@ function writeJson(file, value) {
 }
 
 function dataFile(paths, relative) {
-  const root = path.resolve(paths.dataDir);
-  const full = path.resolve(root, String(relative || "").replace(/\//g, path.sep));
-  return full.startsWith(root + path.sep) ? full : "";
+  return previewPaths.resolveFile(paths, relative);
 }
 
 function safeFileStem(value, fallback) {
@@ -45,13 +45,10 @@ function previewBaseName(item, fallback) {
 
 function previewPluginName(item, fallback, resolvePlugin) {
   const fallbackName = fallback === "builtin" ? "内置" : "其它插件";
-  if (resolvePlugin) {
-    return safeFileStem(resolvePlugin(item, fallbackName), fallbackName);
-  }
-  return safeFileStem(
-    item && item.plugin,
-    fallbackName,
-  );
+  const plugin = resolvePlugin
+    ? resolvePlugin(item, fallbackName)
+    : (item && item.plugin);
+  return previewNames.effectFolder(plugin || fallbackName);
 }
 
 function rawFilesForItem(paths, item) {
@@ -79,8 +76,10 @@ function cleanupIntermediatePngs(paths, builtin, plugin, options = {}) {
   // 渲染脚本正在写 manifest 时 readJson 会失败；此时不能把未归属的 PNG
   // 当成孤儿删掉，等下一批状态更新再重试。
   if (!builtin || !plugin) return;
-  const thumbs = path.join(paths.dataDir, "thumbs");
-  if (!fs.existsSync(thumbs)) return;
+  const roots = [...new Set([
+    path.resolve(paths.dataDir, "thumbs"),
+    path.resolve(previewPaths.currentRoot(paths), "effects"),
+  ])];
 
   const referenced = new Set();
   const unresolved = new Set();
@@ -97,24 +96,29 @@ function cleanupIntermediatePngs(paths, builtin, plugin, options = {}) {
     }
   }
 
-  for (const name of fs.readdirSync(thumbs)) {
-    if (!/^batch_.*\.png$/i.test(name)) continue;
-    const file = path.join(thumbs, name);
-    const key = path.resolve(file).toLowerCase();
-    if (!referenced.has(key) && options.cleanupOrphans !== true) continue;
-    if (unresolved.has(key)) continue;
-    try {
-      fs.unlinkSync(file);
-    } catch {
-      /* 文件被占用时留到下次处理 */
+  for (const root of roots) {
+    if (!fs.existsSync(root)) continue;
+    for (const name of fs.readdirSync(root)) {
+      if (!/^batch_.*\.png$/i.test(name)) continue;
+      const file = path.join(root, name);
+      const key = path.resolve(file).toLowerCase();
+      if (!referenced.has(key) && options.cleanupOrphans !== true) continue;
+      if (unresolved.has(key)) continue;
+      try {
+        fs.unlinkSync(file);
+      } catch {
+        /* 文件被占用时留到下次处理 */
+      }
     }
   }
 }
 
 function cleanupUnreferencedWebp(paths, builtin, plugin) {
   if (!builtin || !plugin) return;
-  const folder = path.join(paths.dataDir, "thumbs", "webp");
-  if (!fs.existsSync(folder)) return;
+  const folders = [...new Set([
+    path.resolve(paths.dataDir, "thumbs", "webp"),
+    path.resolve(previewPaths.currentRoot(paths), "effects", "webp"),
+  ])];
   const legacyName = /^(?:builtin|plugin)_[0-9a-f]{16}(?:_still)?\.webp$/i;
 
   const referenced = new Set();
@@ -128,16 +132,17 @@ function cleanupUnreferencedWebp(paths, builtin, plugin) {
     }
   }
 
-  const visit = (dir) => {
+  const visit = (dir, base) => {
+    if (!fs.existsSync(dir)) return;
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
       const file = path.join(dir, entry.name);
       if (entry.isDirectory()) {
-        visit(file);
+        visit(file, base);
         continue;
       }
       if (!/\.webp$/i.test(entry.name)) continue;
       if (referenced.has(path.resolve(file).toLowerCase())) continue;
-      const relative = path.relative(folder, file);
+      const relative = path.relative(base, file);
       const rootLevel = relative && !relative.includes(path.sep);
       if (!legacyName.test(entry.name) && !rootLevel) continue;
       try {
@@ -147,7 +152,7 @@ function cleanupUnreferencedWebp(paths, builtin, plugin) {
       }
     }
   };
-  visit(folder);
+  for (const folder of folders) visit(folder, folder);
 }
 
 function readStaticPreviewNames(paths) {
@@ -231,7 +236,7 @@ async function writePreview(paths, item, manifest, prefix, quality, resolvePlugi
   const fps = Math.max(1, Number(item.fps) || 24);
   const qualityValue = Math.max(1, Math.min(100, Number(quality) || 80));
   const pluginName = previewPluginName(item, prefix, resolvePlugin);
-  const folder = path.join(paths.dataDir, "thumbs", "webp", pluginName);
+  const folder = path.join(previewPaths.currentRoot(paths), "effects", "webp", pluginName);
   const stillFolder = path.join(folder, "stills");
   fs.mkdirSync(folder, { recursive: true });
   fs.mkdirSync(stillFolder, { recursive: true });
@@ -257,8 +262,8 @@ async function writePreview(paths, item, manifest, prefix, quality, resolvePlugi
     fs.writeFileSync(webpFile, still);
     fs.writeFileSync(stillFile, still);
   }
-  item.webpSrc = `thumbs/webp/${pluginName}/${base}.webp`;
-  item.stillSrc = `thumbs/webp/${pluginName}/stills/${base}.webp`;
+  item.webpSrc = previewPaths.logicalValue("effects", `webp/${pluginName}/${base}.webp`);
+  item.stillSrc = previewPaths.logicalValue("effects", `webp/${pluginName}/stills/${base}.webp`);
   item.stillFrame = stillIndex;
   return { pages };
 }

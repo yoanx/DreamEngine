@@ -235,6 +235,13 @@
                       <option value="60">60 fps</option>
                     </select>
                   </label>
+                  <label class="field" id="flowPresetResolutionField" hidden>
+                    <span class="field-label">预览分辨率</span>
+                    <select id="flowPresetResolution" class="input">
+                      <option value="360">360 × 360</option>
+                      <option value="720" selected>720 × 720</option>
+                    </select>
+                  </label>
                   <div class="field-row">
                     <label class="field narrow">
                       <span class="field-label" id="flowLimitLabel">每批条数</span>
@@ -439,6 +446,19 @@
       </div>
     </div>
 
+    <div class="panel">
+      <div class="panel-title">预览产物</div>
+      <div class="kv"><span>根目录</span><code id="setPreviewRoot">—</code></div>
+      <div class="kv"><span>占用空间</span><code id="setPreviewSize">—</code></div>
+      <div class="panel-row actions">
+        <button class="btn ghost" id="btnChoosePreviewRoot">选择目录</button>
+        <button class="btn ghost" id="btnResetPreviewRoot">恢复默认</button>
+        <button class="btn ghost" id="btnOpenPreviewRoot">打开目录</button>
+      </div>
+      <p class="footnote">
+        效果预览写入 <code>effects</code>，预设预览写入 <code>presets</code>。切换目录时会自动迁移已生成预览并更新索引。
+      </p>
+    </div>
     <div class="panel">
       <div class="panel-title">人工调参</div>
       <div class="kv"><span>属性缓存</span><code id="setParamsCache">—</code></div>

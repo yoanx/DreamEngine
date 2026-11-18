@@ -32,6 +32,7 @@ const catalog = require("./catalog");
 const effectIdentity = require("./effect_identity");
 const effectFavorites = require("./effect_favorites");
 const effectOverrides = require("./effect_overrides");
+const previewPaths = require("./preview_paths");
 
 const FPS = 24;
 const EFFECT_PREVIEW_VERSION = 2;
@@ -74,9 +75,8 @@ function readStaticPreviewNames(dataDir) {
   return still;
 }
 
-function dataPreviewPath(dataDir, relative) {
-  const value = String(relative || "");
-  return value ? path.join(dataDir, value) : "";
+function dataPreviewPath(paths, relative) {
+  return previewPaths.resolveFile(paths, relative);
 }
 
 function isCurrentEffectPreview(entry, frames, fps) {
@@ -129,7 +129,7 @@ function resolveAnimated(matchName, frames, staticNames) {
 }
 
 /** 内置效果：L1 整网上的一个格子（多数是 24 帧动图，部分是单帧静图） */
-function builtinItem(entry, manifest, sheetByIndex, names, dataDir, staticNames) {
+function builtinItem(entry, manifest, sheetByIndex, names, paths, staticNames) {
   const matchName = String((entry && entry.matchName) || "");
   if (!matchName) return null;
 
@@ -138,7 +138,7 @@ function builtinItem(entry, manifest, sheetByIndex, names, dataDir, staticNames)
   const webpSrc = String(entry.webpSrc || "");
   if (!frameSrc && !webpSrc) return null;
 
-  const framePattern = path.join(dataDir, frameSrc);
+  const framePattern = previewPaths.resolveFile(paths, frameSrc);
   if (!webpSrc && !isFile(framePattern.replace("%04d", "0000"))) return null;
 
   const record = names.get(matchName) || {};
@@ -171,8 +171,8 @@ function builtinItem(entry, manifest, sheetByIndex, names, dataDir, staticNames)
     fps,
     duration,
     framePattern: frameSrc ? framePattern : "",
-    webpSrc: dataPreviewPath(dataDir, entry.webpSrc),
-    stillSrc: dataPreviewPath(dataDir, entry.stillSrc),
+    webpSrc: dataPreviewPath(paths, entry.webpSrc),
+    stillSrc: dataPreviewPath(paths, entry.stillSrc),
     cellSize: geometry.cellSize,
     columns: geometry.columns,
     rows: geometry.rows,
@@ -222,7 +222,7 @@ function pluginMeta(row, entry, names) {
 }
 
 /** 预览首帧存在时返回绝对路径（含 %04d），否则返回空串 */
-function previewPattern(entry, dataDir) {
+function previewPattern(entry, paths) {
   if (!entry || !entry.matchName) return "";
   const frames = Math.max(1, Number(entry.frames) || 1);
   let frameSrc = String(entry.frameSrc || "");
@@ -232,18 +232,19 @@ function previewPattern(entry, dataDir) {
     if (frames > 1) frameSrc = frameSrc.replace(/_0000\.png$/i, "_%04d.png");
   }
   if (!frameSrc) return "";
-  const framePattern = path.join(dataDir, frameSrc);
+  const framePattern = previewPaths.resolveFile(paths, frameSrc);
   return isFile(framePattern.replace("%04d", "0000")) ? framePattern : "";
 }
 
-function hasWebpPreview(entry, dataDir) {
+function hasWebpPreview(entry, paths) {
   const relative = String((entry && entry.webpSrc) || "");
   if (!relative) return false;
-  return isFile(path.join(dataDir, relative));
+  const file = previewPaths.resolveFile(paths, relative);
+  return !!file && isFile(file);
 }
 
 /** 有预览的插件条目：沿用效果库渲染条目的形状（1×N 单行拼图） */
-function renderedPluginItem(meta, entry, manifest, dataDir, staticNames) {
+function renderedPluginItem(meta, entry, manifest, paths, staticNames) {
   const frames = Math.max(1, Number(entry.frames) || 1);
   const fps = Math.max(1, Number(entry.fps) || FPS);
   const duration = Math.max(0, Number(entry.duration) || frames / fps);
@@ -260,9 +261,9 @@ function renderedPluginItem(meta, entry, manifest, dataDir, staticNames) {
     frames,
     fps,
     duration,
-    framePattern: previewPattern(entry, dataDir),
-    webpSrc: dataPreviewPath(dataDir, entry.webpSrc),
-    stillSrc: dataPreviewPath(dataDir, entry.stillSrc),
+    framePattern: previewPattern(entry, paths),
+    webpSrc: dataPreviewPath(paths, entry.webpSrc),
+    stillSrc: dataPreviewPath(paths, entry.stillSrc),
     cellSize: geometry.cellSize,
     columns: geometry.columns,
     rows: geometry.rows,
@@ -354,9 +355,9 @@ function createPluginResolver(paths) {
 }
 
 /** 目录行 → 渲染条目（有预览）或占位条目（待渲染/黑名单），source 由调用方决定 */
-function catalogItemFor(meta, entry, manifest, dataDir, blacklist, staticNames) {
-  if (entry && (previewPattern(entry, dataDir) || hasWebpPreview(entry, dataDir))) {
-    return renderedPluginItem(meta, entry, manifest, dataDir, staticNames);
+function catalogItemFor(meta, entry, manifest, paths, blacklist, staticNames) {
+  if (entry && (previewPattern(entry, paths) || hasWebpPreview(entry, paths))) {
+    return renderedPluginItem(meta, entry, manifest, paths, staticNames);
   }
   if (blacklist.has(meta.matchName)) {
     return placeholderPluginItem(meta, "blacklisted", blacklist.get(meta.matchName) || "");
@@ -396,7 +397,7 @@ function list(paths) {
     if (sheet && sheet.index !== undefined) sheetByIndex.set(Number(sheet.index), sheet);
   }
   for (const entry of (builtinDoc && builtinDoc.items) || []) {
-    const item = builtinItem(entry, builtinDoc, sheetByIndex, names, dataDir, staticNames);
+    const item = builtinItem(entry, builtinDoc, sheetByIndex, names, paths, staticNames);
     if (item) builtinItems.push(decorate(item, true, false));
   }
 
@@ -471,7 +472,7 @@ function list(paths) {
     }
     const meta = pluginMeta(row, entry, names);
     if (entry) usedEntries.add(entry.matchName);
-    const item = catalogItemFor(meta, entry, pluginDoc, dataDir, blacklist, staticNames);
+    const item = catalogItemFor(meta, entry, pluginDoc, paths, blacklist, staticNames);
     /* generated 只认 plugin_manifest 命中；L1 内置预览是面板渲染的，不算生成 */
     const generated = !!entry;
     /* 第三方目录里混进来的 AE 自带效果：

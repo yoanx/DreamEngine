@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* DreamEngine Hub 安装包契约测试。
- * 只验证可重复生成的构建配置与干净资源目录，不启动安装器。
+ * 验证可重复生成的构建配置、干净资源目录和安装器预览迁移行为。
  */
 
 import assert from "node:assert/strict";
@@ -83,6 +83,9 @@ test("Hub 的 PowerShell 脚本带 UTF-8 BOM，兼容 Windows PowerShell 5", () 
   }
 });
 
+const migrationBytes = readFileSync(resolve(ROOT, "hub/installer/migrate_previews.ps1"));
+assert.deepEqual([...migrationBytes.subarray(0, 3)], [0xEF, 0xBB, 0xBF]);
+
 test("Hub 窗口、程序和安装器统一使用品牌图标", () => {
   assert.equal(pkg.build.win.icon, "assets/icon.ico");
   assert.equal(pkg.build.nsis.installerIcon, "assets/icon.ico");
@@ -117,7 +120,7 @@ test("安装器资源包含面板、字体、L1、离线渲染工具和安装脚
   assert.ok(existsSync(resolve(HUB, "renderer/about.js")));
   assert.ok(existsSync(resolve(release, "panel/extension/data/names.json")));
   assert.ok(existsSync(resolve(release, "panel/l1/manifest.json")));
-  assert.ok(existsSync(resolve(release, "panel/l1/thumbs/webp/内置")));
+  assert.ok(existsSync(resolve(release, "panel/l1/thumbs/webp/builtin")));
   assert.ok(existsSync(resolve(release, "tools/ae_watchdog.ps1")));
   assert.ok(existsSync(resolve(release, "tools/ae_crash_guard.ps1")));
   assert.ok(existsSync(resolve(release, "tools/manual_probe.ps1")));
@@ -133,6 +136,8 @@ test("安装器资源包含面板、字体、L1、离线渲染工具和安装脚
   assert.ok(existsSync(resolve(release, "tools/ae_render_template.ps1")));
   assert.ok(existsSync(resolve(release, "tools/build_png_template.jsx")));
   assert.ok(existsSync(resolve(release, "tools/run_template_builder_loader.jsx")));
+  assert.ok(existsSync(resolve(release, "tools/migrate_previews.ps1")));
+  assert.ok(existsSync(resolve(release, "installer/migrate_previews.ps1")));
   assert.ok(existsSync(resolve(release, "installer/install_dreamengine.ps1")));
   assert.ok(existsSync(resolve(release, "installer/uninstall_dreamengine.ps1")));
 });
@@ -151,7 +156,7 @@ test("L1 打包根据实际 WebP 页数生成静态预览索引", async () => {
   try {
     const data = join(root, "data");
     const out = join(root, "L1");
-    const builtin = join(data, "thumbs", "webp", "内置");
+    const builtin = join(data, "thumbs", "webp", "builtin");
     const stills = join(builtin, "stills");
     mkdirSync(stills, { recursive: true });
 
@@ -183,8 +188,8 @@ test("L1 打包根据实际 WebP 页数生成静态预览索引", async () => {
       frames: 24,
       fps: 24,
       effectPreviewVersion: 2,
-      webpSrc: `thumbs/webp/内置/${matchName}.webp`,
-      stillSrc: `thumbs/webp/内置/stills/${matchName}.webp`,
+      webpSrc: `thumbs/webp/builtin/${matchName}.webp`,
+      stillSrc: `thumbs/webp/builtin/stills/${matchName}.webp`,
     });
     writeFileSync(
       join(data, "plugin_manifest.json"),
@@ -271,6 +276,95 @@ test("-UpdateL1 用安装包内 WebP 覆盖同名旧文件", () => {
   }
 });
 
+test("安装升级自动迁移原始 L1、效果和预设预览", () => {
+  const root = mkdtempSync(join(tmpdir(), "de-install-preview-migration-"));
+  try {
+    const source = join(root, "source");
+    const target = join(root, "target");
+    const l1 = join(source, "l1");
+    const data = join(target, "data");
+    const customRoot = join(root, "chosen-previews");
+    mkdirSync(join(source, "extension"), { recursive: true });
+    mkdirSync(join(l1, "thumbs", "webp", "builtin", "stills"), { recursive: true });
+    mkdirSync(join(data, "thumbs"), { recursive: true });
+    writeFileSync(join(source, "extension", "index.html"), "<!doctype html>", "utf8");
+    writeFileSync(join(l1, "names.json"), "{}", "utf8");
+    writeFileSync(join(l1, "manifest.json"), JSON.stringify({
+      version: 2,
+      cellSize: 10,
+      columns: 1,
+      width: 10,
+      height: 10,
+      items: [{
+        matchName: "ADBE Preview",
+        src: "thumbs/builtin_0000.png",
+        frameSrc: "thumbs/builtin_%04d.png",
+        frames: 1,
+        fps: 24,
+        webpSrc: "thumbs/webp/builtin/ADBE Preview.webp",
+        stillSrc: "thumbs/webp/builtin/stills/ADBE Preview.webp",
+      }],
+      sheets: [{ index: 0, src: "thumbs/builtin_0000.png" }],
+    }), "utf8");
+    writeFileSync(join(l1, "thumbs", "builtin_0000.png"), "builtin", "utf8");
+    writeFileSync(join(l1, "thumbs", "webp", "builtin", "ADBE Preview.webp"), "webp", "utf8");
+    writeFileSync(join(l1, "thumbs", "webp", "builtin", "stills", "ADBE Preview.webp"), "still", "utf8");
+    writeFileSync(join(data, "thumbs", "plugin_0000.png"), "plugin", "utf8");
+    writeFileSync(join(data, "thumbs", "preset_0000.png"), "preset", "utf8");
+    writeFileSync(join(data, "manifest.json"), JSON.stringify({ version: 2, items: [] }), "utf8");
+    writeFileSync(join(data, "plugin_manifest.json"), JSON.stringify({
+      version: 1,
+      items: [{ matchName: "Plugin", frameSrc: "thumbs/plugin_%04d.png", frames: 1 }],
+    }), "utf8");
+    writeFileSync(join(data, "preset_manifest.json"), JSON.stringify({
+      version: 1,
+      items: [{ name: "Preset", frameSrc: "thumbs/preset_%04d.png", frames: 1 }],
+    }), "utf8");
+    writeFileSync(join(data, "preview_settings.json"), JSON.stringify({ version: 1, root: customRoot }), "utf8");
+    writeFileSync(join(data, "previews.tsv"), "matchName\tsheet\tcell\tframes\tframeTemplate\tkey\r\n", "utf8");
+    writeFileSync(join(data, "plugin_previews.tsv"), "matchName\tsheet\tcell\tframes\tframeTemplate\tkey\r\nPlugin\t0\t0\t1\tthumbs/plugin_%04d.png\tkey\r\n", "utf8");
+
+    const env = {
+      ...process.env,
+      LOCALAPPDATA: join(root, "localappdata"),
+      TEMP: join(root, "temp"),
+      TMP: join(root, "temp"),
+    };
+    mkdirSync(env.LOCALAPPDATA, { recursive: true });
+    mkdirSync(env.TEMP, { recursive: true });
+    execFileSync("powershell.exe", [
+      "-NoProfile",
+      "-ExecutionPolicy",
+      "Bypass",
+      "-File",
+      resolve(ROOT, "tools/install_dreamengine.ps1"),
+      "-Source",
+      source,
+      "-Target",
+      target,
+      "-UpdateL1",
+      "-NoDebugMode",
+      "-Quiet",
+    ], { cwd: ROOT, env, stdio: "pipe" });
+
+    assert.ok(existsSync(join(customRoot, "effects", "builtin_0000.png")));
+    assert.ok(existsSync(join(customRoot, "effects", "plugin_0000.png")));
+    assert.ok(existsSync(join(customRoot, "presets", "preset_0000.png")));
+    assert.ok(existsSync(join(customRoot, "effects", "webp", "builtin", "ADBE Preview.webp")));
+    const builtin = readJson(join(data, "manifest.json"));
+    assert.equal(builtin.items[0].src, "previews/effects/builtin_0000.png");
+    assert.equal(builtin.items[0].frameSrc, "previews/effects/builtin_%04d.png");
+    assert.equal(builtin.sheets[0].src, "previews/effects/builtin_0000.png");
+    assert.equal(readJson(join(data, "plugin_manifest.json")).items[0].frameSrc, "previews/effects/plugin_%04d.png");
+    assert.equal(readJson(join(data, "preset_manifest.json")).items[0].frameSrc, "previews/presets/preset_%04d.png");
+    assert.match(readFileSync(join(data, "plugin_previews.tsv"), "utf8"), /previews\/effects\/plugin_%04d\.png/);
+    assert.equal(existsSync(join(data, "thumbs", "plugin_0000.png")), false);
+    assert.equal(existsSync(join(data, "thumbs", "preset_0000.png")), false);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("NSIS 安装和卸载复用脚本，卸载清理范围覆盖 CEP 本地存储", () => {
   const nsis = read(resolve(HUB, "build/installer.nsh"));
   const installer = read(resolve(ROOT, "tools/install_dreamengine.ps1"));
@@ -284,6 +378,10 @@ test("NSIS 安装和卸载复用脚本，卸载清理范围覆盖 CEP 本地存�
   assert.match(nsis, /uninstall_dreamengine\.ps1/);
   assert.match(nsis, /\$\{isUpdated\}/);
   assert.match(installer, /install-state\.json/);
+  assert.match(installer, /migrate_previews\.ps1/);
+  assert.match(installer, /New-Item -ItemType Directory -Force -Path \$userPresets/);
+  assert.match(read(resolve(ROOT, "tools/build_release.mjs")), /migrate_previews\.ps1/);
+  assert.match(read(resolve(ROOT, "tools/prepare_hub_bundle.mjs")), /migrate_previews\.ps1/);
   assert.match(installer, /Get-ChildItem \$l1ThumbsRoot -Recurse -File/);
   assert.match(installer, /PlayerDebugMode/);
   assert.match(uninstaller, /cep_cache/);
