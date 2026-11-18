@@ -84,6 +84,7 @@ function createPaths(opts = {}) {
     /* 面板读的三份索引 */
     presetManifest: path.join(dataDir, "preset_manifest.json"),
     presetPluginManifest: path.join(dataDir, "preset_plugin_manifest.json"),
+    bundledPresetManifest: path.join(dataDir, "bundled_preset_manifest.json"),
     pluginManifest: path.join(dataDir, "plugin_manifest.json"),
 
     /* 效果库的内置预览索引：面板写入的 L1 manifest.json（8×8 拼图） */

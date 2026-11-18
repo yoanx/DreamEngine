@@ -39,12 +39,13 @@ function readIndex(file) {
   return map;
 }
 
-/** 两份索引合并：面板生成的在内置预设里，含插件的在离线索引里 */
+/** 三份索引合并：旧离线索引 -> 完整 bundled 包 -> 面板现场索引 */
 function loadPreviewIndex(paths) {
-  const merged = readIndex(paths.presetManifest);
-  for (const [key, item] of readIndex(paths.presetPluginManifest)) {
-    merged.set(key, item);
-  }
+  // 旧离线索引可能只有部分 PNG 帧；完整 bundled 包必须覆盖它。
+  // 面板现场生成的 preset_manifest 最后加载，仍可覆盖 bundled。
+  const merged = readIndex(paths.presetPluginManifest);
+  for (const [key, item] of readIndex(paths.bundledPresetManifest)) merged.set(key, item);
+  for (const [key, item] of readIndex(paths.presetManifest)) merged.set(key, item);
   return merged;
 }
 
@@ -85,7 +86,7 @@ function list(paths) {
         ? defaultByName.get(name.toLowerCase())
         : undefined);
     const frameSrc = hit
-      ? hit.frameSrc || String(hit.src || "").replace(/_0000\.png$/i, "_%04d.png")
+      ? hit.frameSrc || String(hit.src || "").replace(/_0000\.(png|webp)$/i, "_%04d.$1")
       : "";
     let stillThumb = hit && hit.stillSrc ? previewPaths.resolveFile(paths, hit.stillSrc) : "";
     if (!stillThumb && frameSrc && Number(hit && hit.frames) > 1) {
@@ -108,6 +109,9 @@ function list(paths) {
       duration: hit ? Number(hit.duration) || 0 : 0,
       fps: hit ? Number(hit.fps) || 0 : 0,
       cellSize: hit ? Number(hit.sliceCellSize) || Number(hit.cellSize) || 720 : 0,
+      format: hit
+        ? String(hit.format || (/\.webp$/i.test(frameSrc) ? "webp-sequence" : "png"))
+        : "png",
       offline: hit ? !!hit.plugin : false,
       thumb: stillThumb || (hit && hit.src ? previewPaths.resolveFile(paths, hit.src) : ""),
       framePattern: frameSrc ? previewPaths.resolveFile(paths, frameSrc) : "",

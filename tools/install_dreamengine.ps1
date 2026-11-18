@@ -36,6 +36,19 @@ function Fail {
   exit 1
 }
 
+function Copy-TreeFast {
+  param([string]$Source, [string]$Target)
+  if (-not (Test-Path -LiteralPath $Source)) { return }
+  New-Item -ItemType Directory -Force -Path $Target | Out-Null
+  $robocopy = Get-Command robocopy.exe -ErrorAction SilentlyContinue
+  if ($robocopy) {
+    & $robocopy.Source $Source $Target /E /COPY:DAT /R:1 /W:1 /NFL /NDL /NJH /NJS /NP | Out-Null
+    if ($LASTEXITCODE -gt 7) { throw "robocopy 失败：$LASTEXITCODE" }
+    return
+  }
+  Copy-Item -Path (Join-Path $Source "*") -Destination $Target -Recurse -Force
+}
+
 # ---------- 1. 路径解析 ----------
 if (-not $Source) { $Source = $PSScriptRoot }
 if (-not $Source) { $Source = Split-Path -Parent $MyInvocation.MyCommand.Path }
@@ -88,7 +101,8 @@ if (Test-Path $Target) {
 }
 
 # ---------- 3. 备份用户数据 ----------
-# 这些文件由用户机器现场生成，包里没有，升级时绝不能丢。
+# 索引文件由用户机器现场生成，升级时不能丢。预览目录不搬来搬去：
+# 扩展本体是增量复制，原地保留数万个小文件，避免覆盖安装反复复制。
 $KEEP = @(
   "manifest.json",
   "previews.tsv",
@@ -101,9 +115,7 @@ $KEEP = @(
   "preset_plugin_manifest.json",
   "preset_plugin_blacklist.json",
   "preset_plugin_previews.tsv",
-  "previews",
-  "preview_settings.json",
-  "thumbs"
+  "preview_settings.json"
 )
 
 $dataDst = Join-Path $Target "data"
@@ -156,6 +168,7 @@ if ($keptCount -gt 0 -and -not $WhatIf) {
 # 升级：默认不动，避免覆盖用户自己生成的条目；-UpdateL1 才替换（先备份）。
 $l1ManifestSrc = Join-Path $l1Src "manifest.json"
 $l1ManifestDst = Join-Path $dataDst "manifest.json"
+$l1HasFrameSequences = Test-Path (Join-Path $l1Src "previews\effects\webp\builtin\frames")
 
 if (-not (Test-Path $l1ManifestSrc)) {
   Say "包里没有 l1 目录，跳过内置预览部署" "Yellow"
@@ -171,11 +184,23 @@ if (-not (Test-Path $l1ManifestSrc)) {
   if ($hadLocalManifest -and -not $UpdateL1) {
     $deployL1 = $false
     $localCount = 0
+    $localHasFrameSequences = $false
     try {
       $localManifest = Get-Content $l1ManifestDst -Raw -Encoding UTF8 | ConvertFrom-Json
       $localCount = @($localManifest.items).Count
+      foreach ($localItem in @($localManifest.items)) {
+        if ($localItem.format -eq "webp-sequence" -and ([string]$localItem.frameSrc).EndsWith(".webp")) {
+          $localHasFrameSequences = $true
+          break
+        }
+      }
     } catch {}
-    Say "已存在本地索引（$localCount 条），保留不覆盖。如需换用包内内置包请加 -UpdateL1。" "Yellow"
+    if ($l1HasFrameSequences -and -not $localHasFrameSequences) {
+      $deployL1 = $true
+      Say "检测到旧版内置预览索引，自动升级为安装包内的 WebP 帧序列。" "Yellow"
+    } else {
+      Say "已存在本地索引（$localCount 条），保留不覆盖。如需换用包内内置包请加 -UpdateL1。" "Yellow"
+    }
   }
 
   if ($deployL1) {
@@ -196,25 +221,57 @@ if (-not (Test-Path $l1ManifestSrc)) {
     if (Test-Path (Join-Path $l1Src "animated.json")) {
       Copy-Item -Force (Join-Path $l1Src "animated.json") (Join-Path $dataDst "animated.json")
     }
+    $l1Previews = Join-Path $l1Src "previews"
+    if (Test-Path $l1Previews) {
+      $previewsDst = Join-Path $dataDst "previews"
+      Copy-TreeFast $l1Previews $previewsDst
+    }
     $l1Thumbs = Join-Path $l1Src "thumbs"
     if (Test-Path $l1Thumbs) {
       # -UpdateL1 是显式替换内置预览包；同名 WebP 必须覆盖，
       # 否则旧单页文件会阻止安装包里的新动画生效。
       # 递归复制，保留 webp/插件名/ 与 stills/ 子目录。
-      $l1ThumbsRoot = (Resolve-Path $l1Thumbs).Path
-      foreach ($img in (Get-ChildItem $l1ThumbsRoot -Recurse -File)) {
-        $relative = $img.FullName.Substring($l1ThumbsRoot.Length).TrimStart([char]92, [char]47)
-        $dstImg = Join-Path (Join-Path $dataDst "thumbs") $relative
-        $dstParent = Split-Path -Parent $dstImg
-        if ($dstParent) { New-Item -ItemType Directory -Force -Path $dstParent | Out-Null }
-        Copy-Item -Force $img.FullName $dstImg
-      }
+      Copy-TreeFast $l1Thumbs (Join-Path $dataDst "thumbs")
     }
     $deployed = @(Get-ChildItem (Join-Path $dataDst "thumbs") -Recurse -File -ErrorAction SilentlyContinue).Count
     Say "内置预览已部署：$deployed 张图" "Green"
   }
 }
 
+# ---------- 6.4 内置预设预览包（静态 WebP 帧序列） ----------
+# 安装包里的 615 个 AE 自带预设预览放在独立的 bundled 目录，
+# 用户现场渲染的预览仍保留在 previews/presets 下，二者通过索引合并。
+$presetBundleSrc = Join-Path $Source "presets"
+if (-not (Test-Path -LiteralPath $presetBundleSrc)) {
+  Say "包里没有预设预览包，跳过内置预设预览部署" "Yellow"
+} elseif (-not $WhatIf) {
+  $bundledManifestSrc = Join-Path $presetBundleSrc "manifest.json"
+  $bundledPreviewsSrc = Join-Path $presetBundleSrc "previews"
+  if (Test-Path -LiteralPath $bundledManifestSrc) {
+    New-Item -ItemType Directory -Force -Path $dataDst | Out-Null
+    $bundledManifestDst = Join-Path $dataDst "bundled_preset_manifest.json"
+    $bundlePreviewsDst = Join-Path $dataDst "previews"
+    $bundleCurrent = $false
+    if ((Test-Path -LiteralPath $bundledManifestDst) -and
+        (Test-Path -LiteralPath (Join-Path $bundlePreviewsDst "bundled\presets"))) {
+      try {
+        $bundleCurrent = (Get-FileHash -LiteralPath $bundledManifestSrc -Algorithm SHA256).Hash -eq
+          (Get-FileHash -LiteralPath $bundledManifestDst -Algorithm SHA256).Hash
+      } catch {}
+    }
+    if (-not $bundleCurrent) {
+      Copy-Item -Force $bundledManifestSrc $bundledManifestDst
+      if (Test-Path -LiteralPath $bundledPreviewsSrc) {
+        Copy-TreeFast $bundledPreviewsSrc $bundlePreviewsDst
+      }
+      $bundledCount = 0
+      try { $bundledCount = @((Get-Content -LiteralPath $bundledManifestSrc -Raw -Encoding UTF8 | ConvertFrom-Json).items).Count } catch {}
+      Say "内置预设预览已部署：$bundledCount 条（WebP 帧序列）" "Green"
+    } else {
+      Say "内置预设预览已是当前版本，跳过重复复制" "Green"
+    }
+  }
+}
 # ---------- 6.5 迁移旧预览到统一根目录 ----------
 $migrationScript = Join-Path $PSScriptRoot "migrate_previews.ps1"
 $devMigration = Join-Path (Split-Path -Parent $PSScriptRoot) "hub\installer\migrate_previews.ps1"

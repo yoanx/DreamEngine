@@ -278,6 +278,34 @@ test("effects.list：只有动画 WebP、没有 PNG 帧的效果仍然可见", (
   assert.equal(item.stillSrc, path.join(paths.dataDir, "frames/blur_still.webp"));
 });
 
+test("effects.list：兼容旧版 thumbs/webp 动画文件路径", () => {
+  const { paths } = makeWorkspace();
+  const legacy = path.join(paths.dataDir, "thumbs", "webp", "builtin", "legacy.webp");
+  fs.mkdirSync(path.dirname(legacy), { recursive: true });
+  fs.writeFileSync(legacy, "webp");
+  writeJson(path.join(paths.dataDir, "manifest.json"), {
+    version: 2,
+    cellSize: 360,
+    columns: 1,
+    width: 360,
+    height: 360,
+    sheets: [],
+    items: [{
+      matchName: "ADBE Gaussian Blur",
+      frames: 24,
+      fps: 24,
+      duration: 1,
+      webpSrc: "previews/effects/webp/builtin/legacy.webp",
+      effectPreviewVersion: 2,
+    }],
+  });
+  writeJson(paths.pluginManifest, { version: 1, items: [], sheets: [] });
+
+  const item = effects.list(paths).items.find((entry) => entry.matchName === "ADBE Gaussian Blur");
+  assert.equal(item.hasPreview, true);
+  assert.equal(item.webpSrc, legacy);
+});
+
 test("内置效果在统一效果渲染器重渲后只出现一条，并采用新预览", () => {
   const { paths } = makeWorkspace();
   writeJson(paths.pluginManifest, {

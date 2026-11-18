@@ -198,7 +198,8 @@ function migratePresetLayout(paths) {
       const targetValue = logicalValue(PRESETS, `${folder}/${base}`);
       for (const sourceValue of expandPattern(value, item.frames)) {
         const source = resolveFile(paths, sourceValue);
-        const target = resolveFile(paths, targetValue.replace("%04d", path.posix.basename(sourceValue).match(/(\d{4})\.png$/i)?.[1] || "0000"));
+        const frameIndex = path.posix.basename(sourceValue).match(/_(\d{4})\.(?:png|webp)$/i)?.[1] || "0000";
+        const target = resolveFile(paths, targetValue.replace("%04d", frameIndex));
         if (source && target && movePreviewFile(source, target)) moved++;
       }
       item[field] = targetValue;
@@ -233,7 +234,7 @@ function migrateEffectLayout(paths) {
   let moved = 0;
   for (const entry of entries) {
     for (const item of (entry.doc && entry.doc.items) || []) {
-      for (const field of ["webpSrc", "stillSrc"]) {
+      for (const field of ["src", "frameSrc", "webpSrc", "stillSrc"]) {
         const value = String(item[field] || "");
         if (!value) continue;
         const relative = relativeForKind(value, EFFECTS);
@@ -417,6 +418,7 @@ function migratePreviewRoot(paths, targetRoot) {
   const builtin = readDoc(path.join(paths.dataDir, "manifest.json"));
   const presetPanel = readDoc(path.join(paths.dataDir, "preset_manifest.json"));
   const presetPlugin = readDoc(path.join(paths.dataDir, "preset_plugin_manifest.json"));
+  const bundledPreset = readDoc(path.join(paths.dataDir, "bundled_preset_manifest.json"));
   const mappings = new Map();
   const files = new Map();
   migrationContext = { paths, oldRoot, targetRoot: target };
@@ -425,11 +427,12 @@ function migratePreviewRoot(paths, targetRoot) {
     collectDoc(builtin.doc, EFFECTS, ["src", "frameSrc", "webpSrc", "stillSrc"], ["src"], mappings, files);
     collectDoc(presetPanel.doc, PRESETS, ["src", "frameSrc", "webpSrc", "stillSrc"], [], mappings, files);
     collectDoc(presetPlugin.doc, PRESETS, ["src", "frameSrc", "webpSrc", "stillSrc"], [], mappings, files);
+    collectDoc(bundledPreset.doc, PRESETS, ["src", "frameSrc", "webpSrc", "stillSrc"], [], mappings, files);
   } finally {
     migrationContext = null;
   }
 
-  const entries = [effectPlugin, builtin, presetPanel, presetPlugin];
+  const entries = [effectPlugin, builtin, presetPanel, presetPlugin, bundledPreset];
   const tsvEntries = ["previews.tsv", "plugin_previews.tsv"].map((name) => {
     const file = path.join(paths.dataDir, name);
     return { file, text: fs.existsSync(file) ? fs.readFileSync(file, "utf8") : "" };
@@ -457,6 +460,7 @@ function migratePreviewRoot(paths, targetRoot) {
     remapDoc(builtin.doc, ["src", "frameSrc", "webpSrc", "stillSrc"], ["src"], mappings);
     remapDoc(presetPanel.doc, ["src", "frameSrc", "webpSrc", "stillSrc"], [], mappings);
     remapDoc(presetPlugin.doc, ["src", "frameSrc", "webpSrc", "stillSrc"], [], mappings);
+    remapDoc(bundledPreset.doc, ["src", "frameSrc", "webpSrc", "stillSrc"], [], mappings);
     for (const entry of entries) writeDoc(entry);
 
     for (const tsv of tsvEntries) {

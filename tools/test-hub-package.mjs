@@ -120,7 +120,7 @@ test("安装器资源包含面板、字体、L1、离线渲染工具和安装脚
   assert.ok(existsSync(resolve(HUB, "renderer/about.js")));
   assert.ok(existsSync(resolve(release, "panel/extension/data/names.json")));
   assert.ok(existsSync(resolve(release, "panel/l1/manifest.json")));
-  assert.ok(existsSync(resolve(release, "panel/l1/thumbs/webp/builtin")));
+  assert.ok(existsSync(resolve(release, "panel/l1/previews/effects/webp/builtin/frames")));
   assert.ok(existsSync(resolve(release, "tools/ae_watchdog.ps1")));
   assert.ok(existsSync(resolve(release, "tools/ae_crash_guard.ps1")));
   assert.ok(existsSync(resolve(release, "tools/manual_probe.ps1")));
@@ -151,6 +151,17 @@ test("干净资源不夹带开发机的运行时预览和索引", () => {
   assert.equal(existsSync(resolve(data, "preset_plugin_manifest.json")), false);
 });
 
+test("安装包包含 AE 内置预设 WebP 帧包并部署 bundled 索引", () => {
+  const release = resolve(ROOT, "hub/build/release/panel");
+  const manifestPath = resolve(release, "presets/manifest.json");
+  const previewRoot = resolve(release, "presets/previews/bundled/presets");
+  assert.ok(existsSync(manifestPath));
+  assert.ok(existsSync(previewRoot));
+  const manifest = readJson(manifestPath);
+  assert.equal(manifest.items.length, 615);
+  assert.ok(manifest.items.every((item) => item.frameSrc.endsWith("%04d.webp")));
+  assert.match(read(resolve(ROOT, "tools/install_dreamengine.ps1")), /bundled_preset_manifest\.json/);
+});
 test("L1 打包根据实际 WebP 页数生成静态预览索引", async () => {
   const root = mkdtempSync(join(tmpdir(), "de-l1-static-index-"));
   try {
@@ -202,11 +213,31 @@ test("L1 打包根据实际 WebP 页数生成静态预览索引", async () => {
       stdio: "pipe",
     });
 
+    const manifest = readJson(join(out, "manifest.json"));
+    assert.equal(manifest.items[0].format, "webp-sequence");
+    assert.equal(manifest.items[0].frameSrc, "previews/effects/webp/builtin/frames/ADBE Static_%04d.webp");
+    assert.ok(existsSync(join(out, "previews/effects/webp/builtin/frames/ADBE Static_0000.webp")));
+    assert.equal(manifest.items[1].frames, 2);
+    assert.ok(existsSync(join(out, "previews/effects/webp/builtin/frames/ADBE Animated_0001.webp")));
+    assert.equal(existsSync(join(out, "thumbs")), false);
     const index = readJson(join(out, "animated.json"));
     assert.deepEqual(index.items, [{ matchName: "ADBE Static", animated: false }]);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+test("L1 包内的动态效果保留多帧 WebP 序列并排除静态名单", () => {
+  const manifest = readJson(resolve(ROOT, "dist/L1/manifest.json"));
+  const animated = manifest.items.find((item) => item.matchName === "APC Radio Waves");
+  assert.ok(animated);
+  assert.equal(animated.format, "webp-sequence");
+  assert.ok(animated.frames > 1);
+  assert.match(animated.frameSrc, /\.webp$/);
+  const staticNames = new Set(
+    readJson(resolve(ROOT, "dist/L1/animated.json")).items.map((item) => item.matchName),
+  );
+  assert.equal(staticNames.has(animated.matchName), false);
 });
 
 test("-UpdateL1 用安装包内 WebP 覆盖同名旧文件", () => {
@@ -270,6 +301,64 @@ test("-UpdateL1 用安装包内 WebP 覆盖同名旧文件", () => {
       readJson(join(target, "data", "animated.json")),
       { version: 1, items: [{ matchName: "ADBE Preview", animated: false }] },
     );
+    assert.equal(readFileSync(join(target, "data", "preset_manifest.json"), "utf8"), "user-presets");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("升级时旧内置索引会自动切换为安装包内的 WebP 帧序列", () => {
+  const root = mkdtempSync(join(tmpdir(), "de-install-l1-sequence-"));
+  try {
+    const source = join(root, "source");
+    const target = join(root, "target");
+    const l1 = join(source, "l1");
+    const frameRelative = "previews/effects/webp/builtin/frames/ADBE Preview_0000.webp";
+    mkdirSync(join(source, "extension"), { recursive: true });
+    mkdirSync(join(l1, "previews/effects/webp/builtin/frames"), { recursive: true });
+    mkdirSync(join(target, "data"), { recursive: true });
+    writeFileSync(join(source, "extension", "index.html"), "<!doctype html>", "utf8");
+    writeFileSync(join(l1, "manifest.json"), JSON.stringify({
+      version: 2,
+      items: [{
+        matchName: "ADBE Preview",
+        frameSrc: "previews/effects/webp/builtin/frames/ADBE Preview_%04d.webp",
+        frames: 1,
+        fps: 24,
+        format: "webp-sequence",
+      }],
+    }), "utf8");
+    writeFileSync(join(l1, frameRelative), "packaged-frame", "utf8");
+    writeFileSync(join(target, "data", "manifest.json"), JSON.stringify({
+      version: 2,
+      items: [{ matchName: "ADBE Preview", webpSrc: "thumbs/webp/builtin/ADBE Preview.webp" }],
+    }), "utf8");
+    writeFileSync(join(target, "data", "preset_manifest.json"), "user-presets", "utf8");
+
+    const env = {
+      ...process.env,
+      LOCALAPPDATA: join(root, "localappdata"),
+      TEMP: join(root, "temp"),
+      TMP: join(root, "temp"),
+    };
+    mkdirSync(env.LOCALAPPDATA, { recursive: true });
+    mkdirSync(env.TEMP, { recursive: true });
+    execFileSync("powershell.exe", [
+      "-NoProfile",
+      "-ExecutionPolicy",
+      "Bypass",
+      "-File",
+      resolve(ROOT, "tools/install_dreamengine.ps1"),
+      "-Source",
+      source,
+      "-Target",
+      target,
+      "-NoDebugMode",
+      "-Quiet",
+    ], { cwd: ROOT, env, stdio: "pipe" });
+
+    assert.equal(readFileSync(join(target, "data", frameRelative), "utf8"), "packaged-frame");
+    assert.equal(readJson(join(target, "data", "manifest.json")).items[0].format, "webp-sequence");
     assert.equal(readFileSync(join(target, "data", "preset_manifest.json"), "utf8"), "user-presets");
   } finally {
     rmSync(root, { recursive: true, force: true });
@@ -382,7 +471,7 @@ test("NSIS 安装和卸载复用脚本，卸载清理范围覆盖 CEP 本地存�
   assert.match(installer, /New-Item -ItemType Directory -Force -Path \$userPresets/);
   assert.match(read(resolve(ROOT, "tools/build_release.mjs")), /migrate_previews\.ps1/);
   assert.match(read(resolve(ROOT, "tools/prepare_hub_bundle.mjs")), /migrate_previews\.ps1/);
-  assert.match(installer, /Get-ChildItem \$l1ThumbsRoot -Recurse -File/);
+  assert.match(installer, /Copy-TreeFast \$l1Thumbs/);
   assert.match(installer, /PlayerDebugMode/);
   assert.match(uninstaller, /cep_cache/);
   assert.match(uninstaller, /com\.dreamengine\.panel\.main/);

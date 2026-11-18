@@ -401,8 +401,35 @@ var AEV_PresetPreview = (function () {
      * textOnly = 有文本属性、没有效果参数组：这类预设不产生效果，落在合成层上
      * 只会在蒙版上留下半套结果（实机：360 度循环 masks+1、keys 不变）。
      */
+    function presetCategory(presetPath) {
+        var text = String(presetPath || "").replace(/\\/g, "/");
+        var parts = text.split("/");
+        for (var i = 1; i < parts.length - 1; i++) {
+            if (String(parts[i]).toLowerCase() === "presets") return String(parts[i + 1]);
+        }
+        return "";
+    }
+
+    function presetStageKind(category, textOnly, presetPath) {
+        var name = String(category || "");
+        var lower = name.toLowerCase();
+        var parts = String(presetPath || "").replace(/\\/g, "/").split("/");
+        var presetName = String(parts[parts.length - 1] || "");
+        var dot = presetName.lastIndexOf(".");
+        if (dot > 0) presetName = presetName.substring(0, dot);
+        // 这个内置预设只在文字层上能得到有效画面。
+        if (presetName === "浮雕状多次曝光") return "text";
+        if (textOnly || lower === "text") return "text";
+        if (lower === "shapes") return "shape";
+        if (lower.indexOf("transitions - ") === 0) return "transition";
+        if (lower === "image - creative" || lower === "image - special effects" || lower === "image - utilities") return "creative";
+        if (lower === "sound effects") return "audio";
+        return "visual";
+    }
+
     function presetInfo(presetPath) {
-        var info = { textOnly: false, known: false };
+        var category = presetCategory(presetPath);
+        var info = { textOnly: false, known: false, category: category, stageKind: presetStageKind(category, false, presetPath) };
         try {
             var file = new File(String(presetPath || ""));
             file.encoding = "BINARY";
@@ -414,6 +441,7 @@ var AEV_PresetPreview = (function () {
             var hasText = data.indexOf("ADBE Text Properties") >= 0;
             var hasEffects = data.indexOf("ADBE Effect Parade") >= 0;
             info.textOnly = hasText && !hasEffects;
+            info.stageKind = presetStageKind(info.category, info.textOnly, presetPath);
         } catch (e) {}
         return info;
     }
@@ -424,7 +452,14 @@ var AEV_PresetPreview = (function () {
      * 只读 numKeys / keyTime —— 绝不读 hasMin / maxValue / value：
      * 实机验证过遍历时读插件参数值会让 AE 直接崩掉。
      */
+    function isShapeLayer(value) {
+        try { return value instanceof ShapeLayer; } catch (e) { return false; }
+    }
+
     function walkKeys(group, depth, out) {
+        // 真实 Shape Layer 的矢量属性树在部分 AE 版本上会返回 Error 对象，
+        // 读取 numKeys 会直接打断脚本；形状类按固定短动画渲染，跳过这棵树。
+        if (isShapeLayer(group)) return;
         if (depth > 5 || out.count > MAX_PROPS) return;
         var n = 0;
         try { n = group.numProperties; } catch (e) { return; }
@@ -600,6 +635,169 @@ var AEV_PresetPreview = (function () {
         };
     }
 
+    function addStageToOutput(comp, stage, size) {
+        var nested = comp.layers.add(stage);
+        try {
+            var transform = nested.property("ADBE Transform Group");
+            transform.property("ADBE Position").setValue([size / 2, size / 2]);
+            var scale = size / TEXT_STAGE_HEIGHT * 100;
+            transform.property("ADBE Scale").setValue([scale, scale]);
+        } catch (e) {}
+        return nested;
+    }
+
+    /** 转场 / Image 舞台使用随包默认渲染图，不能退回 assets.jsx 的形状组合。 */
+    function defaultPhotoPath(extensionPath) {
+        try {
+            if (typeof AEV_Assets !== "undefined" && AEV_Assets.resolveBackground) {
+                return AEV_Assets.resolveBackground("photo", extensionPath);
+            }
+        } catch (e) {}
+        return "";
+    }
+
+    /** Shapes 预设优先使用真实 Shape Layer；旧版 AE 失败时退回可见纯色层。 */
+    function addShapeStage(comp, size, trash, fps, sheetIndex) {
+        var stage = app.project.items.addComp(
+            "DE_preset_shape_stage_" + pad(sheetIndex, 3),
+            TEXT_STAGE_WIDTH, TEXT_STAGE_HEIGHT, 1, MAX_SPAN_SECONDS + 2, fps
+        );
+        trash.comps.push(stage);
+        var bg = stage.layers.addSolid([0.06, 0.07, 0.08], "bg", TEXT_STAGE_WIDTH, TEXT_STAGE_HEIGHT, 1);
+        bg.moveToEnd();
+        var body = null;
+        try {
+            body = stage.layers.addShape();
+            body.name = "body";
+            var root = body.property("ADBE Root Vectors Group");
+            var group = root.addProperty("ADBE Vector Group");
+            var contents = group.property("ADBE Vectors Group");
+            var rect = contents.addProperty("ADBE Vector Shape - Rect");
+            rect.property("ADBE Vector Rect Size").setValue([600, 600]);
+            var fill = contents.addProperty("ADBE Vector Graphic - Fill");
+            fill.property("ADBE Vector Fill Color").setValue([0.18, 0.68, 0.76, 1]);
+            body.property("ADBE Transform Group").property("ADBE Position")
+                .setValue([TEXT_STAGE_WIDTH / 2, TEXT_STAGE_HEIGHT / 2]);
+        } catch (eShape) {
+            try {
+                body = stage.layers.addSolid([0.18, 0.68, 0.76], "body", TEXT_STAGE_WIDTH, TEXT_STAGE_HEIGHT, 1);
+                body.property("ADBE Transform Group").property("ADBE Position")
+                    .setValue([TEXT_STAGE_WIDTH / 2, TEXT_STAGE_HEIGHT / 2]);
+            } catch (eSolid) {
+                return null;
+            }
+        }
+        var nested = addStageToOutput(comp, stage, size);
+        return { layer: nested, targets: [{ comp: stage, layer: body }] };
+    }
+
+    /** 转场直接落在输出合成里：前景默认图，后景形状层，预设只作用前景。 */
+    function addTransitionStage(comp, size, trash, fps, sheetIndex, extensionPath) {
+        var bg = comp.layers.addSolid([0.06, 0.07, 0.08], "transitionBg", size, size, 1);
+        bg.moveToEnd();
+        var bottom = null;
+        try {
+            bottom = comp.layers.addShape();
+            bottom.name = "transitionShape";
+            var root = bottom.property("ADBE Root Vectors Group");
+            var group = root.addProperty("ADBE Vector Group");
+            var contents = group.property("ADBE Vectors Group");
+            var rect = contents.addProperty("ADBE Vector Shape - Rect");
+            rect.property("ADBE Vector Rect Size").setValue([size * 0.78, size * 0.78]);
+            var fill = contents.addProperty("ADBE Vector Graphic - Fill");
+            fill.property("ADBE Vector Fill Color").setValue([0.18, 0.68, 0.76, 1]);
+            bottom.property("ADBE Transform Group").property("ADBE Position")
+                .setValue([size / 2, size / 2]);
+        } catch (eBottom) {}
+        if (!bottom) {
+            bottom = comp.layers.addSolid([0.18, 0.68, 0.76], "transitionBottom", size, size, 1);
+            bottom.moveToEnd();
+        }
+        var top = null;
+        try {
+            var topAsset = AEV_Assets.getFresh("photo", TEXT_STAGE_HEIGHT, defaultPhotoPath(extensionPath));
+            if (topAsset) {
+                trash.comps.push(topAsset);
+                topAsset.duration = MAX_SPAN_SECONDS + 2;
+                for (var ti = 1; ti <= topAsset.numLayers; ti++) {
+                    try { topAsset.layer(ti).outPoint = MAX_SPAN_SECONDS + 2; } catch (eTopOut) {}
+                }
+                top = comp.layers.add(topAsset);
+                top.property("ADBE Transform Group").property("ADBE Position")
+                    .setValue([size / 2, size / 2]);
+                var topScale = size / TEXT_STAGE_HEIGHT * 100;
+                top.property("ADBE Transform Group").property("ADBE Scale")
+                    .setValue([topScale, topScale]);
+            }
+        } catch (eTop) {}
+        if (!top) top = comp.layers.addSolid([0.82, 0.24, 0.16], "transitionTop", size, size, 1);
+        return {
+            layer: top,
+            // 转场只作用在前景；背景形状层负责被擦除后透出的画面。
+            targets: [{ comp: comp, layer: top }]
+        };
+    }
+
+    /** Image 系列需要一个独立目标层，避免把边框/阴影效果直接盖到背景上。 */
+    function addCreativeStage(comp, size, trash, fps, sheetIndex, extensionPath) {
+        var stage = app.project.items.addComp(
+            "DE_preset_creative_stage_" + pad(sheetIndex, 3),
+            TEXT_STAGE_WIDTH, TEXT_STAGE_HEIGHT, 1, MAX_SPAN_SECONDS + 2, fps
+        );
+        trash.comps.push(stage);
+        function addPhoto(name) {
+            var asset = null;
+            try {
+                asset = AEV_Assets.getFresh("photo", TEXT_STAGE_HEIGHT, defaultPhotoPath(extensionPath));
+                if (!asset) return null;
+                trash.comps.push(asset);
+                asset.duration = MAX_SPAN_SECONDS + 2;
+                for (var ai = 1; ai <= asset.numLayers; ai++) {
+                    try { asset.layer(ai).outPoint = MAX_SPAN_SECONDS + 2; } catch (eOut) {}
+                }
+                var layer = stage.layers.add(asset);
+                layer.name = name;
+                layer.property("ADBE Transform Group").property("ADBE Position")
+                    .setValue([TEXT_STAGE_WIDTH / 2, TEXT_STAGE_HEIGHT / 2]);
+                layer.property("ADBE Transform Group").property("ADBE Scale")
+                    .setValue([TEXT_STAGE_WIDTH / TEXT_STAGE_HEIGHT * 100, TEXT_STAGE_WIDTH / TEXT_STAGE_HEIGHT * 100]);
+                return layer;
+            } catch (ePhoto) {
+                return null;
+            }
+        }
+        var bottom = addPhoto("creativeBase");
+        if (bottom) bottom.moveToEnd();
+        if (!bottom) {
+            bottom = stage.layers.addSolid([0.12, 0.18, 0.22], "creativeBase", TEXT_STAGE_WIDTH, TEXT_STAGE_HEIGHT, 1);
+            bottom.moveToEnd();
+        }
+        var top = addPhoto("creativeTarget");
+        if (!top) top = stage.layers.addSolid([0.82, 0.24, 0.16], "creativeTarget", TEXT_STAGE_WIDTH, TEXT_STAGE_HEIGHT, 1);
+        var nested = addStageToOutput(comp, stage, size);
+        return {
+            layer: nested,
+            targets: [{ comp: stage, layer: top }],
+            fallbackTargets: [{ comp: stage, layer: bottom }]
+        };
+    }
+
+    /** 音频类预设没有视觉画面，生成稳定的波形占位图。 */
+    function addWaveformStage(comp, size) {
+        var bg = comp.layers.addSolid([0.04, 0.05, 0.06], "waveBg", size, size, 1);
+        bg.moveToEnd();
+        for (var i = 0; i < 24; i++) {
+            var height = Math.max(4, Math.round(size * (0.12 + 0.58 * Math.abs(Math.sin(i * 1.37)))));
+            var bar = comp.layers.addSolid(
+                [0.34, 0.78, 0.64], "wave" + i,
+                Math.max(2, Math.round(size * 0.022)), height, 1
+            );
+            bar.property("ADBE Transform Group").property("ADBE Position")
+                .setValue([Math.round(size * (0.12 + i * 0.76 / 23)), Math.round(size * 0.5)]);
+        }
+        return bg;
+    }
+
     /**
      * 渲染一个预设的预览。
      *
@@ -644,7 +842,7 @@ var AEV_PresetPreview = (function () {
         function clearKeptFrames() {
             var all = folder.getFiles();
             if (!all) return;
-            var re = new RegExp("^" + baseName + "_\\d{4}\\.png$");
+            var re = new RegExp("^" + baseName + "_\\d{4}\\.(?:png|webp)$");
             var reRaw = new RegExp("^" + baseName + "_raw_\\d{4}\\.png$");
             for (var i = 0; i < all.length; i++) {
                 if (!(all[i] instanceof File)) continue;
@@ -674,11 +872,29 @@ var AEV_PresetPreview = (function () {
             }
             comp.time = 0; // applyPreset 会把关键帧放在当前时间指示器上
 
-            var backgroundInfo = addBackground(comp, background, size, trash, extensionPath, preset.textOnly);
+            var stageKind = preset.stageKind || "visual";
+            var backgroundInfo = null;
+            var effectiveBackground = background;
+            if (stageKind === "text") background = "text";
+            if (stageKind === "audio") {
+                backgroundInfo = { layer: addWaveformStage(comp, size), targets: [] };
+                effectiveBackground = "audio";
+            } else if (stageKind === "shape") {
+                backgroundInfo = addShapeStage(comp, size, trash, fps, sheetIndex);
+                effectiveBackground = "shape";
+            } else if (stageKind === "transition") {
+                backgroundInfo = addTransitionStage(comp, size, trash, fps, sheetIndex, extensionPath);
+                effectiveBackground = "transition";
+            } else if (stageKind === "creative") {
+                backgroundInfo = addCreativeStage(comp, size, trash, fps, sheetIndex, extensionPath);
+                effectiveBackground = "creative";
+            } else {
+                // 非文本视觉预设默认使用高细节图片，不让用户残留的“文字”背景把效果挡掉。
+                if (stageKind === "visual" && background === "text") background = "photo";
+                backgroundInfo = addBackground(comp, background, size, trash, extensionPath, preset.textOnly);
+            }
             var bgLayer = backgroundInfo && backgroundInfo.layer;
             if (!bgLayer) return result("error", [["reason", "bad_background"]]);
-
-            var effectiveBackground = background;
             var attempts = [];
             var lastError = "";
 
@@ -758,13 +974,26 @@ var AEV_PresetPreview = (function () {
             //（实机：360 度循环落到合成层后 masks+1、keys 不变，被误判成「已应用」，
             //  最后只出一张静态图）。按 ffx 内容先把它直接落到文本层。
 
-            if (preset.textOnly) {
+            if (stageKind === "audio") {
+                applied = true;
+            } else if (stageKind === "shape") {
+                try {
+                    applyToTargets(backgroundInfo.targets, file);
+                    attempts.push("shapeStage|applied");
+                    applied = true;
+                } catch (eShapeApply) {
+                    lastError = String(eShapeApply);
+                    attempts.push("shapeStage|error|" + lastError);
+                }
+            } else if (stageKind === "text" || preset.textOnly) {
                 applied = applyOnTextStage() === true;
             } else {
                 applied = tryApply(backgroundInfo.targets, "targets:" + effectiveBackground);
-                // 文本 / 变换 / 蒙版类预设不新增效果，落在错层上 AE 会静默无效
-                //（assets.jsx / presets.jsx 的实机结论）：再换文本层、文字素材重试一次。
-                if (!applied) {
+                if (!applied && backgroundInfo.fallbackTargets && backgroundInfo.fallbackTargets.length) {
+                    applied = tryApply(backgroundInfo.fallbackTargets, "fallback:" + effectiveBackground);
+                }
+                // 只有普通视觉类才回退到文字舞台；Shapes / 转场不能套文字目标。
+                if (!applied && stageKind === "visual") {
                     applied = applyOnTextStage() === true;
                 }
             }
@@ -797,13 +1026,19 @@ var AEV_PresetPreview = (function () {
             var keyAnimated = range.keys > 0 && (range.max - range.min) > 1 / fps;
             // 表达式也会随时间变化，不能因为没有关键帧就只渲一帧。
             var expressionAnimated = expressionCount > 0;
-            var animated = keyAnimated || expressionAnimated;
+            var shapeAnimated = stageKind === "shape";
+            var animated = keyAnimated || expressionAnimated || shapeAnimated;
             var start = 0;
             var span = 1 / fps;
             var truncated = false;
             var keyStart = 0;
             var keyEnd = 0;
-            if (keyAnimated) {
+            if (shapeAnimated) {
+                start = 0;
+                keyStart = 0;
+                keyEnd = Math.min(EXPRESSION_SPAN_SECONDS, MAX_SPAN_SECONDS);
+                span = Math.max(1 / fps, keyEnd - start);
+            } else if (keyAnimated) {
                 start = range.min;
                 keyStart = range.min;
                 keyEnd = range.max;

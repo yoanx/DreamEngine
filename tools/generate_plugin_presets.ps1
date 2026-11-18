@@ -21,6 +21,8 @@ param(
   [int]$Fps = 24,
   [ValidateSet(360, 720)]
   [int]$CellSize = 720,
+  [ValidateSet("png", "webp")]
+  [string]$FrameFormat = "png",
   [int]$Limit = 40,
   [int]$Rounds = 40,
   [int]$Timeout = 240,
@@ -57,6 +59,7 @@ $todoPath        = Join-Path $probe "next_preset_plugin_batch.tsv"
 $bgPath          = Join-Path $probe "preset_plugin_background.txt"
 $fpsPath         = Join-Path $probe "preset_plugin_fps.txt"
 $cellSizePath    = Join-Path $probe "preset_preview_cell_size.txt"
+$frameFormatPath = Join-Path $probe "preset_plugin_frame_format.txt"
 $logPath         = Join-Path $probe "preset_plugin_run.log"
 $entriesPath     = Join-Path $probe "preset_plugin_previews.tsv"
 $blacklistPath   = Join-Path $probe "preset_plugin_blacklist.tsv"
@@ -496,6 +499,7 @@ $jsx = $runnerLoader
 Write-Utf8 $sourcePathFile $runnerSource
 Write-Utf8 $previewRootPath $PreviewRoot
 Write-Utf8 $cellSizePath ([string]$CellSize)
+Write-Utf8 $frameFormatPath $FrameFormat
 New-Item -ItemType Directory -Force -Path $previewPresetsDir | Out-Null
 
 # ---------- 背景：未指定就跟随面板最后一次用的 ----------
@@ -511,15 +515,24 @@ if (-not $Background) {
 }
 
 # ---------- 从 TSV 生成面板读的独立索引（无 BOM，浏览器才能 JSON.parse）----------
+function Get-FrameExtension {
+  param([string]$Folder, [string]$Base, [int]$Frames, [string]$Preferred = "png")
+  $dir = if ($Folder) { Join-Path $PreviewRoot ("presets\" + $Folder) } else { Join-Path $PreviewRoot "presets" }
+  if (-not (Test-Path $dir)) { return "png" }
+  if ($Preferred -eq "webp" -and (Test-Path (Join-Path $dir ($Base + "_0000.webp")))) { return "webp" }
+  if (Test-Path (Join-Path $dir ($Base + "_0000.png"))) { return "png" }
+  if (Test-Path (Join-Path $dir ($Base + "_0000.webp"))) { return "webp" }
+  return "png"
+}
 function Get-BestStillFrame {
-  param([string]$Folder, [string]$Base, [int]$Frames)
+  param([string]$Folder, [string]$Base, [int]$Frames, [string]$Ext = "png")
   $fallback = [Math]::Max(0, [Math]::Floor($Frames / 2))
   $dir = if ($Folder) { Join-Path $PreviewRoot ("presets\" + $Folder) } else { Join-Path $PreviewRoot "presets" }
   if (-not (Test-Path $dir)) { return $fallback }
   $best = $fallback
   $bestSize = -1
   for ($i = 0; $i -lt $Frames; $i++) {
-    $file = Join-Path $dir ($Base + "_" + $i.ToString("D4") + ".png")
+    $file = Join-Path $dir ($Base + "_" + $i.ToString("D4") + "." + $Ext)
     if (-not (Test-Path $file)) { continue }
     $size = (Get-Item -LiteralPath $file).Length
     if ($size -gt $bestSize) { $bestSize = $size; $best = $i }
@@ -548,19 +561,21 @@ function Build-PluginIndex {
     $presetFolder = ""
     if ($r.Count -ge 13) { $presetFolder = ([string]$r[12]).Trim() }
     $presetPrefix = if ($presetFolder) { "previews/presets/" + $presetFolder + "/" } else { "previews/presets/" }
-    $stillFrame = Get-BestStillFrame -Folder $presetFolder -Base $base -Frames $frames
-    $stillName = $presetPrefix + $base + "_" + $stillFrame.ToString("D4") + ".png"
+    $frameExt = Get-FrameExtension -Folder $presetFolder -Base $base -Frames $frames -Preferred $FrameFormat
+    $stillFrame = Get-BestStillFrame -Folder $presetFolder -Base $base -Frames $frames -Ext $frameExt
+    $stillName = $presetPrefix + $base + "_" + $stillFrame.ToString("D4") + "." + $frameExt
     if (-not $byPath.ContainsKey($r[1])) { $order += $r[1] }
     $byPath[$r[1]] = [ordered]@{
       name = $r[0]
       path = $r[1]
       sheet = $sheet
       folder = $presetFolder
-      src = $presetPrefix + $base + "_0000.png"
-      frameSrc = $presetPrefix + $base + "_%04d.png"
+      src = $presetPrefix + $base + "_0000." + $frameExt
+      frameSrc = $presetPrefix + $base + "_%04d." + $frameExt
       stillSrc = $stillName
       stillFrame = $stillFrame
       frames = $frames
+      format = $(if ($frameExt -eq "webp") { "webp-sequence" } else { "png" })
       animated = ($r[4] -eq "true")
       keyStart = [double]$r[5]
       keyEnd = [double]$r[6]

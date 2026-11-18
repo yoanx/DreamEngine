@@ -76,10 +76,26 @@ function readStaticPreviewNames(dataDir) {
 }
 
 function dataPreviewPath(paths, relative) {
-  return previewPaths.resolveFile(paths, relative);
+  const direct = previewPaths.resolveFile(paths, relative);
+  if (direct && isFile(direct)) return direct;
+  const raw = String(relative || "").replace(/\\/g, "/").replace(/^previews\//i, "");
+  if (!raw) return direct;
+  const candidates = [];
+  if (raw.indexOf("effects/") === 0) {
+    candidates.push(path.join(paths.dataDir, "thumbs", raw.slice("effects/".length)));
+  }
+  candidates.push(path.join(paths.dataDir, "thumbs", raw));
+  candidates.push(path.join(paths.dataDir, raw));
+  for (const file of candidates) {
+    if (isFile(file)) return file;
+  }
+  return direct;
 }
 
 function isCurrentEffectPreview(entry, frames, fps) {
+  if (entry && (entry.format === "webp-sequence" || /\.webp$/i.test(String(entry.frameSrc || entry.src || "")))) {
+    return true;
+  }
   return Number(entry.effectPreviewVersion) === EFFECT_PREVIEW_VERSION &&
     Number(frames) === 24 &&
     (Number(fps) || FPS) === 24;
@@ -134,15 +150,18 @@ function builtinItem(entry, manifest, sheetByIndex, names, paths, staticNames) {
   if (!matchName) return null;
 
   const sheet = sheetByIndex.get(Number(entry.sheet)) || null;
-  const frameSrc = String(entry.frameSrc || (sheet && sheet.src) || "");
+  const frames = Math.max(1, Number(entry.frames) || 1);
+  let frameSrc = String(entry.frameSrc || (sheet && sheet.src) || entry.src || "");
+  if (!entry.frameSrc && frames > 1) {
+    frameSrc = frameSrc.replace(/_0000\.(png|webp)$/i, "_%04d.$1");
+  }
   const webpSrc = String(entry.webpSrc || "");
   if (!frameSrc && !webpSrc) return null;
 
-  const framePattern = previewPaths.resolveFile(paths, frameSrc);
+  const framePattern = dataPreviewPath(paths, frameSrc);
   if (!webpSrc && !isFile(framePattern.replace("%04d", "0000"))) return null;
 
   const record = names.get(matchName) || {};
-  const frames = Math.max(1, Number(entry.frames) || 1);
   const fps = Math.max(1, Number(entry.fps) || FPS);
   const duration = Math.max(0, Number(entry.duration) || frames / fps);
   const stillFrame = Math.min(
@@ -173,6 +192,7 @@ function builtinItem(entry, manifest, sheetByIndex, names, paths, staticNames) {
     framePattern: frameSrc ? framePattern : "",
     webpSrc: dataPreviewPath(paths, entry.webpSrc),
     stillSrc: dataPreviewPath(paths, entry.stillSrc),
+    format: String(entry.format || (/\.webp$/i.test(frameSrc) ? "webp-sequence" : "")),
     cellSize: geometry.cellSize,
     columns: geometry.columns,
     rows: geometry.rows,
@@ -229,17 +249,17 @@ function previewPattern(entry, paths) {
   if (!frameSrc && entry.src) {
     frameSrc = String(entry.src);
     // 历史清单只写了首帧路径：动图按离线渲染的命名约定还原成帧序列
-    if (frames > 1) frameSrc = frameSrc.replace(/_0000\.png$/i, "_%04d.png");
+    if (frames > 1) frameSrc = frameSrc.replace(/_0000\.(png|webp)$/i, "_%04d.$1");
   }
   if (!frameSrc) return "";
-  const framePattern = previewPaths.resolveFile(paths, frameSrc);
+  const framePattern = dataPreviewPath(paths, frameSrc);
   return isFile(framePattern.replace("%04d", "0000")) ? framePattern : "";
 }
 
 function hasWebpPreview(entry, paths) {
   const relative = String((entry && entry.webpSrc) || "");
   if (!relative) return false;
-  const file = previewPaths.resolveFile(paths, relative);
+  const file = dataPreviewPath(paths, relative);
   return !!file && isFile(file);
 }
 
@@ -264,6 +284,7 @@ function renderedPluginItem(meta, entry, manifest, paths, staticNames) {
     framePattern: previewPattern(entry, paths),
     webpSrc: dataPreviewPath(paths, entry.webpSrc),
     stillSrc: dataPreviewPath(paths, entry.stillSrc),
+    format: String(entry.format || (/\.webp$/i.test(String(entry.frameSrc || entry.src || "")) ? "webp-sequence" : "")),
     cellSize: geometry.cellSize,
     columns: geometry.columns,
     rows: geometry.rows,
@@ -286,6 +307,7 @@ function placeholderPluginItem(meta, status, reason) {
     frames: 0,
     fps: 0,
     framePattern: "",
+    format: "",
     cellSize: 0,
     columns: 0,
     rows: 0,
@@ -590,8 +612,10 @@ function list(paths) {
 
 /** dataDir 内的相对路径 → 绝对路径；越界（../）或空值返回 "" */
 function dataFilePath(paths, relative) {
+  const text = String(relative || "");
+  if (text.indexOf("previews/") === 0) return dataPreviewPath(paths, text);
   const root = path.resolve(paths.dataDir);
-  const full = path.resolve(root, String(relative || "").replace(/\//g, path.sep));
+  const full = path.resolve(root, text.replace(/\//g, path.sep));
   if (full === root || !full.startsWith(root + path.sep)) return "";
   return full;
 }

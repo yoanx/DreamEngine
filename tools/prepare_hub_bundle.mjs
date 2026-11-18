@@ -12,6 +12,7 @@ const HUB = resolve(ROOT, "hub");
 const RELEASE = resolve(HUB, "build/release");
 const PANEL_SRC = resolve(ROOT, "cep/com.dreamengine.panel");
 const L1_SRC = resolve(ROOT, "dist/L1");
+const PRESET_SRC = resolve(ROOT, "dist/presets");
 const TOOLS_SRC = resolve(ROOT, "tools");
 
 function assertInside(base, target) {
@@ -60,10 +61,18 @@ const missing = [...referenced].filter((ref) => !existsSync(resolve(RELEASE, "pa
 assert.equal(missing.length, 0, `bundle 缺少被引用的资源: ${missing.join(", ")}`);
 
 copyRequired(resolve(L1_SRC, "manifest.json"), resolve(RELEASE, "panel/l1/manifest.json"));
+copyRequired(PRESET_SRC, resolve(RELEASE, "panel/presets"));
 copyRequired(resolve(L1_SRC, "names.json"), resolve(RELEASE, "panel/l1/names.json"));
 copyRequired(resolve(L1_SRC, "previews.tsv"), resolve(RELEASE, "panel/l1/previews.tsv"));
-copyRequired(resolve(L1_SRC, "thumbs"), resolve(RELEASE, "panel/l1/thumbs"));
-for (const name of ["animated.json", "build-report.json"]) {
+const l1Previews = resolve(L1_SRC, "previews");
+if (existsSync(l1Previews)) {
+  cpSync(l1Previews, resolve(RELEASE, "panel/l1/previews"), { recursive: true });
+}
+const l1Thumbs = resolve(L1_SRC, "thumbs");
+if (existsSync(l1Thumbs)) {
+  cpSync(l1Thumbs, resolve(RELEASE, "panel/l1/thumbs"), { recursive: true });
+}
+for (const name of ["animated.json"]) {
   const source = resolve(L1_SRC, name);
   if (existsSync(source)) {
     cpSync(source, resolve(RELEASE, "panel/l1", name));

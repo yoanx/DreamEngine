@@ -449,7 +449,7 @@
     }
     function recordSuccess(item, sheetIndex, layout) {
         var tmpl = "previews/effects/batch_" + pad3(sheetIndex) + "_%04d.png";
-        entries = PS.addEntry(entries, {
+        var nextEntry = {
             matchName: item.matchName,
             sheet: sheetIndex,
             frames: 24,
@@ -466,7 +466,10 @@
             columns: layout.columns,
             width: layout.width,
             height: layout.height
-        });
+        };
+        // 本轮刚生成的 PNG 不能被上一版 WebP 序列覆盖；下一轮再沿用索引即可。
+        nextEntry.__previewJustRendered = true;
+        entries = PS.addEntry(entries, nextEntry);
         writeIndex();
         appendLog("OK", item.matchName, "sheet=" + sheetIndex +
                   " x=" + layout.x + " y=" + layout.y);
@@ -496,6 +499,19 @@
         return match ? match[1] : "";
     }
 
+    function manifestPreviewForMatchName(matchName) {
+        if (!manifestTextCache) manifestTextCache = readText(MANIFEST);
+        if (!manifestTextCache || !matchName) return null;
+        try {
+            var doc = eval("(" + manifestTextCache + ")");
+            var items = (doc && doc.items) || [];
+            for (var i = 0; i < items.length; i++) {
+                if (items[i] && items[i].matchName === matchName) return items[i];
+            }
+        } catch (eManifest) {}
+        return null;
+    }
+
     function entryFramesExist(entry) {
         if (entry && entry.webpSrc) {
             var webp = previewFile(entry.webpSrc);
@@ -503,6 +519,15 @@
         }
         var manifestWebp = entry ? manifestWebpForMatchName(entry.matchName) : "";
         if (manifestWebp && previewFile(manifestWebp).exists) return true;
+        var manifestPreview = manifestPreviewForMatchName(entry && entry.matchName);
+        if (manifestPreview && /\.webp$/i.test(String(manifestPreview.frameSrc || ""))) {
+            var manifestFrames = Math.max(1, parseInt(manifestPreview.frames, 10) || 1);
+            var manifestTemplate = String(manifestPreview.frameSrc);
+            for (var mf = 0; mf < manifestFrames; mf++) {
+                if (!previewFile(manifestTemplate.replace("%04d", pad4(mf))).exists) return false;
+            }
+            return true;
+        }
         var template = String(entry && entry.frameTemplate || "");
         if (!template) return true;
         var frames = Math.max(1, parseInt(entry.frames, 10) || 1);

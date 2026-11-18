@@ -944,6 +944,7 @@ async function renderSelectedPresets() {
       presetPath,
       fps: Number(item.fps) || 0,
       cellSize: Number(item.cellSize) || 720,
+      format: String(item.format || "png"),
     };
   });
   handoffToPreview("preset", { items, entry: { view: "presets" } });
@@ -1457,10 +1458,19 @@ function effectSpritePosition(item) {
 /* 内置是 8×8 整网、插件是单行 8 格：用背景百分比裁切，格子永远精确等于缩略框 */
 function applyEffectPreview(preview, item, frameIndex) {
   if (!preview) return;
-  if (item.webpSrc) {
+  const framePattern = String((item && item.framePattern) || "");
+  const webpSequence = item && (item.format === "webp-sequence" || /\.webp$/i.test(framePattern));
+  if (item.webpSrc || webpSequence) {
     preview.style.backgroundSize = "cover";
     preview.style.backgroundPosition = "center";
-    preview.style.backgroundImage = `url("${toFileUrl(item.stillSrc || item.webpSrc)}")`;
+    const stillFrame = Number(item.stillFrame) || 0;
+    const source = Number(frameIndex) === stillFrame && item.stillSrc
+      ? item.stillSrc
+      : (frameUrl(item, frameIndex) || item.stillSrc || item.webpSrc);
+    const sourceUrl = source && /^(?:file|data):/i.test(String(source))
+      ? source
+      : toFileUrl(source);
+    if (sourceUrl) preview.style.backgroundImage = `url("${sourceUrl}")`;
     return;
   }
   const slice = effectSpritePosition(item);
@@ -2120,6 +2130,7 @@ async function renderSinglePreset(item) {
         presetPath: item.path,
         fps: Number(item.fps) || 0,
         cellSize: Number(item.cellSize) || 720,
+        format: String(item.format || "png"),
       },
     ],
     entry: { view: "presets" },

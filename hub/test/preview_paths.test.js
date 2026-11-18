@@ -269,3 +269,28 @@ test("恢复默认预览根目录会迁回 data/previews 并写回空设置", ()
   assert.equal(fs.existsSync(path.join(customRoot, "effects")), false);
   assert.equal(fs.existsSync(customRoot), false);
 });
+
+test("预设 WebP 帧序列迁移时保留每一帧的编号", () => {
+  const { paths } = workspace();
+  const legacy = path.join(previewPaths.currentRoot(paths), "presets", "legacy");
+  write(path.join(legacy, "preset_001_0000.webp"), "0");
+  write(path.join(legacy, "preset_001_0001.webp"), "1");
+  writeJson(path.join(paths.dataDir, "preset_plugin_manifest.json"), {
+    version: 1,
+    items: [{
+      name: "Preset One",
+      path: "C:/presets/one.ffx",
+      folder: "legacy",
+      src: "previews/presets/legacy/preset_001_0000.webp",
+      frameSrc: "previews/presets/legacy/preset_001_%04d.webp",
+      frames: 2,
+    }],
+  });
+
+  const result = previewPaths.migratePreviewLayout(paths);
+  assert.equal(result.ok, true);
+  const item = readJson(path.join(paths.dataDir, "preset_plugin_manifest.json")).items[0];
+  assert.equal(item.frameSrc, "previews/presets/preset-one/preset_001_%04d.webp");
+  assert.ok(fs.existsSync(path.join(previewPaths.currentRoot(paths), "presets", "preset-one", "preset_001_0000.webp")));
+  assert.ok(fs.existsSync(path.join(previewPaths.currentRoot(paths), "presets", "preset-one", "preset_001_0001.webp")));
+});

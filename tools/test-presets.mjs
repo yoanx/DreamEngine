@@ -481,9 +481,42 @@ test("文字预设按 1920x1080 舞台应用后重新居中，并识别表达式
   assert.match(src, /after\.expressions > before\.expressions/);
   assert.match(src, /var EXPRESSION_SPAN_SECONDS = 3/);
   assert.match(src, /var animated = keyAnimated \|\| expressionAnimated/);
+  // 非 Text 分类需要按类别换舞台，不能全部套文字或单图层。
+  assert.match(src, /function presetCategory/);
+  assert.match(src, /function addShapeStage/);
+  assert.match(src, /function addTransitionStage/);
+  assert.match(src, /function addCreativeStage/);
+  assert.match(src, /lower === "image - creative"/);
+  assert.match(src, /function addWaveformStage/);
+  assert.match(src, /stageKind === "audio"/);
   assert.match(src, /expressionCount > 0/);
 });
 
+test("转场和 Image 舞台使用默认渲染图，转场先创建双图层再落前景", () => {
+  const src = codeOf(read("cep/com.dreamengine.panel/engine/preset_preview.jsx"));
+  assert.match(src, /function defaultPhotoPath\(/);
+  assert.match(src, /AEV_Assets\.getFresh\("photo", TEXT_STAGE_HEIGHT, defaultPhotoPath\(extensionPath\)\)/);
+  assert.match(src, /addTransitionStage\(comp, size, trash, fps, sheetIndex, extensionPath\)/);
+  assert.match(src, /addCreativeStage\(comp, size, trash, fps, sheetIndex, extensionPath\)/);
+  assert.match(src, /targets: \[\{ comp: stage, layer: top \}\]/);
+});
+
+test("安装包内置预设使用 bundled WebP 帧序列并合并索引", () => {
+  assert.match(read("hub/core/paths.js"), /bundledPresetManifest/);
+  assert.match(read("hub/core/presets.js"), /readIndex\(paths\.bundledPresetManifest\)/);
+  assert.match(read("cep/com.dreamengine.panel/js/library.js"), /data\/bundled_preset_manifest\.json/);
+  const lib = read("cep/com.dreamengine.panel/js/library.js");
+  const presetIndexStart = lib.indexOf("function loadPresetIndex");
+  const presetIndexEnd = lib.indexOf("function hasPresetPreview", presetIndexStart);
+  assert.ok(presetIndexStart >= 0 && presetIndexEnd > presetIndexStart);
+  const presetIndexBlock = lib.slice(presetIndexStart, presetIndexEnd);
+  assert.ok(presetIndexBlock.indexOf("data/preset_plugin_manifest.json") < presetIndexBlock.indexOf("data/bundled_preset_manifest.json"));
+  assert.ok(presetIndexBlock.indexOf("data/bundled_preset_manifest.json") < presetIndexBlock.indexOf("data/preset_manifest.json"));
+  assert.match(read("tools/prepare_hub_bundle.mjs"), /PRESET_SRC/);
+  assert.match(read("tools/install_dreamengine.ps1"), /bundled_preset_manifest\.json/);
+  assert.match(read("tools/package_preset_previews.mjs"), /format: "webp-frame-sequence"/);
+  assert.match(read("tools/package_preset_previews.mjs"), /\.\(png\|webp\)/);
+});
 test("预设卡片静态图选内容最多的一帧，不再固定取中间帧", () => {
   const ps = read("tools/generate_plugin_presets.ps1");
   const nodeDriver = read("tools/run_plugin_preset_batches.mjs");
@@ -492,6 +525,17 @@ test("预设卡片静态图选内容最多的一帧，不再固定取中间帧",
   assert.match(nodeDriver, /function bestStillFrame/);
   assert.match(nodeDriver, /stillSrc:/);
 });
+test("预设渲染支持 PNG/WebP 帧序列选项，效果预览也使用 WebP 序列", () => {
+  const html = read("hub/renderer/index.html");
+  const flow = read("hub/renderer/flow.js");
+  const builder = read("hub/core/effect_preview_builder.js");
+  assert.match(html, /id="flowPresetFormat"/);
+  assert.match(flow, /presetFormat/);
+  assert.match(flow, /frameFormat/);
+  assert.match(builder, /format = "webp-sequence"/);
+  assert.match(builder, /frameSrc = previewPaths\.logicalValue\("effects", `webp\/\$\{pluginName\}\/frames\//);
+});
+
 test("离线预设运行器从 FPS 文件读取帧率并传给 renderJson", () => {
   const runner = read("tools/run_plugin_preset_preview.jsx");
   const ps = read("tools/generate_plugin_presets.ps1");
@@ -758,6 +802,8 @@ test("AE 面板预览 URL 会编码中文目录和空格", () => {
   assert.match(lib, /split\("\/"\)\.map\(encodeURIComponent\)\.join\("\/"\)/);
   assert.match(lib, /var stillUrl = preview\.stillSrc \? dataUrl/);
   assert.match(lib, /animated\.src = dataUrl\(preview\.webpSrc\)/);
+  assert.match(lib, /var webpSequence = preview\.format === "webp-sequence"/);
+  assert.match(lib, /thumb\.style\.backgroundSize = "cover"/);
   assert.match(lib, /return dataUrl\(String\(template\)\.replace\("%04d"/);
 });
 

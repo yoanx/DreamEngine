@@ -35,7 +35,7 @@ assert.ok(statSync(INSTALLER).size > 100 * 1024 * 1024, "Installer is unexpected
 const seven = find7za(CACHE);
 assert.ok(seven, `7za.exe not found under persistent cache: ${CACHE}`);
 execFileSync(seven, ["t", INSTALLER], { stdio: "pipe" });
-const listing = execFileSync(seven, ["l", INSTALLER], { encoding: "utf8" });
+const listing = execFileSync(seven, ["l", INSTALLER], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
 for (const required of [
   "resources\\panel\\extension\\index.html",
   "resources\\panel\\extension\\css\\fonts\\NotoSansSC-VF.ttf",
@@ -44,6 +44,8 @@ for (const required of [
   "resources\\panel\\extension\\svg\\mode-multi.svg",
   "resources\\panel\\extension\\svg\\magnet.svg",
   "resources\\panel\\l1\\manifest.json",
+  "resources\\panel\\presets\\manifest.json",
+  "resources\\panel\\presets\\previews\\bundled\\presets\\",
   "resources\\tools\\generate_plugin_presets.ps1",
   "resources\\tools\\ae_watchdog.ps1",
   "resources\\tools\\ae_crash_guard.ps1",

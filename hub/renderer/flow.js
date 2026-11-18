@@ -25,7 +25,7 @@
     step: "type",
     kinds: ["preset", "effect"],
     kind: null,
-    plan: { items: [], config: { ae: "", background: "", presetFps: 24, presetResolution: 720, limit: 40, rounds: 40, force: false } },
+    plan: { items: [], config: { ae: "", background: "", presetFps: 24, presetResolution: 720, presetFormat: "png", limit: 40, rounds: 40, force: false } },
     reached: new Set(["type"]),
     /* 从库进入：记下入口，用于左上角「← 返回」和第 3 步的「来自库选择」提示 */
     entry: null,
@@ -287,6 +287,11 @@
     flow.tuning.doneAt = "";
   }
 
+  function planStatusFor(kind, item) {
+    /* excluded 是效果目录的专用状态；所有 .ffx 预设都应进入渲染脚本判定。 */
+    if (kind === "preset") return item.rendered ? "rendered" : "pending";
+    return String(item.status || "pending");
+  }
   function chooseKind(kind) {
     if (kind !== "preset" && kind !== "effect") return;
     const conflict = flow.plan.items.length > 0 && flow.kind && flow.kind !== kind;
@@ -333,7 +338,7 @@
         kind,
         name: itemName(kind, item),
         meta: itemMetaText(kind, item),
-        status: kind === "effect" ? String(item.status || "pending") : item.rendered ? "rendered" : "pending",
+        status: planStatusFor(kind, item),
         reason: String(item.reason || ""),
         manualTuning: false,
         presetPath: kind === "preset" ? String(item.path || "") : "",
@@ -342,6 +347,7 @@
         category: kind === "effect" ? String(item.category || "") : "",
         fps: kind === "preset" ? Number(item.fps) || 0 : 0,
         cellSize: kind === "preset" ? Number(item.cellSize) || 720 : 0,
+        format: kind === "preset" ? String(item.format || "png") : "",
       });
     }
     resetTuningDone();
@@ -563,7 +569,7 @@
         kind,
         name: itemName(kind, item),
         meta: itemMetaText(kind, item),
-        status: kind === "effect" ? String(item.status || "pending") : item.rendered ? "rendered" : "pending",
+        status: planStatusFor(kind, item),
         reason: String(item.reason || ""),
         manualTuning: false,
         presetPath: kind === "preset" ? String(item.path || "") : "",
@@ -752,6 +758,9 @@
     show("flowPresetResolutionField", kind === "preset");
     const presetResolution = el("flowPresetResolution");
     if (presetResolution) presetResolution.value = String(config.presetResolution || 720);
+    show("flowPresetFormatField", kind === "preset");
+    const presetFormat = el("flowPresetFormat");
+    if (presetFormat) presetFormat.value = String(config.presetFormat || "png");
     const limit = el("flowLimit");
     if (limit) limit.value = config.limit;
     const rounds = el("flowRounds");
@@ -829,6 +838,7 @@
     const background = el("flowBackground");
     const presetFps = el("flowPresetFps");
     const presetResolution = el("flowPresetResolution");
+    const presetFormat = el("flowPresetFormat");
     const limit = el("flowLimit");
     const rounds = el("flowRounds");
     const force = el("flowForce");
@@ -844,6 +854,7 @@
       const value = Number(presetResolution.value);
       config.presetResolution = [360, 720].includes(value) ? value : 720;
     }
+    if (presetFormat) config.presetFormat = presetFormat.value === "webp" ? "webp" : "png";
     if (limit) config.limit = Math.max(1, Math.min(64, Number(limit.value) || config.limit || 8));
     if (rounds) config.rounds = Math.max(1, Math.min(200, Number(rounds.value) || config.rounds || 40));
     if (force) config.force = !!force.checked;
@@ -888,6 +899,7 @@
       "AE：" + (ae || "默认"),
       "背景：" + backgroundLabel(config.background),
       flow.kind === "preset" ? "分辨率：" + (config.presetResolution || 720) + " × " + (config.presetResolution || 720) : "",
+      flow.kind === "preset" ? "格式：" + String(config.presetFormat || "png").toUpperCase() : "",
       (flow.kind === "effect" ? "每批 " : "每实例 ") + config.limit,
       "重启上限 " + config.rounds,
     ].filter(function (value) { return !!value; });
@@ -940,16 +952,23 @@
     const force = !!flow.plan.config.force;
     const presetFps = Number(flow.plan.config.presetFps) || 24;
     const presetResolution = Number(flow.plan.config.presetResolution) || 720;
+    const presetFormat = String(flow.plan.config.presetFormat || "png");
     const targets = [];
     const skips = [];
     for (const item of items) {
-      const status = String(item.status || "pending");
-      if (status === "excluded") {
+      const status = flow.kind === "preset" && item.status === "excluded"
+        ? "pending"
+        : String(item.status || "pending");
+      if (status === "excluded" && flow.kind !== "preset") {
         skips.push({ key: item.key, name: item.name, reason: item.reason || "excluded" });
         continue;
       }
+      const itemFormat = String(item.format || "png");
+      const formatMatches = presetFormat === "webp"
+        ? (itemFormat === "webp" || itemFormat === "webp-sequence")
+        : itemFormat === "png";
       if (status === "rendered" && !force &&
-          (flow.kind !== "preset" || (Number(item.fps) === presetFps && (Number(item.cellSize) || 720) === presetResolution))) {
+          (flow.kind !== "preset" || (Number(item.fps) === presetFps && (Number(item.cellSize) || 720) === presetResolution && formatMatches))) {
         skips.push({ key: item.key, name: item.name, reason: "already_rendered" });
         continue;
       }
@@ -969,6 +988,7 @@
         background: config.background,
         fps: Math.max(12, Math.min(60, Number(config.presetFps) || 24)),
         cellSize: [360, 720].includes(Number(config.presetResolution)) ? Number(config.presetResolution) : 720,
+        frameFormat: config.presetFormat === "webp" ? "webp" : "png",
         limit: Math.max(1, Math.min(64, Number(config.limit) || 40)),
         rounds: Math.max(1, Math.min(200, Number(config.rounds) || 40)),
         retryFailed: !force,
@@ -1909,12 +1929,13 @@
         kind: flow.kind,
         name: String(item.name || key),
         meta: String(item.meta || ""),
-        status: String(item.status || "pending"),
+        status: planStatusFor(flow.kind, item),
         reason: String(item.reason || ""),
         manualTuning: !!(item.manualTuning || data.manualTuning),
         presetPath: String(item.presetPath || (flow.kind === "preset" ? key : "")),
         fps: flow.kind === "preset" ? Number(item.fps) || 0 : 0,
         cellSize: flow.kind === "preset" ? Number(item.cellSize) || 720 : 0,
+        format: flow.kind === "preset" ? String(item.format || "png") : "",
         matchName: String(item.matchName || (flow.kind === "effect" ? key : "")),
         plugin: String(item.plugin || ""),
         category: String(item.category || ""),
@@ -2021,6 +2042,11 @@
     on("flowPresetResolution", "change", (event) => {
       const value = Number(event.target.value);
       flow.plan.config.presetResolution = [360, 720].includes(value) ? value : 720;
+      saveConfig();
+    });
+
+    on("flowPresetFormat", "change", (event) => {
+      flow.plan.config.presetFormat = event.target.value === "webp" ? "webp" : "png";
       saveConfig();
     });
     on("flowBackground", "change", async (event) => {

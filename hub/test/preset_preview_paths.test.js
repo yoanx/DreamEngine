@@ -51,3 +51,44 @@ test("presets.list 读取自定义预览根目录中的预设帧", () => {
   assert.equal(item.framePattern, path.join(customRoot, "presets", "one_%04d.png"));
   assert.equal(item.cellSize, 360);
 });
+
+test("bundled 预览索引覆盖同路径的旧离线索引，现场索引优先级最高", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "de-preset-priority-"));
+  const paths = createPaths({
+    docsDir: path.join(root, "docs"),
+    appData: path.join(root, "appdata"),
+  });
+  const preset = path.join(paths.presets, "Priority.ffx");
+  fs.mkdirSync(path.dirname(preset), { recursive: true });
+  fs.writeFileSync(preset, "preset", "utf8");
+
+  const pluginItem = {
+    name: "Priority",
+    path: preset,
+    frames: 2,
+    src: "previews/presets/priority_0000.png",
+    frameSrc: "previews/presets/priority_%04d.png",
+    format: "png",
+  };
+  const bundledItem = {
+    ...pluginItem,
+    src: "previews/bundled/presets/priority/preset_001_0000.webp",
+    frameSrc: "previews/bundled/presets/priority/preset_001_%04d.webp",
+    format: "webp-sequence",
+    bundled: true,
+  };
+  const panelItem = {
+    ...pluginItem,
+    src: "previews/presets/priority/preset_002_0000.png",
+    frameSrc: "previews/presets/priority/preset_002_%04d.png",
+  };
+
+  writeJson(paths.presetPluginManifest, { version: 1, items: [pluginItem] });
+  writeJson(paths.bundledPresetManifest, { version: 1, items: [bundledItem] });
+  let index = presets.loadPreviewIndex(paths);
+  assert.equal(index.get(presets.norm(preset)).format, "webp-sequence");
+
+  writeJson(paths.presetManifest, { version: 1, items: [panelItem] });
+  index = presets.loadPreviewIndex(paths);
+  assert.equal(index.get(presets.norm(preset)).src, panelItem.src);
+});

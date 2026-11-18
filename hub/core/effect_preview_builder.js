@@ -2,7 +2,6 @@ const fs = require("node:fs");
 const path = require("node:path");
 const sharp = require("sharp");
 
-const { encodeAnimatedWebp } = require("./preview_codec");
 const { createPluginResolver } = require("./effects");
 const previewPaths = require("./preview_paths");
 const previewNames = require("./preview_names");
@@ -20,7 +19,20 @@ function writeJson(file, value) {
 }
 
 function dataFile(paths, relative) {
-  return previewPaths.resolveFile(paths, relative);
+  const direct = previewPaths.resolveFile(paths, relative);
+  if (direct && fs.existsSync(direct)) return direct;
+  const raw = String(relative || "").replace(/\\/g, "/").replace(/^previews\//i, "");
+  if (!raw) return direct;
+  const candidates = [];
+  if (raw.indexOf("effects/") === 0) {
+    candidates.push(path.join(paths.dataDir, "thumbs", raw.slice("effects/".length)));
+  }
+  candidates.push(path.join(paths.dataDir, "thumbs", raw));
+  candidates.push(path.join(paths.dataDir, raw));
+  for (const file of candidates) {
+    if (fs.existsSync(file)) return file;
+  }
+  return direct;
 }
 
 function safeFileStem(value, fallback) {
@@ -75,7 +87,22 @@ function rawFilesForItem(paths, item) {
 function cleanupIntermediatePngs(paths, builtin, plugin, options = {}) {
   // 渲染脚本正在写 manifest 时 readJson 会失败；此时不能把未归属的 PNG
   // 当成孤儿删掉，等下一批状态更新再重试。
-  if (!builtin || !plugin) return;
+  if (!builtin && !plugin) return;
+  // 已生成 WebP 帧序列的条目可以安全删除原始 PNG 帧。
+  for (const doc of [builtin, plugin]) {
+    for (const item of (doc && doc.items) || []) {
+      if (!item || !String(item.frameSrc || "").toLowerCase().endsWith(".webp")) continue;
+      const rawTemplate = String(item.rawFrameSrc || "");
+      if (!rawTemplate) continue;
+      const rawPngs = [...rawFilesForItem(paths, { frameSrc: rawTemplate, frames: item.frames })];
+      const webpFrames = [...rawFilesForItem(paths, item)];
+      if (!webpFrames.length || !webpFrames.every((file) => fs.existsSync(file))) continue;
+      for (const file of rawPngs) {
+        try { fs.unlinkSync(file); } catch { /* 文件被占用时留到下次处理 */ }
+      }
+    }
+  }
+
   const roots = [...new Set([
     path.resolve(paths.dataDir, "thumbs"),
     path.resolve(previewPaths.currentRoot(paths), "effects"),
@@ -88,10 +115,8 @@ function cleanupIntermediatePngs(paths, builtin, plugin, options = {}) {
       if (!item) continue;
       const rawFiles = rawFilesForItem(paths, item);
       for (const file of rawFiles) referenced.add(path.resolve(file).toLowerCase());
-      const webp = item.webpSrc ? dataFile(paths, item.webpSrc) : "";
-      if (webp && fs.existsSync(webp)) continue;
-      for (const file of rawFiles) {
-        unresolved.add(path.resolve(file).toLowerCase());
+      if (!rawFiles.length || !rawFiles.every((file) => fs.existsSync(file))) {
+        for (const file of rawFiles) unresolved.add(path.resolve(file).toLowerCase());
       }
     }
   }
@@ -114,7 +139,7 @@ function cleanupIntermediatePngs(paths, builtin, plugin, options = {}) {
 }
 
 function cleanupUnreferencedWebp(paths, builtin, plugin) {
-  if (!builtin || !plugin) return;
+  if (!builtin && !plugin) return;
   const folders = [...new Set([
     path.resolve(paths.dataDir, "thumbs", "webp"),
     path.resolve(previewPaths.currentRoot(paths), "effects", "webp"),
@@ -128,6 +153,9 @@ function cleanupUnreferencedWebp(paths, builtin, plugin) {
       for (const relative of [item.webpSrc, item.stillSrc]) {
         const file = dataFile(paths, relative);
         if (file) referenced.add(path.resolve(file).toLowerCase());
+      }
+      for (const file of rawFilesForItem(paths, item)) {
+        referenced.add(path.resolve(file).toLowerCase());
       }
     }
   }
@@ -230,49 +258,129 @@ async function cropFrames(files, geometry) {
 }
 
 async function writePreview(paths, item, manifest, prefix, quality, resolvePlugin) {
-  const files = frameFiles(paths, item);
+  // 已经是 WebP 序列且没有原始 PNG 时直接复用；否则会把裁好的单帧
+  // 再按旧拼图坐标裁一次，导致重启 Hub 后预览错位。
+  if (item && !item.rawFrameSrc && /\.webp$/i.test(String(item.frameSrc || ""))) return null;
+  if (!item.rawFrameSrc && /\.png$/i.test(String(item.frameSrc || item.src || ""))) {
+    item.rawFrameSrc = String(item.frameSrc || item.src);
+  }
+  const inputItem = item.rawFrameSrc ? { ...item, frameSrc: item.rawFrameSrc } : item;
+  const files = frameFiles(paths, inputItem);
   if (!files.length) return null;
   const frames = await cropFrames(files, cropGeometry(item, manifest));
-  const fps = Math.max(1, Number(item.fps) || 24);
   const qualityValue = Math.max(1, Math.min(100, Number(quality) || 80));
   const pluginName = previewPluginName(item, prefix, resolvePlugin);
   const folder = path.join(previewPaths.currentRoot(paths), "effects", "webp", pluginName);
+  const framesFolder = path.join(folder, "frames");
   const stillFolder = path.join(folder, "stills");
-  fs.mkdirSync(folder, { recursive: true });
+  fs.mkdirSync(framesFolder, { recursive: true });
   fs.mkdirSync(stillFolder, { recursive: true });
   const base = previewBaseName(item, prefix);
   const stillIndex = Math.floor(frames.length / 2);
-  const webpFile = path.join(folder, `${base}.webp`);
   const stillFile = path.join(stillFolder, `${base}.webp`);
   const still = await sharp(frames[stillIndex]).webp({ quality: qualityValue }).toBuffer();
-
-  let pages = 1;
-  if (frames.length > 1) {
-    const metadata = await sharp(frames[0]).metadata();
-    const animated = await encodeAnimatedWebp(frames, {
-      width: metadata.width,
-      height: metadata.height,
-      fps,
-      quality: qualityValue,
-    });
-    pages = Number((await sharp(animated, { animated: true }).metadata()).pages) || 1;
-    fs.writeFileSync(webpFile, animated);
-    fs.writeFileSync(stillFile, still);
-  } else {
-    fs.writeFileSync(webpFile, still);
-    fs.writeFileSync(stillFile, still);
+  for (let index = 0; index < frames.length; index++) {
+    const frameFile = path.join(framesFolder, `${base}_${String(index).padStart(4, "0")}.webp`);
+    fs.writeFileSync(frameFile, await sharp(frames[index]).webp({ quality: qualityValue }).toBuffer());
   }
-  item.webpSrc = previewPaths.logicalValue("effects", `webp/${pluginName}/${base}.webp`);
+  fs.writeFileSync(stillFile, still);
+  item.src = previewPaths.logicalValue("effects", `webp/${pluginName}/frames/${base}_0000.webp`);
+  item.frameSrc = previewPaths.logicalValue("effects", `webp/${pluginName}/frames/${base}_%04d.webp`);
   item.stillSrc = previewPaths.logicalValue("effects", `webp/${pluginName}/stills/${base}.webp`);
   item.stillFrame = stillIndex;
+  item.frames = frames.length;
+  item.format = "webp-sequence";
+  delete item.webpSrc;
+  return { pages: frames.length };
+}
+
+/**
+ * 旧版本把效果预览存成单张动画 WebP。新版统一存静态 WebP 帧序列，
+ * 没有原始 PNG 时直接从动画 WebP 的每一页拆帧，避免用户升级后预览消失。
+ */
+async function extractExistingWebp(paths, item, manifest, prefix, quality, resolvePlugin) {
+  if (!item || !item.webpSrc) return null;
+  if (String(item.frameSrc || "").toLowerCase().endsWith(".webp")) return null;
+  const source = dataFile(paths, item.webpSrc);
+  if (!source || !fs.existsSync(source)) return null;
+  const previousCache = sharp.cache();
+  sharp.cache({ memory: previousCache.memory.max, files: 0, items: previousCache.items.max });
+  let metadata;
+  try {
+    metadata = await sharp(source, { animated: true }).metadata();
+  } catch {
+    restoreSharpCache(previousCache);
+    return null;
+  }
+  const pages = Math.max(1, Number(metadata && metadata.pages) || 1);
+  const qualityValue = Math.max(1, Math.min(100, Number(quality) || 80));
+  const pluginName = previewPluginName(item, prefix, resolvePlugin);
+  const folder = path.join(previewPaths.currentRoot(paths), "effects", "webp", pluginName);
+  const framesFolder = path.join(folder, "frames");
+  const stillFolder = path.join(folder, "stills");
+  fs.mkdirSync(framesFolder, { recursive: true });
+  fs.mkdirSync(stillFolder, { recursive: true });
+  const base = previewBaseName(item, prefix);
+  const stillIndex = Math.min(
+    pages - 1,
+    Math.max(0, Number.isFinite(Number(item.stillFrame)) ? Number(item.stillFrame) : Math.floor(pages / 2)),
+  );
+  const oldStill = dataFile(paths, item.stillSrc);
+  const stillFile = path.join(stillFolder, `${base}.webp`);
+  for (let index = 0; index < pages; index++) {
+    const frameFile = path.join(framesFolder, `${base}_${String(index).padStart(4, "0")}.webp`);
+    await sharp(source, { page: index, pages: 1 })
+      .webp({ quality: qualityValue, effort: 4 })
+      .toFile(frameFile);
+  }
+  if (oldStill && fs.existsSync(oldStill) && path.resolve(oldStill) !== path.resolve(stillFile)) {
+    fs.copyFileSync(oldStill, stillFile);
+  } else {
+    await sharp(source, { page: stillIndex, pages: 1 })
+      .webp({ quality: qualityValue, effort: 4 })
+      .toFile(stillFile);
+  }
+  item.src = previewPaths.logicalValue("effects", `webp/${pluginName}/frames/${base}_0000.webp`);
+  item.frameSrc = previewPaths.logicalValue("effects", `webp/${pluginName}/frames/${base}_%04d.webp`);
+  item.stillSrc = previewPaths.logicalValue("effects", `webp/${pluginName}/stills/${base}.webp`);
+  item.stillFrame = stillIndex;
+  item.frames = pages;
+  item.format = "webp-sequence";
+  delete item.webpSrc;
+  for (const file of [source, oldStill]) {
+    if (!file || path.resolve(file) === path.resolve(stillFile)) continue;
+    await removeFileWithRetry(file);
+  }
+  restoreSharpCache(previousCache);
   return { pages };
+}
+
+function restoreSharpCache(cache) {
+  sharp.cache({
+    memory: cache.memory.max,
+    files: cache.files.max,
+    items: cache.items.max,
+  });
+}
+
+async function removeFileWithRetry(file) {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    try {
+      fs.unlinkSync(file);
+      return true;
+    } catch {
+      if (attempt < 4) await new Promise((resolve) => setTimeout(resolve, 80));
+    }
+  }
+  return false;
 }
 
 async function buildManifest(paths, file, manifest, prefix, quality, resolvePlugin, changed) {
   if (!manifest || !Array.isArray(manifest.items)) return 0;
   let built = 0;
   for (const item of manifest.items) {
-    const preview = await writePreview(paths, item, manifest, prefix, quality, resolvePlugin);
+    const preview = await writePreview(paths, item, manifest, prefix, quality, resolvePlugin) ||
+      await extractExistingWebp(paths, item, manifest, prefix, quality, resolvePlugin);
     if (preview) {
       built++;
       changed.set(item.matchName, preview.pages);

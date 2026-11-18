@@ -35,7 +35,7 @@ async function makeSheet(file, colors) {
     .toFile(file);
 }
 
-test("effect_preview_builder 把拼图帧裁成动画 WebP 并回写 manifest", async () => {
+test("effect_preview_builder 把拼图帧裁成 WebP 帧序列并回写 manifest", async () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "de-effect-webp-"));
   const paths = createPaths({
     docsDir: path.join(root, "docs"),
@@ -65,25 +65,79 @@ test("effect_preview_builder 把拼图帧裁成动画 WebP 并回写 manifest", 
       frameSrc: "thumbs/batch_%04d.png",
     }],
   });
-  writeJson(paths.pluginManifest, { version: 1, items: [], sheets: [] });
-
   const result = await builder.buildEffectPreviews(paths, { quality: 78 });
   assert.equal(result.ok, true);
   assert.equal(result.built, 1);
 
   const manifest = JSON.parse(fs.readFileSync(path.join(paths.dataDir, "manifest.json"), "utf8"));
   const item = manifest.items[0];
-  assert.equal(item.webpSrc, "previews/effects/webp/builtin/ADBE Glo2.webp");
+  assert.equal(item.webpSrc, undefined);
+  assert.equal(item.frameSrc, "previews/effects/webp/builtin/frames/ADBE Glo2_%04d.webp");
+  assert.equal(item.src, "previews/effects/webp/builtin/frames/ADBE Glo2_0000.webp");
   assert.equal(item.stillSrc, "previews/effects/webp/builtin/stills/ADBE Glo2.webp");
-  assert.ok(fs.existsSync(previewPaths.resolveFile(paths, item.webpSrc)));
+  assert.ok(fs.existsSync(previewPaths.resolveFile(paths, item.frameSrc.replace("%04d", "0000"))));
   assert.ok(fs.existsSync(previewPaths.resolveFile(paths, item.stillSrc)));
   assert.equal(fs.existsSync(path.join(thumbs, "batch_0000.png")), false);
   assert.equal(fs.existsSync(path.join(thumbs, "batch_0001.png")), false);
 
-  const metadata = await sharp(previewPaths.resolveFile(paths, item.webpSrc), { animated: true }).metadata();
+  const metadata = await sharp(previewPaths.resolveFile(paths, item.frameSrc.replace("%04d", "0000"))).metadata();
   assert.equal(metadata.width, 10);
-  assert.equal(metadata.pageHeight, 10);
-  assert.ok(metadata.pages <= 2);
+  assert.equal(metadata.height, 10);
+});
+
+test("旧版单文件动画 WebP 会拆成 WebP 帧序列", async () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "de-effect-webp-legacy-"));
+  const paths = createPaths({
+    docsDir: path.join(root, "docs"),
+    appData: path.join(root, "appdata"),
+  });
+  const legacy = path.join(paths.dataDir, "thumbs", "webp", "builtin", "ADBE Legacy.webp");
+  fs.mkdirSync(path.dirname(legacy), { recursive: true });
+  const frames = [];
+  for (const color of ["#ff0000", "#00ff00"]) {
+    frames.push(await sharp({ create: { width: 10, height: 10, channels: 3, background: color } })
+      .png()
+      .toBuffer());
+  }
+  await sharp(frames, { join: { animated: true } })
+    .webp({ quality: 80, delay: [100, 100] })
+    .toFile(legacy);
+  writeJson(path.join(paths.dataDir, "manifest.json"), {
+    version: 2,
+    cellSize: 10,
+    columns: 1,
+    width: 10,
+    height: 10,
+    sheets: [],
+    items: [{
+      matchName: "ADBE Legacy",
+      sheet: 0,
+      x: 0,
+      y: 0,
+      width: 10,
+      height: 10,
+      frames: 24,
+      fps: 24,
+      duration: 1,
+      frameSrc: "previews/effects/batch_0000_%04d.png",
+      webpSrc: "previews/effects/webp/builtin/ADBE Legacy.webp",
+      stillFrame: 1,
+    }],
+  });
+  writeJson(paths.pluginManifest, { version: 1, items: [], sheets: [] });
+
+  const result = await builder.buildEffectPreviews(paths, { quality: 78 });
+  assert.equal(result.ok, true);
+  const item = JSON.parse(fs.readFileSync(path.join(paths.dataDir, "manifest.json"), "utf8")).items[0];
+  assert.equal(item.webpSrc, undefined);
+  assert.equal(item.format, "webp-sequence");
+  assert.equal(item.frames, 2);
+  assert.match(item.frameSrc, /ADBE Legacy_%04d\.webp$/);
+  assert.ok(fs.existsSync(previewPaths.resolveFile(paths, item.frameSrc.replace("%04d", "0000"))));
+  assert.ok(fs.existsSync(previewPaths.resolveFile(paths, item.frameSrc.replace("%04d", "0001"))));
+  assert.equal(fs.existsSync(legacy), false);
+  const second = await builder.buildEffectPreviews(paths, { quality: 78 });
+  assert.equal(second.built, 0);
 });
 
 test("同一效果重新渲染时使用稳定文件名并覆盖旧 WebP", async () => {
@@ -119,20 +173,20 @@ test("同一效果重新渲染时使用稳定文件名并覆盖旧 WebP", async 
   await makeSheet(path.join(thumbs, "batch_0000.png"), ["#ff0000", "#00ff00"]);
   await makeSheet(path.join(thumbs, "batch_0001.png"), ["#ff0000", "#00ff00"]);
   await builder.buildEffectPreviews(paths, { quality: 78 });
-  const first = JSON.parse(fs.readFileSync(path.join(paths.dataDir, "manifest.json"), "utf8")).items[0].webpSrc;
+  const first = JSON.parse(fs.readFileSync(path.join(paths.dataDir, "manifest.json"), "utf8")).items[0].frameSrc;
 
   await makeSheet(path.join(thumbs, "batch_0000.png"), ["#0000ff", "#ffff00"]);
   await makeSheet(path.join(thumbs, "batch_0001.png"), ["#0000ff", "#ffff00"]);
   await builder.buildEffectPreviews(paths, { quality: 78 });
   const manifest = JSON.parse(fs.readFileSync(path.join(paths.dataDir, "manifest.json"), "utf8"));
-  const second = manifest.items[0].webpSrc;
+  const second = manifest.items[0].frameSrc;
 
-  assert.equal(first, "previews/effects/webp/builtin/ADBE Glo2.webp");
+  assert.equal(first, "previews/effects/webp/builtin/frames/ADBE Glo2_%04d.webp");
   assert.equal(second, first);
   assert.equal(
-    fs.readdirSync(path.join(previewPaths.currentRoot(paths), "effects", "webp"), { recursive: true })
-      .filter((name) => name.endsWith(".webp") && !name.includes("stills")).length,
-    1,
+    fs.readdirSync(path.join(previewPaths.currentRoot(paths), "effects", "webp", "builtin", "frames"))
+      .filter((name) => name.endsWith(".webp")).length,
+    2,
   );
 });
 
@@ -219,11 +273,11 @@ test("预览 WebP 按插件分目录存储", async () => {
   await builder.buildEffectPreviews(paths, { quality: 78 });
 
   const manifest = JSON.parse(fs.readFileSync(paths.pluginManifest, "utf8"));
-  assert.equal(manifest.items[0].webpSrc, "previews/effects/webp/bcc/BCC_GLOW.webp");
+  assert.equal(manifest.items[0].frameSrc, "previews/effects/webp/bcc/frames/BCC_GLOW_%04d.webp");
   assert.equal(manifest.items[0].stillSrc, "previews/effects/webp/bcc/stills/BCC_GLOW.webp");
 });
 
-test("WebP 被 Sharp 合并为单页时写入 animated.json", async () => {
+test("WebP 帧序列按页数写入 animated.json", async () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "de-effect-webp-static-"));
   const paths = createPaths({
     docsDir: path.join(root, "docs"),
@@ -272,7 +326,7 @@ test("WebP 被 Sharp 合并为单页时写入 animated.json", async () => {
   await builder.buildEffectPreviews(paths, { quality: 78 });
 
   const index = JSON.parse(fs.readFileSync(path.join(paths.dataDir, "animated.json"), "utf8"));
-  assert.deepEqual(index.items, [{ matchName: "ADBE Static", animated: false }]);
+  assert.deepEqual(index.items, []);
 });
 
 test("被 Hub 归为内置的效果写入内置目录，而不是原始扫描插件名", async () => {
@@ -326,8 +380,8 @@ test("被 Hub 归为内置的效果写入内置目录，而不是原始扫描插
 
   const manifest = JSON.parse(fs.readFileSync(paths.pluginManifest, "utf8"));
   assert.equal(
-    manifest.items[0].webpSrc,
-    "previews/effects/webp/builtin/Mettle SkyBox Chromatic Aberrat.webp",
+    manifest.items[0].frameSrc,
+    "previews/effects/webp/builtin/frames/Mettle SkyBox Chromatic Aberrat_%04d.webp",
   );
 });
 
@@ -367,7 +421,7 @@ test("重新渲染后删除不再引用的旧哈希 WebP", async () => {
   await builder.buildEffectPreviews(paths, { quality: 78 });
 
   assert.equal(fs.existsSync(path.join(thumbs, "webp", "builtin_deadbeefdeadbeef.webp")), false);
-  assert.equal(fs.existsSync(previewPaths.resolveFile(paths, "previews/effects/webp/builtin/ADBE Glo2.webp")), true);
+  assert.equal(fs.existsSync(previewPaths.resolveFile(paths, "previews/effects/webp/builtin/frames/ADBE Glo2_0000.webp")), true);
 });
 
 test("批次清理删除旧根目录 WebP，但保留插件目录内的命名 WebP", async () => {
@@ -453,8 +507,8 @@ test("已完成条目的 WebP 生成后立即清理自己的 PNG，不等所有�
   assert.equal(fs.existsSync(path.join(thumbs, "batch_0000_0001.png")), false);
   assert.equal(fs.existsSync(path.join(thumbs, "batch_0001_0000.png")), false);
   const manifest = JSON.parse(fs.readFileSync(path.join(paths.dataDir, "manifest.json"), "utf8"));
-  assert.match(manifest.items[0].webpSrc, /^previews\/effects\/webp\/.+\.webp$/);
-  assert.equal(manifest.items[1].webpSrc, undefined);
+  assert.match(manifest.items[0].frameSrc, /^previews\/effects\/webp\/.+_%04d\.webp$/);
+  assert.equal(manifest.items[1].frameSrc, "thumbs/batch_0001_%04d.png");
 });
 
 test("帧序列未写齐时不生成 WebP，也不清理已有 PNG", async () => {
@@ -558,8 +612,8 @@ test("effect_preview_builder 将 WebP 写入自定义预览根目录的 effects 
 
   const manifest = JSON.parse(fs.readFileSync(path.join(paths.dataDir, "manifest.json"), "utf8"));
   const item = manifest.items[0];
-  assert.match(item.webpSrc, /^previews\/effects\/webp\//);
+  assert.match(item.frameSrc, /^previews\/effects\/webp\/.+_%04d\.webp$/);
   assert.match(item.stillSrc, /^previews\/effects\/webp\//);
-  assert.ok(fs.existsSync(previewPaths.resolveFile(paths, item.webpSrc)));
+  assert.ok(fs.existsSync(previewPaths.resolveFile(paths, item.frameSrc.replace("%04d", "0000"))));
   assert.ok(fs.existsSync(previewPaths.resolveFile(paths, item.stillSrc)));
 });

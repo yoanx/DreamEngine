@@ -78,9 +78,9 @@ function collectManifestFiles(paths, doc, output) {
     if (!item) continue;
     const webpSrc = relativePath(item.webpSrc);
     const stillSrc = relativePath(item.stillSrc);
+    if (stillSrc) output.add(stillSrc);
     if (webpSrc) {
       output.add(webpSrc);
-      if (stillSrc) output.add(stillSrc);
       continue;
     }
     for (const relative of expandPattern(item.frameSrc, item.frames)) output.add(relative);

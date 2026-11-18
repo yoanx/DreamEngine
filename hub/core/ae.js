@@ -39,6 +39,19 @@ function expandEnv(value) {
 }
 
 /** App Paths 只有一个槽位：装多个 AE 时只留下最后安装的那个 */
+function parseAppPaths(output) {
+  const paths = [];
+  for (const line of String(output || "").split(/\r?\n/)) {
+    const match = line.match(/\bREG_(?:EXPAND_)?SZ\s+(.+?)\s*$/i);
+    if (!match) continue;
+    let candidate = match[1].trim().replace(/,\d+$/, "").replace(/^"|"$/g, "").trim();
+    if (!/AfterFX\.exe$/i.test(candidate)) continue;
+    paths.push(expandEnv(candidate));
+  }
+  return paths;
+}
+
+/** App Paths 只有一个槽位：装多个 AE 时只留下最后安装的那个 */
 function appPathCandidates() {
   const paths = [];
   for (const key of APP_PATH_KEYS) {
@@ -48,13 +61,7 @@ function appPathCandidates() {
     } catch {
       continue;
     }
-    for (const line of output.split(/\r?\n/)) {
-      const match = line.match(/REG_SZ\s+(.+?)\s*$/i);
-      if (!match) continue;
-      const candidate = match[1].replace(/^"|"$/g, "").replace(/,\d+$/, "");
-      if (!/AfterFX\.exe$/i.test(candidate)) continue;
-      paths.push(expandEnv(candidate));
-    }
+    paths.push(...parseAppPaths(output));
   }
   return paths;
 }
@@ -64,21 +71,25 @@ function appPathCandidates() {
  * 值是 Support Files 目录的绝对路径（可能带引号或末尾反斜杠）。
  * 已卸载但残留的项会在 findAfterFX 里被 existsSync 过滤掉。
  */
-function adobeInstallCandidates() {
+function parseInstallPaths(output) {
   const paths = [];
-  let output;
-  try {
-    output = regQuery(["query", ADOBE_AE_KEY, "/s", "/v", "InstallPath"]);
-  } catch {
-    return paths;
-  }
-  for (const line of output.split(/\r?\n/)) {
+  for (const line of String(output || "").split(/\r?\n/)) {
     const match = line.match(/InstallPath\s+REG_(?:EXPAND_)?SZ\s+(.+?)\s*$/i);
     if (!match) continue;
-    const dir = expandEnv(match[1].replace(/^"|"$/g, "").replace(/[\\/]+$/, ""));
-    paths.push(path.join(dir, "AfterFX.exe"));
+    const dir = expandEnv(match[1].replace(/^"|"$/g, "").replace(/[\\/]+$/, "")).trim();
+    if (dir) paths.push(dir);
   }
   return paths;
+}
+
+function adobeInstallCandidates(query = regQuery) {
+  let output;
+  try {
+    output = query(["query", ADOBE_AE_KEY, "/s", "/v", "InstallPath"]);
+  } catch {
+    return [];
+  }
+  return parseInstallPaths(output).map((dir) => path.join(dir, "AfterFX.exe"));
 }
 
 function registeredAfterFXPaths() {
@@ -171,4 +182,9 @@ function isAERunning() {
   }
 }
 
-module.exports = { findAfterFX, bestAfterFX, isAERunning };
+module.exports = {
+  findAfterFX,
+  bestAfterFX,
+  isAERunning,
+  __internals: { parseInstallPaths, adobeInstallCandidates, parseAppPaths, appPathCandidates },
+};

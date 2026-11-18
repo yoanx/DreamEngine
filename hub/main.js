@@ -34,6 +34,7 @@ const effectFavorites = require("./core/effect_favorites");
 const previewPackage = require("./core/preview_package");
 const previewPaths = require("./core/preview_paths");
 const { buildEffectPreviews } = require("./core/effect_preview_builder");
+const { convertPresetPreviews } = require("./core/preset_preview_format");
 const update = require("./core/update");
 const packageInfo = require("./package.json");
 const {
@@ -45,6 +46,7 @@ const {
 let mainWindow = null;
 let paths = null;
 let job = null;
+let renderFrameFormat = "png";
 let pluginJob = null;
 let manualRunner = null;
 let dumpJob = null;
@@ -480,6 +482,7 @@ function registerIpc() {
     if (busy) return { ok: false, reason: busy };
     let opts = options || {};
     opts.previewRoot = previewPaths.currentRoot(paths);
+    renderFrameFormat = opts.frameFormat === "webp" ? "webp" : "png";
     let selectedPaths = null;
     if (Array.isArray(opts.presetPaths)) {
       selectedPaths = selectedPresetPaths(opts.presetPaths);
@@ -490,10 +493,25 @@ function registerIpc() {
         const folderByPath = new Map(
           presets.list(paths).items.map((item) => [presets.norm(item.path), item.folder || "preset"]),
         );
-        const folderRows = selectedPaths.map(
-          (presetPath) => `${presetPath}\t${folderByPath.get(presets.norm(presetPath)) || "preset"}`,
+        const folderRows = new Map();
+        try {
+          const existing = fs.readFileSync(paths.presetFolderMap, "utf8").replace(/^\uFEFF/, "");
+          for (const line of existing.split(/\r?\n/)) {
+            const cells = line.split("\t");
+            if (cells.length >= 2 && cells[0]) folderRows.set(presets.norm(cells[0]), cells);
+          }
+        } catch { /* first render */ }
+        for (const presetPath of selectedPaths) {
+          folderRows.set(presets.norm(presetPath), [
+            presetPath,
+            folderByPath.get(presets.norm(presetPath)) || "preset",
+          ]);
+        }
+        fs.writeFileSync(
+          paths.presetFolderMap,
+          Array.from(folderRows.values()).map((cells) => cells.join("\t")).join("\r\n") + "\r\n",
+          "utf8",
         );
-        fs.writeFileSync(paths.presetFolderMap, folderRows.join("\r\n") + "\r\n", "utf8");
       } catch (error) {
         return { ok: false, reason: "write_failed", detail: String(error.message || error) };
       }
@@ -1051,8 +1069,17 @@ if (!gotLock) {
       },
       onExit: (info) => {
         stopAeGuard("render exit");
-        if (mainWindow && !mainWindow.isDestroyed()) {
-          mainWindow.webContents.send("render:exit", info);
+        const finish = (extra) => {
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send("render:exit", Object.assign({}, info, extra || {}));
+          }
+        };
+        if (renderFrameFormat === "webp") {
+          convertPresetPreviews(paths, { quality: 80 })
+            .then((result) => finish({ conversion: result }))
+            .catch((error) => finish({ conversion: { ok: false, detail: String(error.message || error) } }));
+        } else {
+          finish();
         }
       },
     });
@@ -1145,6 +1172,8 @@ if (!gotLock) {
     }
 
     createWindow();
+    // 升级后的旧动画 WebP 在窗口就绪后异步拆成帧序列；失败不阻塞 Hub 使用。
+    mainWindow.webContents.once("did-finish-load", () => runEffectPreviewBuild());
 
     if (screenshotArg) {
       mainWindow.webContents.once("did-finish-load", () => {

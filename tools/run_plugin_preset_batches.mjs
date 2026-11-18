@@ -164,13 +164,13 @@ function panelDonePaths() {
   }
 }
 
-function bestStillFrame(folder, base, frames) {
+function bestStillFrame(folder, base, frames, ext = "png") {
   const fallback = Math.max(0, Math.floor(frames / 2));
   const dir = resolve(PREVIEW_ROOT, "presets", folder || "");
   let best = fallback;
   let bestSize = -1;
   for (let i = 0; i < frames; i++) {
-    const file = join(dir, `${base}_${String(i).padStart(4, "0")}.png`);
+    const file = join(dir, `${base}_${String(i).padStart(4, "0")}.${ext}`);
     if (!existsSync(file)) continue;
     const size = statSync(file).size;
     if (size > bestSize) {
@@ -179,6 +179,13 @@ function bestStillFrame(folder, base, frames) {
     }
   }
   return best;
+}
+function frameExtension(folder, base, frames) {
+  const dir = resolve(PREVIEW_ROOT, "presets", folder || "");
+  for (let i = 0; i < Math.max(1, frames); i++) {
+    if (existsSync(join(dir, `${base}_${String(i).padStart(4, "0")}.webp`))) return "webp";
+  }
+  return "png";
 }
 /** 从 TSV 生成面板读的独立索引（面板的 preset_manifest.json 不动） */
 function buildPluginIndex() {
@@ -192,17 +199,19 @@ function buildPluginIndex() {
     const folder = String(row[12] || "");
     const prefix = folder ? `previews/presets/${folder}/` : "previews/presets/";
     const frames = Number(row[3]) || 1;
-    const stillFrame = bestStillFrame(folder, base, frames);
+    const frameExt = frameExtension(folder, base, frames);
+    const stillFrame = bestStillFrame(folder, base, frames, frameExt);
     byPath.set(row[1], {
       name: row[0],
       path: row[1],
       sheet,
       folder,
-      src: `${prefix}${base}_0000.png`,
-      frameSrc: `${prefix}${base}_%04d.png`,
-      stillSrc: `${prefix}${base}_${String(stillFrame).padStart(4, "0")}.png`,
+      src: `${prefix}${base}_0000.${frameExt}`,
+      frameSrc: `${prefix}${base}_%04d.${frameExt}`,
+      stillSrc: `${prefix}${base}_${String(stillFrame).padStart(4, "0")}.${frameExt}`,
       stillFrame,
       frames,
+      format: frameExt === "webp" ? "webp-sequence" : "png",
       animated: row[4] === "true",
       keyStart: Number(row[5]) || 0,
       keyEnd: Number(row[6]) || 0,

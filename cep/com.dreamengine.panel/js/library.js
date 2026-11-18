@@ -308,6 +308,13 @@ var AEV_Library = (function () {
     var stillUrl = preview.stillSrc ? dataUrl(preview.stillSrc) : "";
     thumb.style.backgroundSize = slice.size;
     thumb.style.backgroundPosition = slice.position;
+    // WebP 序列已经是裁好的单帧，不能再按旧版整网拼图切片，否则会放大错位。
+    var webpSequence = preview.format === "webp-sequence" ||
+      /\.webp$/i.test(String(preview.frameSrc || preview.src || ""));
+    if (webpSequence) {
+      thumb.style.backgroundSize = "cover";
+      thumb.style.backgroundPosition = "center";
+    }
     if (preview.webpSrc) {
       thumb.style.backgroundSize = "cover";
       thumb.style.backgroundPosition = "center";
@@ -459,10 +466,13 @@ var AEV_Library = (function () {
     thumb.className = "thumb";
     if (item.hasPreview) {
       var preview = item.preview;
+      var webpSequence = preview.format === "webp-sequence" ||
+        /\.webp$/i.test(String(preview.frameSrc || preview.src || ""));
       var previewCurrent =
-        Number(preview.effectPreviewVersion) === 2 &&
-        Number(preview.frames) === 24 &&
-        Number(preview.fps) === 24;
+        webpSequence ||
+        (Number(preview.effectPreviewVersion) === 2 &&
+          Number(preview.frames) === 24 &&
+          Number(preview.fps) === 24);
       var isAnimated =
         previewCurrent &&
         state.staticPreviews[item.matchName] !== true &&
@@ -1248,31 +1258,32 @@ var AEV_Library = (function () {
   /* ---------- 预设库（M3） ---------- */
 
   /* 预设预览的独立索引（不进 L1 的 manifest.json，由离线工具维护）。
-     面板生成的内置预设 + 离线脚本生成的插件预设，两份合并；离线条目优先。 */
+     加载顺序就是覆盖优先级：旧离线索引 -> 完整 bundled 包 -> 面板现场索引。
+     旧离线索引可能只保留部分 PNG 帧，不能让它在同名/同路径上盖掉完整包。 */
   function loadPresetIndex(done) {
-    loadOptionalJson("data/preset_manifest.json", function (data) {
-      state.presetPreviews = {};
-      state.presetPreviewsByPath = {};
-      state.presetPreviewsByNameLower = {};
-      function addPresetPreview(item) {
-        if (!item) return;
-        var name = String(item.name || "");
-        state.presetPreviews[name] = item;
-        state.presetPreviewsByNameLower[name.toLowerCase()] = item;
-        if (item.path && AEV_Prefs && AEV_Prefs.pathKey) {
-          state.presetPreviewsByPath[AEV_Prefs.pathKey(item.path)] = item;
-        }
+    state.presetPreviews = {};
+    state.presetPreviewsByPath = {};
+    state.presetPreviewsByNameLower = {};
+    function addPresetPreview(item) {
+      if (!item) return;
+      var name = String(item.name || "");
+      state.presetPreviews[name] = item;
+      state.presetPreviewsByNameLower[name.toLowerCase()] = item;
+      if (item.path && AEV_Prefs && AEV_Prefs.pathKey) {
+        state.presetPreviewsByPath[AEV_Prefs.pathKey(item.path)] = item;
       }
-      var items = (data && data.items) || [];
-      for (var i = 0; i < items.length; i++) {
-        addPresetPreview(items[i]);
-      }
-      loadOptionalJson("data/preset_plugin_manifest.json", function (pluginData) {
-        var pluginItems = (pluginData && pluginData.items) || [];
-        for (var q = 0; q < pluginItems.length; q++) {
-          addPresetPreview(pluginItems[q]);
-        }
-        if (done) done();
+    }
+    loadOptionalJson("data/preset_plugin_manifest.json", function (pluginData) {
+      var pluginItems = (pluginData && pluginData.items) || [];
+      for (var q = 0; q < pluginItems.length; q++) addPresetPreview(pluginItems[q]);
+      loadOptionalJson("data/bundled_preset_manifest.json", function (bundledData) {
+        var bundledItems = (bundledData && bundledData.items) || [];
+        for (var b = 0; b < bundledItems.length; b++) addPresetPreview(bundledItems[b]);
+        loadOptionalJson("data/preset_manifest.json", function (data) {
+          var items = (data && data.items) || [];
+          for (var i = 0; i < items.length; i++) addPresetPreview(items[i]);
+          if (done) done();
+        });
       });
     });
   }

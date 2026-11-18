@@ -66,7 +66,7 @@ class RenderJob {
   }
 
   /**
-   * @param {{ae?: string, background?: string, limit?: number, cellSize?: number, autoClose?: boolean, rounds?: number, onlyPreset?: string}} [options]
+   * @param {{ae?: string, background?: string, limit?: number, cellSize?: number, frameFormat?: string, autoClose?: boolean, rounds?: number, onlyPreset?: string}} [options]
    */
   start(options = {}) {
     if (this.running) return { ok: false, reason: "already_running" };
@@ -80,6 +80,7 @@ class RenderJob {
     if (options.background) args.push("-Background", String(options.background));
     if (options.fps !== undefined) args.push("-Fps", String(normalizeFps(options.fps)));
     if (options.cellSize !== undefined) args.push("-CellSize", String(normalizeCellSize(options.cellSize)));
+    if (options.frameFormat) args.push("-FrameFormat", options.frameFormat === "webp" ? "webp" : "png");
     if (options.limit) args.push("-Limit", String(Number(options.limit) || 40));
     if (options.rounds) args.push("-Rounds", String(Number(options.rounds) || 40));
     if (options.autoClose) args.push("-AutoClose");

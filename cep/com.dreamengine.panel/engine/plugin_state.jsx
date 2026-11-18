@@ -222,10 +222,15 @@ var AEV_PluginState = (function () {
                 if (entry.hasOwnProperty(key)) next[key] = entry[key];
             }
             var preview = byName[entry.matchName];
-            if (preview) {
+            if (preview && !next.__previewJustRendered) {
                 if (preview.webpSrc) next.webpSrc = preview.webpSrc;
+                if (preview.frameSrc) {
+                    next.frameTemplate = preview.frameSrc;
+                    if (preview.frames !== undefined) next.frames = preview.frames;
+                }
                 if (preview.stillSrc) next.stillSrc = preview.stillSrc;
                 if (preview.stillFrame !== undefined) next.stillFrame = preview.stillFrame;
+                if (preview.format) next.format = preview.format;
             }
             out.push(next);
         }
@@ -366,6 +371,7 @@ var AEV_PluginState = (function () {
             if (e.webpSrc) parts.push('"webpSrc":' + jsonText(e.webpSrc));
             if (e.stillSrc) parts.push('"stillSrc":' + jsonText(e.stillSrc));
             if (e.stillFrame !== undefined) parts.push('"stillFrame":' + parseInt(e.stillFrame, 10));
+            if (e.format) parts.push('"format":' + jsonText(e.format));
             items.push("{" + parts.join(",") + "}");
 
             if (!seenSheets[String(e.sheet)] && firstFrame) {

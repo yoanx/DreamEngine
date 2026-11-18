@@ -37,11 +37,14 @@ test("导出效果预览包时可以按插件选择", () => {
   assert.match(main, /exportEffectPreviews\([\s\S]*result\.filePath[\s\S]*options/);
 });
 
-test("Hub 效果卡优先使用单文件动画 WebP，不预加载整组 PNG 帧", () => {
+test("Hub 效果卡兼容旧动画 WebP，并直接播放 WebP 帧序列", () => {
   const app = read("renderer/app.js");
   const css = read("renderer/style.css");
   assert.match(app, /item\.webpSrc/);
+  assert.match(app, /webpSequence/);
   assert.match(app, /item\.stillSrc/);
+  assert.match(app, /const sourceUrl = source/);
+  assert.match(app, /preview\.style\.backgroundImage = `url\("\$\{sourceUrl\}"\)`/);
   assert.match(app, /effect-preview-webp/);
   assert.match(app, /removeAttribute\("src"\)/);
   assert.match(css, /\.effect-preview-webp/);
@@ -89,6 +92,12 @@ test("预览渲染流程使用统一效果选择，只排除不可渲染条目",
   assert.match(html, /把内置或插件效果加到测试图层上/);
 });
 
+test("预设计划不会继承效果专用的 excluded 状态", () => {
+  const flow = read("renderer/flow.js");
+  assert.match(flow, /function planStatusFor/);
+  assert.match(flow, /kind === "preset"[\s\S]{0,80}rendered[\s\S]{0,40}pending/);
+  assert.match(flow, /status === "excluded" && flow\.kind !== "preset"/);
+});
 test("效果渲染确认页隐藏预设帧率字段", () => {
   const css = read("renderer/style.css");
   assert.match(
