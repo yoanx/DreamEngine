@@ -120,7 +120,7 @@ test("安装器资源包含面板、字体、L1、离线渲染工具和安装脚
   assert.ok(existsSync(resolve(HUB, "renderer/about.js")));
   assert.ok(existsSync(resolve(release, "panel/extension/data/names.json")));
   assert.ok(existsSync(resolve(release, "panel/l1/manifest.json")));
-  assert.ok(existsSync(resolve(release, "panel/l1/previews/effects/webp/builtin/frames")));
+  assert.ok(existsSync(resolve(release, "panel/previews/effects/webp/builtin/frames")));
   assert.ok(existsSync(resolve(release, "tools/ae_watchdog.ps1")));
   assert.ok(existsSync(resolve(release, "tools/ae_crash_guard.ps1")));
   assert.ok(existsSync(resolve(release, "tools/manual_probe.ps1")));
@@ -154,7 +154,7 @@ test("干净资源不夹带开发机的运行时预览和索引", () => {
 test("安装包包含 AE 内置预设 WebP 帧包并部署 bundled 索引", () => {
   const release = resolve(ROOT, "hub/build/release/panel");
   const manifestPath = resolve(release, "presets/manifest.json");
-  const previewRoot = resolve(release, "presets/previews/bundled/presets");
+  const previewRoot = resolve(release, "previews/bundled/presets");
   assert.ok(existsSync(manifestPath));
   assert.ok(existsSync(previewRoot));
   const manifest = readJson(manifestPath);
@@ -208,7 +208,7 @@ test("L1 打包根据实际 WebP 页数生成静态预览索引", async () => {
       "utf8",
     );
 
-    execFileSync(process.execPath, [resolve(ROOT, "tools/package_effect_l1.mjs"), data, out], {
+    execFileSync(process.execPath, [resolve(ROOT, "tools/package_effect_l1.mjs"), data, out, join(out, "previews")], {
       cwd: ROOT,
       stdio: "pipe",
     });
@@ -315,7 +315,8 @@ test("升级时旧内置索引会自动切换为安装包内的 WebP 帧序列",
     const l1 = join(source, "l1");
     const frameRelative = "previews/effects/webp/builtin/frames/ADBE Preview_0000.webp";
     mkdirSync(join(source, "extension"), { recursive: true });
-    mkdirSync(join(l1, "previews/effects/webp/builtin/frames"), { recursive: true });
+    mkdirSync(l1, { recursive: true });
+    mkdirSync(join(source, "previews/effects/webp/builtin/frames"), { recursive: true });
     mkdirSync(join(target, "data"), { recursive: true });
     writeFileSync(join(source, "extension", "index.html"), "<!doctype html>", "utf8");
     writeFileSync(join(l1, "manifest.json"), JSON.stringify({
@@ -328,7 +329,7 @@ test("升级时旧内置索引会自动切换为安装包内的 WebP 帧序列",
         format: "webp-sequence",
       }],
     }), "utf8");
-    writeFileSync(join(l1, frameRelative), "packaged-frame", "utf8");
+    writeFileSync(join(source, frameRelative), "packaged-frame", "utf8");
     writeFileSync(join(target, "data", "manifest.json"), JSON.stringify({
       version: 2,
       items: [{ matchName: "ADBE Preview", webpSrc: "thumbs/webp/builtin/ADBE Preview.webp" }],

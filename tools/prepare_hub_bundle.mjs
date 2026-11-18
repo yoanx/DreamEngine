@@ -13,6 +13,7 @@ const RELEASE = resolve(HUB, "build/release");
 const PANEL_SRC = resolve(ROOT, "cep/com.dreamengine.panel");
 const L1_SRC = resolve(ROOT, "dist/L1");
 const PRESET_SRC = resolve(ROOT, "dist/presets");
+const PREVIEW_SRC = resolve(ROOT, "dist/previews");
 const TOOLS_SRC = resolve(ROOT, "tools");
 
 function assertInside(base, target) {
@@ -31,6 +32,8 @@ assertInside(HUB, RELEASE);
 rmSync(RELEASE, { recursive: true, force: true });
 mkdirSync(resolve(RELEASE, "panel/extension/data"), { recursive: true });
 mkdirSync(resolve(RELEASE, "panel/l1"), { recursive: true });
+mkdirSync(resolve(RELEASE, "panel/presets"), { recursive: true });
+mkdirSync(resolve(RELEASE, "panel/previews"), { recursive: true });
 mkdirSync(resolve(RELEASE, "tools"), { recursive: true });
 mkdirSync(resolve(RELEASE, "installer"), { recursive: true });
 
@@ -61,7 +64,11 @@ const missing = [...referenced].filter((ref) => !existsSync(resolve(RELEASE, "pa
 assert.equal(missing.length, 0, `bundle 缺少被引用的资源: ${missing.join(", ")}`);
 
 copyRequired(resolve(L1_SRC, "manifest.json"), resolve(RELEASE, "panel/l1/manifest.json"));
-copyRequired(PRESET_SRC, resolve(RELEASE, "panel/presets"));
+copyRequired(resolve(PRESET_SRC, "manifest.json"), resolve(RELEASE, "panel/presets/manifest.json"));
+if (existsSync(resolve(PRESET_SRC, "build-report.json"))) {
+  cpSync(resolve(PRESET_SRC, "build-report.json"), resolve(RELEASE, "panel/presets/build-report.json"));
+}
+copyRequired(PREVIEW_SRC, resolve(RELEASE, "panel/previews"));
 copyRequired(resolve(L1_SRC, "names.json"), resolve(RELEASE, "panel/l1/names.json"));
 copyRequired(resolve(L1_SRC, "previews.tsv"), resolve(RELEASE, "panel/l1/previews.tsv"));
 const l1Previews = resolve(L1_SRC, "previews");

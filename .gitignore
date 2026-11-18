@@ -34,6 +34,10 @@ logs/
 !dist/
 !dist/L1/
 !dist/L1/**
+!dist/previews/
+!dist/previews/**
+!dist/presets/
+!dist/presets/**
 !dist/L1/thumbs/*.png
 # 打包中间产物与安装包本身不入库（随时可用 tools/build_release.mjs 重新生成）
 dist/stage/
@@ -41,7 +45,7 @@ dist/*.zip
 
 # ---- 运行时产物（不入库）----
 # 扩展数据目录里的预览图与索引由 AE 生成或由 install_l1 部署，
-# 可分发的副本在 dist/L1/，运行时这份不入库——否则每次生成都会污染版本历史。
+# 可分发的副本在 dist/previews/，运行时这份不入库——否则每次生成都会污染版本历史。
 cep/com.dreamengine.panel/data/thumbs/
 cep/com.dreamengine.panel/data/manifest.json
 cep/com.dreamengine.panel/data/previews.tsv

@@ -45,7 +45,7 @@ for (const required of [
   "resources\\panel\\extension\\svg\\magnet.svg",
   "resources\\panel\\l1\\manifest.json",
   "resources\\panel\\presets\\manifest.json",
-  "resources\\panel\\presets\\previews\\bundled\\presets\\",
+  "resources\\panel\\previews\\bundled\\presets\\",
   "resources\\tools\\generate_plugin_presets.ps1",
   "resources\\tools\\ae_watchdog.ps1",
   "resources\\tools\\ae_crash_guard.ps1",

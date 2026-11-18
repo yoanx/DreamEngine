@@ -57,6 +57,8 @@ $Source = (Resolve-Path $Source).Path
 
 $extSrc   = Join-Path $Source "extension"
 $l1Src    = Join-Path $Source "l1"
+$presetBundleSrc = Join-Path $Source "presets"
+$previewsSrc = Join-Path $Source "previews"
 $toolsSrc = Join-Path $Source "tools"
 $docs     = [Environment]::GetFolderPath("MyDocuments")
 $userPresets = Join-Path $docs "DreamEngine\presets"
@@ -168,7 +170,11 @@ if ($keptCount -gt 0 -and -not $WhatIf) {
 # 升级：默认不动，避免覆盖用户自己生成的条目；-UpdateL1 才替换（先备份）。
 $l1ManifestSrc = Join-Path $l1Src "manifest.json"
 $l1ManifestDst = Join-Path $dataDst "manifest.json"
-$l1HasFrameSequences = Test-Path (Join-Path $l1Src "previews\effects\webp\builtin\frames")
+$l1EffectsSrc = Join-Path $previewsSrc "effects"
+if (-not (Test-Path -LiteralPath $l1EffectsSrc)) {
+  $l1EffectsSrc = Join-Path $l1Src "previews\effects"
+}
+$l1HasFrameSequences = Test-Path (Join-Path $l1EffectsSrc "webp\builtin\frames")
 
 if (-not (Test-Path $l1ManifestSrc)) {
   Say "包里没有 l1 目录，跳过内置预览部署" "Yellow"
@@ -221,10 +227,8 @@ if (-not (Test-Path $l1ManifestSrc)) {
     if (Test-Path (Join-Path $l1Src "animated.json")) {
       Copy-Item -Force (Join-Path $l1Src "animated.json") (Join-Path $dataDst "animated.json")
     }
-    $l1Previews = Join-Path $l1Src "previews"
-    if (Test-Path $l1Previews) {
-      $previewsDst = Join-Path $dataDst "previews"
-      Copy-TreeFast $l1Previews $previewsDst
+    if (Test-Path -LiteralPath $l1EffectsSrc) {
+      Copy-TreeFast $l1EffectsSrc (Join-Path $dataDst "previews\effects")
     }
     $l1Thumbs = Join-Path $l1Src "thumbs"
     if (Test-Path $l1Thumbs) {
@@ -233,7 +237,7 @@ if (-not (Test-Path $l1ManifestSrc)) {
       # 递归复制，保留 webp/插件名/ 与 stills/ 子目录。
       Copy-TreeFast $l1Thumbs (Join-Path $dataDst "thumbs")
     }
-    $deployed = @(Get-ChildItem (Join-Path $dataDst "thumbs") -Recurse -File -ErrorAction SilentlyContinue).Count
+    $deployed = @(Get-ChildItem (Join-Path $dataDst "previews\effects") -Recurse -File -ErrorAction SilentlyContinue).Count
     Say "内置预览已部署：$deployed 张图" "Green"
   }
 }
@@ -241,12 +245,14 @@ if (-not (Test-Path $l1ManifestSrc)) {
 # ---------- 6.4 内置预设预览包（静态 WebP 帧序列） ----------
 # 安装包里的 615 个 AE 自带预设预览放在独立的 bundled 目录，
 # 用户现场渲染的预览仍保留在 previews/presets 下，二者通过索引合并。
-$presetBundleSrc = Join-Path $Source "presets"
 if (-not (Test-Path -LiteralPath $presetBundleSrc)) {
   Say "包里没有预设预览包，跳过内置预设预览部署" "Yellow"
 } elseif (-not $WhatIf) {
   $bundledManifestSrc = Join-Path $presetBundleSrc "manifest.json"
-  $bundledPreviewsSrc = Join-Path $presetBundleSrc "previews"
+  $bundledPreviewsSrc = Join-Path $previewsSrc "bundled"
+  if (-not (Test-Path -LiteralPath $bundledPreviewsSrc)) {
+    $bundledPreviewsSrc = Join-Path $presetBundleSrc "previews\bundled"
+  }
   if (Test-Path -LiteralPath $bundledManifestSrc) {
     New-Item -ItemType Directory -Force -Path $dataDst | Out-Null
     $bundledManifestDst = Join-Path $dataDst "bundled_preset_manifest.json"
@@ -262,7 +268,7 @@ if (-not (Test-Path -LiteralPath $presetBundleSrc)) {
     if (-not $bundleCurrent) {
       Copy-Item -Force $bundledManifestSrc $bundledManifestDst
       if (Test-Path -LiteralPath $bundledPreviewsSrc) {
-        Copy-TreeFast $bundledPreviewsSrc $bundlePreviewsDst
+        Copy-TreeFast $bundledPreviewsSrc (Join-Path $bundlePreviewsDst "bundled")
       }
       $bundledCount = 0
       try { $bundledCount = @((Get-Content -LiteralPath $bundledManifestSrc -Raw -Encoding UTF8 | ConvertFrom-Json).items).Count } catch {}
