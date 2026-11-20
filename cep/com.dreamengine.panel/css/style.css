@@ -1982,14 +1982,58 @@ main {
   overflow-y: auto;
 }
 
-/* 右栏顶部一行：左边面包屑，右边换目录 / 刷新两个小图标。 */
+/* 右栏顶部一行：左边面包屑，右边换目录 / 刷新两个小图标。
+   吸顶：素材列表滚动时这一行保持可见（position:sticky 在 Chromium 74 可用）。
+   为什么用伪元素铺底而不是负外边距：.materials-main 的内边距是 16px，
+   但窄面板的媒体查询里会变成 12px，写死负边距必然在某个宽度下错位。
+   伪元素给一个足够大的负向外扩，超出部分由 .materials-main 的
+   overflow 裁剪掉，于是「上/左/右」三边自适应任意内边距；
+   只有 bottom 需要精确，它等于 head 原有的 12px 下外边距，
+   让卡片滚到这行下方才被裁切，中间不留透明缝。 */
 .materials-head {
+  position: sticky;
+  top: 0;
+  /* 必须高于卡片悬停层：.material-card:hover 的 z-index 是 10，
+     否则鼠标悬停的卡片会翻到吸顶条上面（实测截图就是这种破功）。
+     同时要低于设置抽屉（21）与关于弹窗（100），取 12。 */
+  z-index: 12;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   min-height: 30px;
   margin-bottom: 12px;
+}
+
+.materials-head::before {
+  content: "";
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  bottom: -12px;
+  left: -40px;
+  z-index: -1;
+  background: var(--bg);
+}
+
+/* 滚动中才出现的「浮起」暗示：一道细亮线 + 12px 渐隐投影。
+   两者都由 js/sticky_shadow.js 在 scrollTop > 2 时挂 .is-stuck 触发，
+   静止时不显示 —— 常显会在面板顶部凭空多一条暗带。
+   投影画在 ::after 而不是 ::before：::before 的 z-index 是 -1，
+   画在它上面的阴影会被卡片盖住，看不见。 */
+.materials-head.is-stuck {
+  box-shadow: 0 1px 0 var(--border);
+}
+
+.materials-head.is-stuck::after {
+  content: "";
+  position: absolute;
+  right: -40px;
+  bottom: -24px;
+  left: -40px;
+  height: 12px;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0));
+  pointer-events: none;
 }
 
 .materials-head-actions {
