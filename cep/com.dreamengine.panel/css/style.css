@@ -1,3 +1,21 @@
+/* ============================================================
+ * CEP 兼容约束（AE 2021 = CEP 11 / Chromium 74.0.3729，T0_9 探针实测）
+ *
+ * 以下写法在该内核上「静默失效」，不要在新代码里直接用：
+ *   aspect-ratio      → 元素高度按内容算（实测 200px 宽容器高 0）
+ *   inset: 0          → 四个偏移不生效（实测盒子 0x0），必须展开成 top/right/bottom/left
+ *   min()/max()/clamp() → 整条声明被丢弃；写在自定义属性里更危险：
+ *                        var() 有值但到 use 时才解析，会让消费方整条失效而不是回退
+ *   :is() / :where() / :has() → 选择器整条失效
+ *   mask-image        → 只有 -webkit-mask-image 可用
+ *   gap（flex 容器）   → 只有 grid 生效；CSS.supports("gap") 返回 yes 属误报
+ *
+ * 替代口径：
+ *   宽高比 → height: calc(var(--view-size) * 比例)  或  height:0 + padding-top:%
+ *   叠层定位 → top/right/bottom/left 四写
+ *   自适应尺寸 → 先给固定值兜底，再用 @supports 升级为 clamp/表达式
+ * ============================================================ */
+
 :root {
   color-scheme: dark;
   --bg: #0a0b0c;
@@ -251,7 +269,10 @@ html.keyboard-nav [role="button"]:focus {
 
 .preset-thumb .thumb-placeholder {
   position: absolute;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   display: grid;
   place-items: center;
   color: var(--muted);
@@ -424,7 +445,10 @@ html.keyboard-nav [role="button"]:focus {
 
 .about-mask {
   position: fixed;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   z-index: 100;
   display: grid;
   place-items: center;
@@ -437,7 +461,11 @@ html.keyboard-nav [role="button"]:focus {
 }
 
 .about-card {
+  /* min() 在 Chromium 74 被整条丢弃 → 宽度会变 auto（弹窗被内容撑开）。
+     先用等价的「定宽 + 上限」写法兜底，再用 min() 升级。 */
+  width: 380px;
   width: min(380px, 100%);
+  max-width: 100%;
   max-height: calc(100vh - 32px);
   padding: 18px;
   overflow-y: auto;
@@ -1066,12 +1094,22 @@ select:hover {
    现在 body 是 flex 列（高度固定），workspace 撑满剩余高度，
    内部 sidebar 与 main 各自 overflow-y:auto——滚右边不动左边。 */
 .workspace {
-  --category-width: clamp(104px, 22%, 176px);
+  /* 分类列宽：老内核不认 clamp()，而自定义属性是「use 时才解析」——
+     直接写 clamp 不会触发 var(--category-width, 176px) 的兜底，
+     而是让 width/flex-basis 整条失效（列宽退化为 auto）。
+     因此先给老内核能用的固定值，再用 @supports 升级为自适应。 */
+  --category-width: 168px;
   flex: 1 1 auto;
   display: flex;
   align-items: stretch;
   min-height: 0;
   gap: 0;
+}
+
+@supports (width: clamp(1px, 1vw, 2px)) {
+  .workspace {
+    --category-width: clamp(104px, 22%, 176px);
+  }
 }
 
 /* 视图切换：.workspace 自己的 display:flex 会盖掉 [hidden] 的默认
@@ -1325,7 +1363,10 @@ main {
   content: "";
   display: block;
   width: 100%;
-  aspect-ratio: 1 / 1;
+  /* 未挂载占位方块。Chromium 74 不认 aspect-ratio，高度会塌成 0，
+     改用 padding-top 撑成正方形（与 .thumb / .preset-thumb 同一口径）。 */
+  height: 0;
+  padding-top: 100%;
   border-radius: 6px;
   background: var(--surface-2);
   opacity: 0.35;
@@ -1386,7 +1427,10 @@ main {
 
 .thumb .preview-webp {
   position: absolute;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   z-index: 2;
   width: 100%;
   height: 100%;
@@ -1406,7 +1450,10 @@ main {
 
 .thumb-placeholder {
   position: absolute;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   display: grid;
   place-items: center;
   color: var(--faint);
@@ -1614,7 +1661,10 @@ main {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  width: 340px;
+  /* min() 旧内核不支持（整条丢弃），上面这行负责兜底 */
   width: min(340px, 88vw);
+  max-width: 88vw;
   padding: 12px 14px;
   border-left: 1px solid var(--border);
   background: var(--surface);
@@ -2085,7 +2135,10 @@ main {
 }
 
 .material-folder-back {
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   z-index: 0;
   border-radius: 9px;
   background: #34383b;
@@ -2226,7 +2279,15 @@ main {
 .material-preview {
   position: relative;
   display: flex;
-  aspect-ratio: 16 / 10;
+  /* 16:10 预览区高度。
+     原写法只用 aspect-ratio，但 CEP 11 / Chromium 74.0.3729 不认该属性
+     （T0_9 探针实测：200px 宽容器算出的高度是 0），预览区高度归零后
+     整张卡片只剩文字行 —— 这就是素材页「卡片高矮不一」的真实成因。
+     改为按列宽换算：.grid 的列宽恒等于 --view-size（两条 grid-template-columns
+     在新旧内核下最终都收敛到该值），10/16 = 0.625，换算精确且不依赖新特性。
+     现代内核下该结果与 aspect-ratio 等价，故不再保留 aspect-ratio，
+     避免两处口径不一致。 */
+  height: calc(var(--view-size, 132px) * 0.625);
   align-items: center;
   justify-content: center;
   overflow: hidden;
@@ -2236,7 +2297,10 @@ main {
 .material-preview::after {
   content: "";
   position: absolute;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   z-index: 3;
   border: 1px solid transparent;
   pointer-events: none;
@@ -2946,7 +3010,10 @@ main {
   left: 50%;
   top: 50%;
   z-index: 5;
+  width: 320px;
+  /* min() 旧内核不支持（整条丢弃），上面这行负责兜底 */
   width: min(320px, calc(100% - 32px));
+  max-width: calc(100% - 32px);
   padding: 14px;
   transform: translate(-50%, -50%);
   border: 1px solid var(--border-strong);
@@ -3146,7 +3213,10 @@ main {
 .material-card::before {
   content: "";
   position: absolute;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   z-index: 3;
   padding: 1px;
   border-radius: inherit;
@@ -3175,3 +3245,66 @@ main {
     transition: none;
   }
 }
+
+/* ============================================================
+ * flex gap 兜底（Chromium 74 / CEP 11）
+ *
+ * 现象：display:flex 容器的 gap 在旧内核完全不生效（T0_9 实测 20px 间距实得 0），
+ *       而 CSS.supports("gap","8px") 返回 true，无法用 @supports 区分。
+ * 做法：js/compat.js 运行时量一次，量不出来才给 <html> 加 .no-flex-gap；
+ *       下面的规则全部挂在该类下，现代内核一行都不会命中。
+ * 口径：gap 与子项自身的 margin 是「相加」关系，所以兜底用同侧 margin 补足，
+ *       既有 margin 会自然叠加；唯一例外是 margin-left:auto 这类「吃掉剩余空间」
+ *       的写法，auto 无法相加，必须在末尾显式还原（见 EXCEPTIONS）。
+ *
+ * 换行的容器（.preset-head）不在此列：它是 justify-content:space-between +
+ * flex-wrap，间距由 space-between 撑开，补 margin 反而会让换行后的行首缩进。
+ * ============================================================ */
+
+/* ---- 行方向：补 margin-left ---- */
+.no-flex-gap .view-switch > * + * { margin-left: 6px; }
+.no-flex-gap .preset-tools > * + * { margin-left: 8px; }
+.no-flex-gap .hub-button > * + * { margin-left: 6px; }
+.no-flex-gap .topbar > * + * { margin-left: 20px; }
+.no-flex-gap .sidebar-heading > * + * { margin-left: 8px; }
+.no-flex-gap .preset-category-menu button > * + * { margin-left: 8px; }
+.no-flex-gap .controls > * + * { margin-left: 10px; }
+.no-flex-gap .search-wrap > * + * { margin-left: 6px; }
+.no-flex-gap .category-item > * + * { margin-left: 8px; }
+.no-flex-gap .card-meta > * + * { margin-left: var(--card-text-gap); }
+.no-flex-gap .statusbar > * + * { margin-left: 10px; }
+.no-flex-gap .size-slider > * + * { margin-left: 6px; }
+.no-flex-gap .settings-row > * + * { margin-left: 10px; }
+.no-flex-gap .materials-head > * + * { margin-left: 12px; }
+.no-flex-gap .materials-head-actions > * + * { margin-left: 2px; }
+.no-flex-gap .material-breadcrumb > * + * { margin-left: 4px; }
+.no-flex-gap .material-folder-row > * + * { margin-left: 6px; }
+.no-flex-gap .material-file-row > * + * { margin-left: 4px; }
+.no-flex-gap .curve-toolbar > * + * { margin-left: 3px; }
+.no-flex-gap .curve-toolbar-track > * + * { margin-left: 4px; }
+.no-flex-gap .curve-toolbar-group > * + * { margin-left: 1px; }
+.no-flex-gap .curve-action-bar > * + * { margin-left: 5px; }
+.no-flex-gap .curve-action-row > * + * { margin-left: 5px; }
+.no-flex-gap .preset-divider > * + * { margin-left: 6px; }
+.no-flex-gap .curve-conflict-actions > * + * { margin-left: 6px; }
+
+/* ---- 列方向：补 margin-top ---- */
+.no-flex-gap .preset-main > * + * { margin-top: 10px; }
+.no-flex-gap .preset-card > * + * { margin-top: var(--card-text-gap); }
+.no-flex-gap .settings-drawer > * + * { margin-top: 10px; }
+.no-flex-gap .materials-sidebar .category-list > * + * { margin-top: 3px; }
+.no-flex-gap .curve-view > * + * { margin-top: 6px; }
+.no-flex-gap .curve-editor-pane > * + * { margin-top: 6px; }
+.no-flex-gap .preset-chip > * + * { margin-top: 1px; }
+.no-flex-gap .mode-menu > * + * { margin-top: 2px; }
+
+/* ---- EXCEPTIONS：auto 边距必须还原 ----
+ * 上面 .topbar > * + * 会把 margin-left 一律写成 20px，
+ * 但这三个子项原本靠 auto 占位，被覆盖后会贴到左边/挤到中间：
+ *   .view-switch    本就有 margin-left:4px，正确值是 20(gap) + 4 = 24px
+ *   .search-wrap    靠 margin-left:auto 推到右侧
+ *   .material-folder-count  靠 margin-left:auto 贴右侧（「101 项」这类计数）
+ * #btnSettings 那条不用处理：它是 ID 选择器，优先级高于上面的类规则。 */
+.no-flex-gap .topbar > .view-switch { margin-left: 24px; }
+.no-flex-gap .topbar > .search-wrap { margin-left: auto; }
+.no-flex-gap .material-folder-row > .material-folder-count { margin-left: auto; }

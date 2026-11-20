@@ -94,3 +94,6 @@ cep/com.dreamengine.panel/js/t03_cef_probe.js
 cep/com.dreamengine.panel/js/t06_drag_probe.js
 cep/com.dreamengine.panel/data/l1-targets.tsv
 dist/L1/build-report.json
+
+# CodeGraph 本地索引（不入库）
+.codegraph/

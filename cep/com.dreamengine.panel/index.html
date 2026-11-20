@@ -6,6 +6,8 @@
         content="default-src * data: file: blob: 'unsafe-inline' 'unsafe-eval';"/>
   <title>DreamEngine</title>
   <link rel="stylesheet" href="css/style.css"/>
+  <!-- 内核能力标记：必须在 body 渲染前跑完，否则首帧会闪一下没有间距的布局 -->
+  <script src="js/compat.js"></script>
 </head>
 <body>
   <header class="topbar">
