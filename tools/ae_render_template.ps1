@@ -4,6 +4,13 @@
 # that is not newer than the selected AE.
 
 $script:AeRenderTemplateHelperDir = $PSScriptRoot
+# 预置模板目录可被环境变量覆盖：测试需要隔离真实仓库里的模板，
+# 否则「首次构建 + 之后复用」这条路径永远走不到（预置模板会抢先命中）。
+$script:AeRenderTemplateDir = if ($env:DREAMENGINE_TEMPLATE_DIR) {
+  $env:DREAMENGINE_TEMPLATE_DIR
+} else {
+  Join-Path $PSScriptRoot "templates"
+}
 
 function Get-AeRenderMajorYear {
   param([string]$Ae)
@@ -44,7 +51,7 @@ function Get-AePackagedRenderTemplatePath {
   param([string]$Ae)
 
   $year = Get-AeRenderMajorYear -Ae $Ae
-  $templateDir = Join-Path $script:AeRenderTemplateHelperDir "templates"
+  $templateDir = $script:AeRenderTemplateDir
   if (-not (Test-Path -LiteralPath $templateDir)) { return "" }
 
   $best = $null

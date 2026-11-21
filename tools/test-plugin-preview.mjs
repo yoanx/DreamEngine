@@ -253,26 +253,12 @@ test("插件 manifest 支持同一切图里的 8 个格子", () => {
   assert.equal(manifest.sheets[0].height, 128);
 });
 
-test("spriteSlice 对插件单格图按条目布局切片，不套 L1 整网参数", () => {
-  const slice = view.spriteSlice(
-    {
-      sliceColumns: 1, sliceCellSize: 128, sliceWidth: 128, sliceHeight: 128,
-      width: 128, height: 128, x: 0, y: 0
-    },
-    { columns: 8, cellSize: 128, width: 1024, height: 1024 },
-  );
-  assert.equal(slice.size, "100.0000% 100.0000%");
-  assert.equal(slice.position, "0.0000% 0.0000%");
-});
-
-test("L1 条目的 width/height 是格子尺寸，不能被误当成整图布局", () => {
-  // 回归：曾把 item.width/height 当整图，rows 变 1，非首格全部切到 (0,0)
-  const slice = view.spriteSlice(
-    { x: 0, y: 128, width: 128, height: 128 },
-    { columns: 8, cellSize: 128, width: 1024, height: 1024 },
-  );
-  assert.equal(slice.size, "800.0000% 800.0000%");
-  assert.equal(slice.position, "0.0000% 14.2857%");
+test("预览定位统一 cover，viewmodel 不再提供切片", () => {
+  assert.equal(typeof view.spriteSlice, "undefined");
+  const library = read("cep/com.dreamengine.panel/js/library.js");
+  assert.match(library, /thumb\.style\.backgroundSize = "cover"/);
+  const code = library.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
+  assert.doesNotMatch(code, /spriteSlice/);
 });
 
 /* ---------- 4. 渲染隔离与离线脚本 ---------- */
@@ -356,6 +342,7 @@ test("缺少所选 AE 版本模板时只构建一次，之后直接复用", () =
       script,
       [
         "$ErrorActionPreference = 'Stop'",
+        `$env:DREAMENGINE_TEMPLATE_DIR = '${resolve(temp, "no-templates")}'`,
         `. '${resolve(ROOT, "tools/ae_render_template.ps1").replace(/'/g, "''")}'`,
         `$first = Resolve-AeRenderTemplate -Ae '${fakeAe.replace(/'/g, "''")}' -Probe '${probe.replace(/'/g, "''")}' -BuilderScript '${builder.replace(/'/g, "''")}' -LoaderScript '${loader.replace(/'/g, "''")}' -TimeoutSec 15`,
         `$second = Resolve-AeRenderTemplate -Ae '${fakeAe.replace(/'/g, "''")}' -Probe '${probe.replace(/'/g, "''")}' -BuilderScript '${builder.replace(/'/g, "''")}' -LoaderScript '${loader.replace(/'/g, "''")}' -TimeoutSec 15`,

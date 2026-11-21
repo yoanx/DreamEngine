@@ -124,24 +124,39 @@ test("materials 能识别脚本，表达式扩展名不进入素材分类", () =
   assert.equal(materials.classify("notes.txt", "C:/Media/notes.txt"), "");
 });
 
+test("素材视频预览持续 5 秒", () => {
+  const source = read("cep/com.dreamengine.panel/js/materials.js");
+  assert.match(source, /state\.videoTimer = setTimeout\(pauseAll, 5000\)/);
+});
+
 /* ---------- 3. previewgen ---------- */
 
-test("previewgen 的容量规划按 8x8 网格与 6 帧计算", () => {
+test("previewgen 的容量规划使用 2x2、720px 与 24 帧", () => {
   const ctx = loadModules([
     `${ENGINE}/render_config.jsx`,
     `${ENGINE}/previewgen.jsx`,
   ]);
   const gen = ctx.AEV_PreviewGen;
 
-  const full = gen.plan(64);
+  const full = gen.plan(4);
   assert.equal(full.sheets, 1);
-  assert.equal(full.totalRenders, 6);
+  assert.equal(full.perSheet, 4);
+  assert.equal(full.frames, 24);
+  assert.equal(full.totalRenders, 24);
 
-  const overshoot = gen.plan(80);
+  const overshoot = gen.plan(5);
   assert.equal(overshoot.sheets, 2);
-  assert.equal(overshoot.totalRenders, 12);
+  assert.equal(overshoot.totalRenders, 48);
 
   assert.equal(gen.plan(0).sheets, 0);
+
+  const conf = gen.config();
+  assert.equal(conf.contactSheet.cellSize, 720);
+  assert.equal(conf.contactSheet.columns, 2);
+  assert.equal(conf.contactSheet.width, 1440);
+  assert.equal(conf.contactSheet.height, 1440);
+  assert.equal(conf.animatedPreview.frameCount, 24);
+  assert.equal(conf.animatedPreview.fps, 24);
 });
 
 test("previewgen 在模板列表缺失 PNG 时尝试内置 Hidden PNG 模板", () => {
@@ -338,13 +353,13 @@ test("配方覆盖常用内置效果，每条都带参数名与值", () => {
   assert.ok(recipes["CC Radial Blur"][0].names.includes("Amount"));
 });
 
-test("previewgen 用合成帧率换算渲染时长，不用面板播放帧率", () => {
+test("previewgen 用 24fps 合成时间轴生成 1 秒预览", () => {
   const code = stripComments(read(`${ENGINE}/previewgen.jsx`));
-  // 6 帧按 12fps 算成 0.5 秒，在 30fps 合成上会渲出 15 帧（AE 2021 实测踩过）
-  assert.match(code, /var CELL_FPS = 30;/);
+  assert.match(code, /var CELL_FPS = 24;/);
   assert.match(code, /var durationSeconds = frames \/ CELL_FPS;/);
   assert.match(code, /queueItem\.timeSpanDuration = durationSeconds;/);
   assert.doesNotMatch(code, /timeSpanDuration = frames \/ fps/);
+  assert.match(code, /asset\.duration = Math\.max/);
 });
 
 test("previewgen 把队列时间段限制在合成范围内，避免 AE 空白帧警告", () => {
@@ -470,15 +485,16 @@ test("store 把所有数据写在 我的文档/DreamEngine 下", () => {
 
 /* ---------- 5. bridge 加载顺序 ---------- */
 
-test("bridge 的 engine 加载顺序满足依赖关系", () => {
+test("bridge 只加载面板需要的只读预览模块", () => {
   const source = read("cep/com.dreamengine.panel/js/bridge.js");
-  const order = ["render_config", "store", "names", "assets", "recipe", "previewgen", "queue", "catalog"].map(
+  const order = ["render_config", "store", "names", "assets", "recipe", "previewgen", "catalog"].map(
     (name) => source.indexOf(`engine/${name}.jsx`),
   );
   for (const index of order) assert.notEqual(index, -1, "加载清单缺少模块");
   for (let i = 1; i < order.length; i++) {
-    assert.ok(order[i] > order[i - 1], "engine 模块顺序必须满足依赖（config → store → names → assets → recipe → previewgen → queue）");
+    assert.ok(order[i] > order[i - 1], "engine 模块顺序必须满足依赖（config → store → names → assets → recipe → previewgen）");
   }
+  assert.doesNotMatch(source, /engine\/queue\.jsx/, "面板不应加载渲染队列模块");
 });
 
 /* ---------- names.jsx ---------- */
@@ -731,8 +747,8 @@ test("writeManifest 保留旧条目指纹，只给新渲染条目计算新指纹
     { File: FileMock },
   );
   const tsv = [
-    "CC Lens\t1\t0\t6\tthumbs/batch_001_%04d.png\t23\told-key",
-    "ADBE Glo2\t1\t1\t6\tthumbs/batch_001_%04d.png\t23\t",
+    "CC Lens\t1\t0\t36\tthumbs/batch_001_%04d.png\t23\told-key",
+    "ADBE Glo2\t1\t1\t36\tthumbs/batch_001_%04d.png\t23\t",
   ].join("\n");
   const report = JSON.parse(ctx.AEV_PreviewGen.writeManifest(tsv, "X:/ext", ""));
   assert.equal(report.status, "ok");
@@ -740,6 +756,9 @@ test("writeManifest 保留旧条目指纹，只给新渲染条目计算新指纹
   const manifest = JSON.parse(written["X:/ext/data/manifest.json"]);
   assert.equal(manifest.items[0].key, "old-key");
   assert.ok(manifest.items[1].key && manifest.items[1].key !== "old-key");
+  assert.equal(manifest.items[0].fps, 24);
+  assert.equal(manifest.items[0].duration, 1.5);
+  assert.equal(manifest.items[0].effectPreviewVersion, 2);
   const index = written["X:/ext/data/previews.tsv"].split(/\r?\n/);
   assert.equal(index[1].split("\t")[5], "old-key");
 });
@@ -785,7 +804,7 @@ test("L1 包里的 manifest 与 previews.tsv 条目一致，且都带指纹", ()
 
 test("assets 按类型生成五套素材并复用缓存", () => {
   const code = stripComments(read(`${ENGINE}/assets.jsx`));
-  assert.match(code, /var VERSION = "photo-v3";/);
+  assert.match(code, /var VERSION = "photo-v4";/);
   assert.match(code, /function buildPhoto/);
   assert.match(code, /function buildText/);
   assert.match(code, /function buildSolid/);
@@ -796,6 +815,23 @@ test("assets 按类型生成五套素材并复用缓存", () => {
   assert.match(code, /cache\[key\(kind, size, background\)\] = \{ item: comp, deps: deps \|\| \[\] \};/);
   assert.match(code, /function dispose\(\)/);
   assert.match(code, /entry\.item\.remove\(\)/);
+});
+
+test("photo 背景优先使用随包默认图，特殊素材仍保持专用类型", () => {
+  class FileMock {
+    constructor(path) {
+      this.fsName = String(path || "").replace(/\\/g, "/");
+      this.exists = this.fsName === "C:/ext/assets/preview-default.png";
+    }
+  }
+  const ctx = loadModules([`${ENGINE}/assets.jsx`], { File: FileMock });
+  const assets = ctx.AEV_Assets;
+  assert.equal(
+    assets.resolveBackground("photo", "C:/ext"),
+    "C:/ext/assets/preview-default.png",
+  );
+  assert.equal(assets.resolveBackground("text", "C:/ext"), "");
+  assert.equal(assets.resolveBackground("", "C:/ext"), "");
 });
 
 test("自定义效果背景只改变通用画面类效果的缓存指纹", () => {
@@ -824,18 +860,31 @@ test("自定义效果背景只改变通用画面类效果的缓存指纹", () =>
   assert.equal(textDefault, textCustom, "文字类效果仍使用专用文字素材");
 });
 
-test("设置页支持上传效果预览背景并贯通渲染参数", () => {
+test("AE 面板设置页不再暴露预览维护模块", () => {
   const html = read("cep/com.dreamengine.panel/index.html");
   const prefs = read("cep/com.dreamengine.panel/js/prefs.js");
   const library = read("cep/com.dreamengine.panel/js/library.js");
   const previewgen = read(`${ENGINE}/previewgen.jsx`);
   const assets = read(`${ENGINE}/assets.jsx`);
 
-  assert.match(html, /id="btnEffectBackground"/);
-  assert.match(html, /id="btnEffectBackgroundClear"/);
+  assert.doesNotMatch(html, /settings\.maintenance/);
+  for (const id of [
+    "btnEffectBackground",
+    "btnEffectBackgroundClear",
+    "btnGenerate",
+    "btnRefresh",
+    "btnRetry",
+    "btnOpenQueue",
+  ]) {
+    assert.doesNotMatch(html, new RegExp(`id="${id}"`), `${id} 仍在设置页`);
+  }
+  assert.doesNotMatch(library, /addEventListener\("click", generateMissing\)/);
+  assert.doesNotMatch(library, /addEventListener\("click", chooseEffectBackground\)/);
+  assert.doesNotMatch(library, /AEV_Queue/);
+  assert.doesNotMatch(html, /id="btnQueue"/);
+
+  // 面板不再维护预览，但离线渲染引擎仍保留背景处理能力。
   assert.match(prefs, /effectBackground: effectBackground/);
-  assert.match(library, /AEV_PreviewGen\.pickBackground\(\)/);
-  assert.match(library, /JSON\.stringify\(state\.effectBackground\)/);
   assert.match(previewgen, /File\.openDialog\("选择效果预览背景"\)/);
   assert.match(previewgen, /DreamEngine\/backgrounds/);
   assert.match(
@@ -918,7 +967,7 @@ test("两层输入场景会真的搭出两层：图案层 + 效果层", () => {
   const code = stripComments(read(`${ENGINE}/previewgen.jsx`));
   // 顺序必须是「背景 → 图案 → 效果层」，AE 里后加的在上面，
   // 于是效果层在第 1 层、图案层在第 2 层，图层选择器绑 2 才有意义。
-  assert.match(code, /layout = AEV_Recipe\.layoutFor\(AEV_Recipe\.sceneFor\(matchName\)\)/);
+  assert.match(code, /layout = AEV_Recipe\.layoutFor\(AEV_Recipe\.sceneFor\(matchName, category\)\)/);
   assert.match(code, /if \(layout\.needBg\) \{/);
   assert.match(code, /if \(layout\.needSource\) \{/);
   assert.match(code, /cell\.layers\.add\(sceneOf\("pattern"\)\)/);
@@ -1058,19 +1107,28 @@ test("面板对多帧预览按帧序列取图，而不是依赖 sprite 的 sheet
   assert.match(library, /setInterval/);
 });
 
-test("面板把过期预览排进生成队列，而不是当成已缓存", () => {
+test("面板优先播放单文件动画 WebP，不再预加载 24 张拼图帧", () => {
+  const library = read("cep/com.dreamengine.panel/js/library.js");
+  const css = read("cep/com.dreamengine.panel/css/style.css");
+  assert.match(library, /preview\.webpSrc/);
+  assert.match(library, /preview\.stillSrc/);
+  assert.match(library, /Number\(preview\.effectPreviewVersion\) === 2/);
+  assert.match(library, /Number\(preview\.frames\) === 24/);
+  assert.match(library, /Number\(preview\.fps\) === 24/);
+  assert.match(library, /var isAnimated =\s*previewCurrent &&/);
+  assert.match(library, /preview-webp/);
+  assert.match(library, /animated\.src = dataUrl\(preview\.webpSrc\)/);
+  assert.match(library, /animated\.src = stillUrl/);
+  assert.match(css, /\.preview-webp/);
+});
+
+test("面板只标记过期预览，不排队或触发渲染", () => {
   const library = read("cep/com.dreamengine.panel/js/library.js");
   assert.match(library, /AEV_PreviewGen\.staleList/);
-  assert.match(library, /AEV_Queue\.reopen/);
   assert.match(library, /AEV_PreviewGen\.cleanupArtifacts/);
-  assert.match(library, /keepAssets:true/);
-  // 只有当前版本且不过期的预览才算完整；旧版回退仍进生成队列
-  assert.match(library, /installedBuiltinNames/);
-  assert.match(library, /isExactPreview\(effect\.matchName\) && !state\.stale\[effect\.matchName\]/);
-  assert.match(
-    library,
-    /if \(state\.stale\[key\] \|\| !isExactPreview\(key\)\) staleNames\.push\(key\);/,
-  );
+  assert.doesNotMatch(library, /AEV_Queue/);
+  assert.doesNotMatch(library, /renderBatch|writeManifest|generateMissing/);
+  assert.match(library, /state\.stale\[data\.stale\[i\]\] = true/);
 });
 
 test("面板显示当前 AE 效果清单，并选用最后一个有效预览", () => {
@@ -1078,8 +1136,8 @@ test("面板显示当前 AE 效果清单，并选用最后一个有效预览", (
   const library = read("cep/com.dreamengine.panel/js/library.js");
   assert.match(html, /id="showAll"[^>]*checked/);
   assert.match(library, /previewVariants/);
-  assert.doesNotMatch(library, /catalogMajor|preview\.aeMajor/);
   assert.match(library, /choosePreview\(/);
+  assert.doesNotMatch(library, /catalogMajor|preview\.aeMajor/);
 });
 
 test("viewmodel 给过期条目打标记，图仍然照常显示", () => {
@@ -1204,71 +1262,31 @@ test("分类计数用于侧栏", () => {
   assert.equal(stats.counts["扭曲"], 1);
 });
 
-/* ---------- sprite 切片：固定画面裁切 ---------- */
+/* ---------- 预览定位：统一 cover，不再整网切片 ---------- */
 
-test("sprite 切片用百分比而不是固定像素，保证一格正好等于一个预览框", () => {
-  const ctx = loadModules(["cep/com.dreamengine.panel/js/viewmodel.js"], { window: {} });
-  const view = ctx.AEV_ViewModel;
-  const manifest = { cellSize: 128, columns: 8, width: 1024, height: 1024 };
-
-  const slice = view.spriteSlice({ x: 0, y: 0 }, manifest);
-  // 整网被放大到「格数 × 100%」，一格就等于预览框
-  assert.equal(slice.size, "800.0000% 800.0000%", "background-size 应按格数放大");
-  // 左上角格：偏移 0
-  assert.equal(slice.position, "0.0000% 0.0000%");
-
-  // 百分比定位的换算：offset = 百分比 × (容器 - 图片)，
-  // 图片放大后比容器大，所以分母是 (格数 - 1)。
-  const check = (cellX, cellY) => {
-    const s = view.spriteSlice({ x: cellX * 128, y: cellY * 128 }, manifest);
-    const [px, py] = s.position.split(" ").map((v) => Number(v.replace("%", "")));
-    // 图片被放大 8 倍，容器宽 = 1 格；定位后目标格左上角应落在容器左上角
-    const containerW = 1;
-    const imageW = 8;
-    const offsetX = (px / 100) * (containerW - imageW);
-    const offsetY = (py / 100) * (containerW - imageW);
-    assert.ok(
-      Math.abs(offsetX + cellX) < 0.001,
-      `第 ${cellX} 列横向偏移应为 -${cellX} 格，实际 ${offsetX}`,
-    );
-    assert.ok(
-      Math.abs(offsetY + cellY) < 0.001,
-      `第 ${cellY} 行纵向偏移应为 -${cellY} 格，实际 ${offsetY}`,
-    );
-  };
-
-  check(0, 0);
-  check(3, 0);
-  check(7, 0);
-  check(0, 5);
-  check(7, 7);
-  check(4, 2);
-});
-
-test("sprite 切片对最后一格也正确（百分比定位的边界）", () => {
-  const ctx = loadModules(["cep/com.dreamengine.panel/js/viewmodel.js"], { window: {} });
-  const view = ctx.AEV_ViewModel;
-  const manifest = { cellSize: 128, columns: 8, width: 1024, height: 1024 };
-  const slice = view.spriteSlice({ x: 7 * 128, y: 7 * 128 }, manifest);
-  assert.equal(slice.position, "100.0000% 100.0000%");
-});
-
-test("sprite 切片在列数为 1 时不除以零", () => {
-  const ctx = loadModules(["cep/com.dreamengine.panel/js/viewmodel.js"], { window: {} });
-  const view = ctx.AEV_ViewModel;
-  const slice = view.spriteSlice({ x: 0, y: 0 }, { cellSize: 128, columns: 1, width: 128, height: 128 });
-  assert.equal(slice.size, "100.0000% 100.0000%");
-  assert.equal(slice.position, "0.0000% 0.0000%");
-});
-
-test("面板不再按数组位置取 sheet（数组顺序与 index 字段不一致）", () => {
+test("面板不再按整网切片，预览统一 cover 居中", () => {
   const library = read("cep/com.dreamengine.panel/js/library.js");
-  // 必须按 index 建索引表
-  assert.match(library, /sheetByIndex\[sheetList\[sh\]\.index\] = sheetList\[sh\]/);
-  assert.match(library, /sheetByIndex\[preview\.sheet\]/);
-  // 不能再用 sheets[preview.sheet] 取值（注释里提到不算）
-  const code = library.replace(/\/\/[^\n]*/g, "");
-  assert.doesNotMatch(code, /sheets\[preview\.sheet\]/);
+  assert.match(library, /thumb\.style\.backgroundSize = "cover"/);
+  assert.match(library, /thumb\.style\.backgroundPosition = "center"/);
+  // 切片逻辑必须彻底移除，否则又会把单图当整网放大。
+  // 注释里还会提到旧实现（说明为什么删），所以断言前先剥掉注释。
+  const code = library
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/\/\/[^\n]*/g, "");
+  assert.doesNotMatch(code, /spriteSlice/);
+  assert.doesNotMatch(code, /sheetByIndex/);
+  assert.doesNotMatch(code, /backgroundPosition = "-" \+ preview\.x/);
+});
+
+test("viewmodel 不再导出 spriteSlice", () => {
+  const ctx = loadModules(["cep/com.dreamengine.panel/js/viewmodel.js"], { window: {} });
+  assert.equal(typeof ctx.AEV_ViewModel.spriteSlice, "undefined");
+});
+
+test("帧序列缺 src 时用第 0 帧兜底，而不是从 sheets 反查", () => {
+  const library = read("cep/com.dreamengine.panel/js/library.js");
+  assert.match(library, /preview\.frameSrc\)\.replace\("%04d", "0000"\)/);
+  assert.doesNotMatch(library, /preview\.src = sheet\.src/);
 });
 
 test("未分类的效果被排除（用户要求不要）", () => {
@@ -1281,14 +1299,6 @@ test("未分类的效果被排除（用户要求不要）", () => {
   assert.equal(view.isExcludable({ matchName: "ADBE Gaussian Blur 2", category: "模糊和锐化" }), false);
 });
 
-test("面板的缩略图用 spriteSlice 而不是固定像素定位", () => {
-  const library = read("cep/com.dreamengine.panel/js/library.js");
-  assert.match(library, /AEV_ViewModel\.spriteSlice\(preview, state\.manifest\)/);
-  assert.match(library, /thumb\.style\.backgroundSize = slice\.size/);
-  assert.match(library, /thumb\.style\.backgroundPosition = slice\.position/);
-  // 固定像素定位会把相邻格子带进来
-  assert.doesNotMatch(library, /backgroundPosition = "-" \+ preview\.x/);
-});
 
 test("面板提供分视图尺寸滑块，并写进当前视图 CSS 变量", () => {
   const library = read("cep/com.dreamengine.panel/js/library.js");
@@ -1334,9 +1344,18 @@ test("侧栏不被拉成与右栏等高（滚动条不该贯穿整个面板）",
 
 test("侧栏宽度随面板收缩，窄面板下主区不被挤没", () => {
   const css = read("cep/com.dreamengine.panel/css/style.css");
-  // 未手动拖动时仍保留响应式默认宽度；手动宽度写在父容器的 CSS 变量里。
+  // 旧写法是把 clamp 直接写进 .workspace 的自定义属性，但 CEP 11（Chromium 74）
+  // 不认 clamp：自定义属性要到 use 时才解析，那里会整条失效（列宽退化 auto），
+  // 而且不会触发 var(--category-width, 176px) 的兜底。所以现在改成
+  // 「固定值兜底 + @supports 内升级为 clamp」，断言也跟着改成两段都验。
   const workspaceBlock = css.match(/\.workspace \{[^}]*\}/s)[0];
-  assert.match(workspaceBlock, /--category-width:\s*clamp\(/);
+  assert.match(workspaceBlock, /--category-width:\s*\d+px/, "老内核需要固定值兜底");
+  assert.doesNotMatch(workspaceBlock, /--category-width:\s*clamp\(/, "clamp 不能直接写进自定义属性");
+
+  const supportsBlock = css.match(/@supports \(width: clamp\([^)]*\)\) \{[^}]*\.workspace \{[^}]*\}/s);
+  assert.ok(supportsBlock, "现代内核应在 @supports 里升级为 clamp");
+  assert.match(supportsBlock[0], /--category-width:\s*clamp\(/);
+
   const sidebarBlock = css.match(/\.sidebar \{[^}]*\}/s)[0];
   assert.doesNotMatch(sidebarBlock, /flex: 0 0 168px/);
   assert.match(sidebarBlock, /flex: 0 0 var\(--category-width/);
@@ -1345,20 +1364,25 @@ test("侧栏宽度随面板收缩，窄面板下主区不被挤没", () => {
   assert.match(mainBlock, /min-width: \d+px/);
 });
 
-test("滑块范围固定 48–180px，窄面板下收敛实际尺寸并同步回滑块", () => {
+test("效果/预设滑块上限 360px，窄面板下收敛实际尺寸并同步回滑块", () => {
   const library = read("cep/com.dreamengine.panel/js/library.js");
   const html = read("cep/com.dreamengine.panel/index.html");
   const css = read("cep/com.dreamengine.panel/css/style.css");
   // 范围固定：HTML 与 JS 都不能出现别的上下限
-  assert.match(html, /id="thumbSize" type="range" min="48" max="180" step="2"/);
+  assert.match(html, /id="thumbSize" type="range" min="48" max="360" step="2"/);
   assert.match(library, /var THUMB_MIN = 48;/);
-  assert.match(library, /var THUMB_MAX = 180;/);
+  assert.match(library, /var THUMB_MAX = 360;/);
   assert.match(library, /var THUMB_STEP = 2;/);
   // 必须按可用宽度收敛，且滑块自身的 min/max 恒定（不随窗口比例改变）
   assert.match(library, /availableThumbWidth/);
   assert.match(library, /Math\.min\(thumbPreferred\[view\], limit\)/);
   assert.match(library, /slider\.min = String\(THUMB_MIN\)/);
-  assert.match(library, /slider\.max = String\(THUMB_MAX\)/);
+  assert.match(library, /slider\.max = String\(maxThumb\)/);
+  assert.match(library, /--card-font-main/);
+  assert.match(library, /--card-font-meta/);
+  assert.match(library, /--card-text-pad/);
+  assert.match(css, /font-size:\s*var\(--card-font-main\)/);
+  assert.match(css, /font-size:\s*var\(--card-font-meta\)/);
   // 收敛后写回实际值，避免「标 180、实际 150」的错位
   assert.match(library, /slider\.value = String\(value\)/);
   // 面板尺寸变化时要重新收敛

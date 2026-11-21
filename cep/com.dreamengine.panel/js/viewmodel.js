@@ -299,62 +299,6 @@ var AEV_ViewModel = (function () {
     return firstText(item.categoryEn, item.category, item.categoryZh, "Uncategorized");
   }
 
-  /**
-   * 计算 sprite 切片参数。
-   *
-   * 为什么不用固定像素：缩略框的实际渲染宽度随面板宽度变化（132px 到几百 px），
-   * 而整张网是固定像素尺寸。用 `background-size: 1024px` + `background-position: -x -y`
-   * 的话，缩略框一旦大于格子尺寸（128px），就会把相邻格子的画面带进来。
-   *
-   * 改用百分比：
-   *   background-size     = 每行格数 × 100%（横向）、每列格数 × 100%（纵向）
-   *   background-position = 格位在整网中的百分比偏移
-   * 这样无论缩略框渲染成多大，**一格永远精确等于一个缩略框**，不会串格。
-   *
-   * 返回 { size: "...", position: "..." }，可直接写进 style。
-   */
-  function spriteSlice(preview, manifest) {
-    // L1 是 8×8 整网，布局取自全局 manifest；插件 L2 预览是 1×1 单格图，
-    // 布局写在条目自身的 slice* 字段里。
-    // 不能读 item.width/height：L1 那两个字段是「格子尺寸」而非整图尺寸，
-    // 拿它当整图会把 rows 算成 1，所有非首格条目都被切到 (0,0)。
-    var cellSize =
-      (preview && preview.sliceCellSize) || (manifest && manifest.cellSize) || 720;
-    var columns =
-      (preview && preview.sliceColumns) || (manifest && manifest.columns) || 8;
-    var width =
-      (preview && preview.sliceWidth) ||
-      (manifest && manifest.width) ||
-      cellSize * columns;
-    var height =
-      (preview && preview.sliceHeight) ||
-      (manifest && manifest.height) ||
-      cellSize * columns;
-    var rows = Math.max(1, Math.round(height / cellSize));
-
-    var x = (preview && preview.x) || 0;
-    var y = (preview && preview.y) || 0;
-
-    // 整网被放大到「格数 × 100%」，一格就正好是缩略框的 1/格数
-    var size =
-      (columns * 100).toFixed(4) + "% " + (rows * 100).toFixed(4) + "%";
-
-    // 百分比定位：偏移量 = 百分比 × (容器尺寸 - 图片尺寸)。
-    // 图片放大后比容器大很多，所以要用 (格数-1) 而不是格数来归一。
-    var posX = 0;
-    var posY = 0;
-    if (columns > 1) {
-      posX = ((x / cellSize) / (columns - 1)) * 100;
-    }
-    if (rows > 1) {
-      posY = ((y / cellSize) / (rows - 1)) * 100;
-    }
-
-    return {
-      size: size,
-      position: posX.toFixed(4) + "% " + posY.toFixed(4) + "%"
-    };
-  }
 
   /**
    * 是否 AE 自带效果。
@@ -494,7 +438,6 @@ var AEV_ViewModel = (function () {
     previewKeyFor: previewKeyFor,
     resolveName: resolveName,
     resolveCategory: resolveCategory,
-    spriteSlice: spriteSlice,
     categoryKey: categoryKey,
     categoryLabel: categoryLabel,
     categoryOrder: categoryOrder,

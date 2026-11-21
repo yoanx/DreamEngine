@@ -361,13 +361,19 @@ var AEV_PluginState = (function () {
             parts.push('"duration":' + (Number(e.duration) || 1));
             parts.push('"fps":' + (parseInt(e.fps, 10) || 24));
             parts.push('"effectPreviewVersion":' + (parseInt(e.previewVersion, 10) || 0));
-            parts.push('"sliceColumns":' + itemColumns + ',"sliceCellSize":' + cellSize);
+            /* 单文件动画（webpSrc）已经是「一个文件装整段动画」，
+               不再有整网拼图和帧序列，因此不再写 frameSrc / 多列切片
+               这类只在拼图时代成立的字段。保留 slice* 是为了让老读者不崩，
+               但固定为单格（1 列），语义上就是「一张图占一格」。 */
+            var hasAnimFile = !!e.webpSrc;
+            parts.push('"sliceColumns":' + (hasAnimFile ? 1 : itemColumns) + ',"sliceCellSize":' + cellSize);
             parts.push('"sliceWidth":' + itemWidth + ',"sliceHeight":' + itemHeight);
             parts.push('"plugin":' + jsonText(e.plugin || "其它插件"));
             if (e.displayName) parts.push('"displayName":' + jsonText(e.displayName));
             if (e.previewKey) parts.push('"previewKey":' + jsonText(e.previewKey));
-            if (tmpl) parts.push('"frameSrc":' + jsonText(tmpl));
-            if (firstFrame) parts.push('"src":' + jsonText(firstFrame));
+            if (tmpl && !hasAnimFile) parts.push('"frameSrc":' + jsonText(tmpl));
+            if (e.stillSrc && hasAnimFile) parts.push('"src":' + jsonText(e.stillSrc));
+            else if (firstFrame) parts.push('"src":' + jsonText(firstFrame));
             if (e.webpSrc) parts.push('"webpSrc":' + jsonText(e.webpSrc));
             if (e.stillSrc) parts.push('"stillSrc":' + jsonText(e.stillSrc));
             if (e.stillFrame !== undefined) parts.push('"stillFrame":' + parseInt(e.stillFrame, 10));

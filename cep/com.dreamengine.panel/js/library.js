@@ -304,17 +304,14 @@ var AEV_Library = (function () {
    * stillIndex：静止时显示第几帧，默认中间帧。
    */
   function attachPreview(thumb, card, preview, isAnimated, stillIndex) {
-    var slice = AEV_ViewModel.spriteSlice(preview, state.manifest);
     var stillUrl = preview.stillSrc ? dataUrl(preview.stillSrc) : "";
-    thumb.style.backgroundSize = slice.size;
-    thumb.style.backgroundPosition = slice.position;
-    // WebP 序列已经是裁好的单帧，不能再按旧版整网拼图切片，否则会放大错位。
-    var webpSequence = preview.format === "webp-sequence" ||
-      /\.webp$/i.test(String(preview.frameSrc || preview.src || ""));
-    if (webpSequence) {
-      thumb.style.backgroundSize = "cover";
-      thumb.style.backgroundPosition = "center";
-    }
+    /* 统一 cover 居中。
+       旧版这里要用 spriteSlice 按 manifest 的 cellSize/columns 算
+       background-size/position，因为那时的预览是「一张整网 + 按 cell 切格」。
+       现在所有预览都已经是裁好的单帧/单张（内置走 frames+stills，插件走 webpSrc），
+       整网切片不再存在，继续算反而会让图片被放大错位。 */
+    thumb.style.backgroundSize = "cover";
+    thumb.style.backgroundPosition = "center";
     if (preview.webpSrc) {
       thumb.style.backgroundSize = "cover";
       thumb.style.backgroundPosition = "center";
@@ -468,7 +465,13 @@ var AEV_Library = (function () {
       var preview = item.preview;
       var webpSequence = preview.format === "webp-sequence" ||
         /\.webp$/i.test(String(preview.frameSrc || preview.src || ""));
+      // 单文件动画（webpSrc）是新的打包形态：一个文件里装着整段动画。
+      // 旧判定把「24 帧 / 24fps」写死成必要条件，导致 8 帧、13 帧的效果
+      // 即使带 webpSrc 也被判成静态、永不 hover 起播。这里改为按「是否多帧」判定，
+      // 帧数只用于决定要不要播，不再用作格式校验。
+      var webpAnimated = !!preview.webpSrc && Number(preview.frames) > 1;
       var previewCurrent =
+        webpAnimated ||
         webpSequence ||
         (Number(preview.effectPreviewVersion) === 2 &&
           Number(preview.frames) === 24 &&
@@ -975,20 +978,14 @@ var AEV_Library = (function () {
         state.manifest = manifestData;
         state.previews = {};
         state.previewVariants = {};
-        var columns = manifestData.columns || 8;
-        var cellSize = manifestData.cellSize || 256;
-        // sheets 数组的顺序不等于它的 index 字段（打包器按落盘顺序追加），
-        // 所以必须按 index 建索引，不能直接用 sheets[preview.sheet]。
-        var sheetByIndex = {};
-        var sheetList = manifestData.sheets || [];
-        for (var sh = 0; sh < sheetList.length; sh++) {
-          sheetByIndex[sheetList[sh].index] = sheetList[sh];
-        }
+        /* 不再有 sheets/sheet 索引：那是「一张整网 + 按 cell 切格」时代的产物。
+           现在每个预览自带文件（帧序列的 frameSrc 或单文件的 webpSrc），
+           src 只作为缺字段时的兜底，不再从 sheets 里反查。 */
         for (var p = 0; p < manifestData.items.length; p++) {
           var preview = manifestData.items[p];
-          if (!preview.src) {
-            var sheet = sheetByIndex[preview.sheet] || {};
-            preview.src = sheet.src || "";
+          if (!preview.src && preview.frameSrc) {
+            // 帧序列没有单张 src 时，用第 0 帧兜底（静止态显示用）
+            preview.src = String(preview.frameSrc).replace("%04d", "0000");
           }
           addPreviewVariant(preview);
         }
