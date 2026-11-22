@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "aeMajor": 0,
   "cellSize": 720,
   "columns": 1,
@@ -23,13 +23,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Glue Gun_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Glue Gun_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Glue Gun.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Glue Gun.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Glue Gun",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "CC RepeTile",
@@ -47,13 +46,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC RepeTile_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC RepeTile_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC RepeTile.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC RepeTile.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC RepeTile",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE SelectiveColor",
@@ -71,13 +69,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE SelectiveColor_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE SelectiveColor_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE SelectiveColor.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE SelectiveColor.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE SelectiveColor",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "APC Radio Waves",
@@ -95,13 +92,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/APC Radio Waves_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/APC Radio Waves_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/APC Radio Waves.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/APC Radio Waves.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:APC Radio Waves",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/APC Radio Waves.webp"
     },
     {
       "matchName": "ADBE Spherize",
@@ -119,13 +116,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Spherize_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Spherize_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Spherize.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Spherize.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Spherize",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Spherize.webp"
     },
     {
       "matchName": "CC WarpoMatic",
@@ -143,13 +140,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC WarpoMatic_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC WarpoMatic_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC WarpoMatic.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC WarpoMatic.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC WarpoMatic",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC WarpoMatic.webp"
     },
     {
       "matchName": "CC Mr. Smoothie",
@@ -167,13 +164,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Mr. Smoothie_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Mr. Smoothie_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Mr. Smoothie.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Mr. Smoothie.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Mr. Smoothie",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Mr. Smoothie.webp"
     },
     {
       "matchName": "CC Light Rays",
@@ -191,13 +188,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Light Rays_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Light Rays_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Light Rays.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Light Rays.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Light Rays",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Light Rays.webp"
     },
     {
       "matchName": "CC Light Burst 2.5",
@@ -215,13 +212,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Light Burst 2.5_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Light Burst 2.5_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Light Burst 2.5.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Light Burst 2.5.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Light Burst 2.5",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Light Burst 2.5.webp"
     },
     {
       "matchName": "CC Threshold",
@@ -239,13 +236,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Threshold_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Threshold_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Threshold.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Threshold.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Threshold",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Threshold.webp"
     },
     {
       "matchName": "CC Threshold RGB",
@@ -263,13 +260,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Threshold RGB_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Threshold RGB_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Threshold RGB.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Threshold RGB.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Threshold RGB",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Threshold RGB.webp"
     },
     {
       "matchName": "CC Bend It",
@@ -287,13 +284,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Bend It_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Bend It_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Bend It.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Bend It.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Bend It",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Bend It.webp"
     },
     {
       "matchName": "ADBE Vibrance",
@@ -311,13 +308,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Vibrance_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Vibrance_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Vibrance.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Vibrance.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Vibrance",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "CC Light Sweep",
@@ -335,13 +331,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Light Sweep_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Light Sweep_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Light Sweep.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Light Sweep.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Light Sweep",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Light Sweep.webp"
     },
     {
       "matchName": "CC Bender",
@@ -359,13 +355,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Bender_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Bender_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Bender.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Bender.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Bender",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Bender.webp"
     },
     {
       "matchName": "CC Color Offset",
@@ -383,13 +379,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Color Offset_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Color Offset_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Color Offset.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Color Offset.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Color Offset",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Color Offset.webp"
     },
     {
       "matchName": "CC Blobbylize",
@@ -407,13 +403,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Blobbylize_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Blobbylize_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Blobbylize.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Blobbylize.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Blobbylize",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Blobbylize.webp"
     },
     {
       "matchName": "CC Power Pin",
@@ -431,13 +427,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Power Pin_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Power Pin_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Power Pin.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Power Pin.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Power Pin",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Power Pin.webp"
     },
     {
       "matchName": "CC Page Turn",
@@ -455,13 +451,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Page Turn_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Page Turn_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Page Turn.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Page Turn.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Page Turn",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Page Turn.webp"
     },
     {
       "matchName": "VISINF Grain Duplication",
@@ -479,13 +475,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/VISINF Grain Duplication_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/VISINF Grain Duplication_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/VISINF Grain Duplication.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/VISINF Grain Duplication.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:VISINF Grain Duplication",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/VISINF Grain Duplication.webp"
     },
     {
       "matchName": "VISINF Grain Implant",
@@ -503,13 +499,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/VISINF Grain Implant_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/VISINF Grain Implant_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/VISINF Grain Implant.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/VISINF Grain Implant.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:VISINF Grain Implant",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/VISINF Grain Implant.webp"
     },
     {
       "matchName": "VISINF Grain Removal",
@@ -527,13 +523,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/VISINF Grain Removal_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/VISINF Grain Removal_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/VISINF Grain Removal.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/VISINF Grain Removal.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:VISINF Grain Removal",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "Keylight 906",
@@ -551,13 +546,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/Keylight 906_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/Keylight 906_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/Keylight 906.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/Keylight 906.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:Keylight 906",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "Mettle SkyBox Converter",
@@ -575,13 +569,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/Mettle SkyBox Converter_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/Mettle SkyBox Converter_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/Mettle SkyBox Converter.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/Mettle SkyBox Converter.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:Mettle SkyBox Converter",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "Mettle SkyBox Color Gradients",
@@ -599,13 +592,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/Mettle SkyBox Color Gradients_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/Mettle SkyBox Color Gradients_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/Mettle SkyBox Color Gradients.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/Mettle SkyBox Color Gradients.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:Mettle SkyBox Color Gradients",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "Mettle SkyBox Denoise",
@@ -623,13 +615,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/Mettle SkyBox Denoise_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/Mettle SkyBox Denoise_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/Mettle SkyBox Denoise.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/Mettle SkyBox Denoise.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:Mettle SkyBox Denoise",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "Mettle SkyBox Chromatic Aberrat",
@@ -647,13 +638,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/Mettle SkyBox Chromatic Aberrat_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/Mettle SkyBox Chromatic Aberrat_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/Mettle SkyBox Chromatic Aberrat.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/Mettle SkyBox Chromatic Aberrat.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:Mettle SkyBox Chromatic Aberrat",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "Mettle SkyBox Blur",
@@ -671,13 +661,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/Mettle SkyBox Blur_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/Mettle SkyBox Blur_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/Mettle SkyBox Blur.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/Mettle SkyBox Blur.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:Mettle SkyBox Blur",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "Mettle SkyBox Fractal Noise",
@@ -695,13 +684,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/Mettle SkyBox Fractal Noise_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/Mettle SkyBox Fractal Noise_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/Mettle SkyBox Fractal Noise.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/Mettle SkyBox Fractal Noise.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:Mettle SkyBox Fractal Noise",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "Mettle SkyBox Glow",
@@ -719,13 +707,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/Mettle SkyBox Glow_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/Mettle SkyBox Glow_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/Mettle SkyBox Glow.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/Mettle SkyBox Glow.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:Mettle SkyBox Glow",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "Mettle SkyBox Digital Glitch",
@@ -743,13 +730,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/Mettle SkyBox Digital Glitch_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/Mettle SkyBox Digital Glitch_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/Mettle SkyBox Digital Glitch.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/Mettle SkyBox Digital Glitch.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:Mettle SkyBox Digital Glitch",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "Mettle SkyBox Sharpen",
@@ -767,13 +753,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/Mettle SkyBox Sharpen_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/Mettle SkyBox Sharpen_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/Mettle SkyBox Sharpen.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/Mettle SkyBox Sharpen.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:Mettle SkyBox Sharpen",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "Mettle SkyBox Rotate Sphere",
@@ -791,13 +776,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/Mettle SkyBox Rotate Sphere_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/Mettle SkyBox Rotate Sphere_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/Mettle SkyBox Rotate Sphere.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/Mettle SkyBox Rotate Sphere.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:Mettle SkyBox Rotate Sphere",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "Mettle SkyBox Viewer",
@@ -815,13 +799,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/Mettle SkyBox Viewer_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/Mettle SkyBox Viewer_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/Mettle SkyBox Viewer.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/Mettle SkyBox Viewer.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:Mettle SkyBox Viewer",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "Mettle SkyBox Project 2D",
@@ -839,13 +822,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/Mettle SkyBox Project 2D_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/Mettle SkyBox Project 2D_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/Mettle SkyBox Project 2D.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/Mettle SkyBox Project 2D.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:Mettle SkyBox Project 2D",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE PS Median",
@@ -863,13 +845,13 @@
       "sliceWidth": 720,
       "sliceHeight": 720,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE PS Median_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE PS Median_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE PS Median.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE PS Median.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE PS Median",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE PS Median.webp"
     },
     {
       "matchName": "ADBE Noise2",
@@ -887,13 +869,13 @@
       "sliceWidth": 720,
       "sliceHeight": 720,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Noise2_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Noise2_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Noise2.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Noise2.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Noise2",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Noise2.webp"
     },
     {
       "matchName": "CC Split",
@@ -911,13 +893,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Split_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Split_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Split.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Split.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Split",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Split.webp"
     },
     {
       "matchName": "CC Tiler",
@@ -935,13 +917,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Tiler_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Tiler_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Tiler.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Tiler.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Tiler",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Tiler.webp"
     },
     {
       "matchName": "CC Toner",
@@ -959,13 +941,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Toner_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Toner_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Toner.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Toner.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Toner",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Toner.webp"
     },
     {
       "matchName": "CC Split 2",
@@ -983,13 +965,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Split 2_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Split 2_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Split 2.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Split 2.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Split 2",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Split 2.webp"
     },
     {
       "matchName": "ADBE Calculations",
@@ -1007,13 +989,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Calculations_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Calculations_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Calculations.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Calculations.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Calculations",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Calculations.webp"
     },
     {
       "matchName": "ADBE Noise HLS Auto2",
@@ -1031,13 +1013,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Noise HLS Auto2_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Noise HLS Auto2_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Noise HLS Auto2.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Noise HLS Auto2.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Noise HLS Auto2",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Noise HLS Auto2.webp"
     },
     {
       "matchName": "APC CardWipeCam",
@@ -1055,13 +1037,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/APC CardWipeCam_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/APC CardWipeCam_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/APC CardWipeCam.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/APC CardWipeCam.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:APC CardWipeCam",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/APC CardWipeCam.webp"
     },
     {
       "matchName": "CC Sphere",
@@ -1079,13 +1061,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Sphere_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Sphere_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Sphere.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Sphere.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Sphere",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Sphere.webp"
     },
     {
       "matchName": "CC Bubbles",
@@ -1103,13 +1085,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Bubbles_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Bubbles_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Bubbles.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Bubbles.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Bubbles",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Bubbles.webp"
     },
     {
       "matchName": "ADBE Spill2",
@@ -1127,13 +1109,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Spill2_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Spill2_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Spill2.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Spill2.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Spill2",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Spill2.webp"
     },
     {
       "matchName": "CC Glass Wipe",
@@ -1151,13 +1133,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Glass Wipe_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Glass Wipe_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Glass Wipe.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Glass Wipe.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Glass Wipe",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Glass Wipe.webp"
     },
     {
       "matchName": "ADBE Set Channels",
@@ -1175,13 +1157,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Set Channels_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Set Channels_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Set Channels.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Set Channels.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Set Channels",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Set Channels.webp"
     },
     {
       "matchName": "ADBE Scatter",
@@ -1199,13 +1181,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Scatter_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Scatter_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Scatter.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Scatter.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Scatter",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Scatter.webp"
     },
     {
       "matchName": "ADBE Smart Blur",
@@ -1223,13 +1205,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Smart Blur_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Smart Blur_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Smart Blur.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Smart Blur.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Smart Blur",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Smart Blur.webp"
     },
     {
       "matchName": "ADBE Shift Channels",
@@ -1247,13 +1229,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Shift Channels_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Shift Channels_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Shift Channels.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Shift Channels.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Shift Channels",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Shift Channels.webp"
     },
     {
       "matchName": "ADBE Lens Flare",
@@ -1271,13 +1253,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Lens Flare_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Lens Flare_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Lens Flare.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Lens Flare.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Lens Flare",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Lens Flare.webp"
     },
     {
       "matchName": "CC Grid Wipe",
@@ -1295,13 +1277,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Grid Wipe_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Grid Wipe_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Grid Wipe.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Grid Wipe.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Grid Wipe",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Grid Wipe.webp"
     },
     {
       "matchName": "CC Image Wipe",
@@ -1319,13 +1301,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Image Wipe_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Image Wipe_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Image Wipe.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Image Wipe.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Image Wipe",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Image Wipe.webp"
     },
     {
       "matchName": "CC Jaws",
@@ -1343,13 +1325,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Jaws_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Jaws_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Jaws.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Jaws.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Jaws",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Jaws.webp"
     },
     {
       "matchName": "ADBE Optics Compensation",
@@ -1367,13 +1349,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Optics Compensation_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Optics Compensation_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Optics Compensation.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Optics Compensation.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Optics Compensation",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Optics Compensation.webp"
     },
     {
       "matchName": "CC Particle World",
@@ -1391,13 +1373,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Particle World_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Particle World_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Particle World.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Particle World.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Particle World",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Particle World.webp"
     },
     {
       "matchName": "ADBE Lightning 2",
@@ -1415,13 +1397,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Lightning 2_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Lightning 2_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Lightning 2.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Lightning 2.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Lightning 2",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Lightning 2.webp"
     },
     {
       "matchName": "CC Scale Wipe",
@@ -1439,13 +1421,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Scale Wipe_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Scale Wipe_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Scale Wipe.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Scale Wipe.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Scale Wipe",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Scale Wipe.webp"
     },
     {
       "matchName": "CC Light Wipe",
@@ -1463,13 +1445,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Light Wipe_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Light Wipe_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Light Wipe.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Light Wipe.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Light Wipe",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Light Wipe.webp"
     },
     {
       "matchName": "CC Radial ScaleWipe",
@@ -1487,13 +1469,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Radial ScaleWipe_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Radial ScaleWipe_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Radial ScaleWipe.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Radial ScaleWipe.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Radial ScaleWipe",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Radial ScaleWipe.webp"
     },
     {
       "matchName": "CC Star Burst",
@@ -1511,13 +1493,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Star Burst_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Star Burst_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Star Burst.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Star Burst.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Star Burst",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Star Burst.webp"
     },
     {
       "matchName": "CC Scatterize",
@@ -1535,13 +1517,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Scatterize_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Scatterize_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Scatterize.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Scatterize.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Scatterize",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Scatterize.webp"
     },
     {
       "matchName": "CC Composite",
@@ -1559,13 +1541,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Composite_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Composite_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Composite.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Composite.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Composite",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Composite.webp"
     },
     {
       "matchName": "CC Flo Motion",
@@ -1583,13 +1565,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Flo Motion_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Flo Motion_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Flo Motion.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Flo Motion.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Flo Motion",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Flo Motion.webp"
     },
     {
       "matchName": "CC Twister",
@@ -1607,13 +1589,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Twister_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Twister_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Twister.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Twister.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Twister",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Twister.webp"
     },
     {
       "matchName": "CC Griddler",
@@ -1631,13 +1613,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Griddler_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Griddler_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Griddler.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Griddler.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Griddler",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Griddler.webp"
     },
     {
       "matchName": "CC Lens",
@@ -1655,13 +1637,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Lens_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Lens_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Lens.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Lens.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Lens",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Lens.webp"
     },
     {
       "matchName": "ADBE Box Blur2",
@@ -1679,13 +1661,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Box Blur2_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Box Blur2_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Box Blur2.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Box Blur2.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Box Blur2",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Box Blur2.webp"
     },
     {
       "matchName": "ADBE Unsharp Mask2",
@@ -1703,13 +1685,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Unsharp Mask2_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Unsharp Mask2_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Unsharp Mask2.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Unsharp Mask2.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Unsharp Mask2",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Unsharp Mask2.webp"
     },
     {
       "matchName": "ADBE Radial Blur",
@@ -1727,13 +1709,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Radial Blur_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Radial Blur_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Radial Blur.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Radial Blur.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Radial Blur",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Radial Blur.webp"
     },
     {
       "matchName": "ADBE Motion Blur",
@@ -1751,13 +1733,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Motion Blur_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Motion Blur_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Motion Blur.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Motion Blur.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Motion Blur",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Motion Blur.webp"
     },
     {
       "matchName": "ADBE Sharpen",
@@ -1775,13 +1757,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Sharpen_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Sharpen_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Sharpen.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Sharpen.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Sharpen",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Sharpen.webp"
     },
     {
       "matchName": "CC Radial Fast Blur",
@@ -1799,13 +1781,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Radial Fast Blur_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Radial Fast Blur_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Radial Fast Blur.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Radial Fast Blur.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Radial Fast Blur",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Radial Fast Blur.webp"
     },
     {
       "matchName": "CC Radial Blur",
@@ -1823,13 +1805,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Radial Blur_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Radial Blur_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Radial Blur.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Radial Blur.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Radial Blur",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Radial Blur.webp"
     },
     {
       "matchName": "CC Vector Blur",
@@ -1847,13 +1829,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Vector Blur_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Vector Blur_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Vector Blur.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Vector Blur.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Vector Blur",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Vector Blur.webp"
     },
     {
       "matchName": "ADBE Black&White",
@@ -1871,13 +1853,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Black&White_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Black&White_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Black&White.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Black&White.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Black&White",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Black&White.webp"
     },
     {
       "matchName": "ADBE Tint",
@@ -1895,13 +1877,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Tint_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Tint_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Tint.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Tint.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Tint",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Tint.webp"
     },
     {
       "matchName": "ADBE Tritone",
@@ -1919,13 +1901,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Tritone_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Tritone_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Tritone.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Tritone.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Tritone",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Tritone.webp"
     },
     {
       "matchName": "ADBE Turbulent Displace",
@@ -1943,13 +1925,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Turbulent Displace_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Turbulent Displace_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Turbulent Displace.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Turbulent Displace.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Turbulent Displace",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Turbulent Displace.webp"
     },
     {
       "matchName": "ADBE Wave Warp",
@@ -1967,13 +1949,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Wave Warp_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Wave Warp_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Wave Warp.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Wave Warp.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Wave Warp",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Wave Warp.webp"
     },
     {
       "matchName": "ADBE Ripple",
@@ -1991,13 +1973,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Ripple_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Ripple_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Ripple.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Ripple.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Ripple",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Ripple.webp"
     },
     {
       "matchName": "ADBE Equalize",
@@ -2015,13 +1997,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Equalize_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Equalize_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Equalize.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Equalize.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Equalize",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Equalize.webp"
     },
     {
       "matchName": "ADBE Twirl",
@@ -2039,13 +2021,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Twirl_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Twirl_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Twirl.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Twirl.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Twirl",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Twirl.webp"
     },
     {
       "matchName": "ADBE Bulge",
@@ -2063,13 +2045,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Bulge_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Bulge_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Bulge.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Bulge.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Bulge",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Bulge.webp"
     },
     {
       "matchName": "ADBE Brush Strokes",
@@ -2087,13 +2069,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Brush Strokes_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Brush Strokes_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Brush Strokes.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Brush Strokes.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Brush Strokes",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Brush Strokes.webp"
     },
     {
       "matchName": "ADBE Cartoonify",
@@ -2111,13 +2093,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Cartoonify_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Cartoonify_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Cartoonify.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Cartoonify.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Cartoonify",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Cartoonify.webp"
     },
     {
       "matchName": "ADBE Compander",
@@ -2135,13 +2117,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Compander_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Compander_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Compander.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Compander.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Compander",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Compander.webp"
     },
     {
       "matchName": "ADBE Bevel Edges",
@@ -2159,13 +2141,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Bevel Edges_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Bevel Edges_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Bevel Edges.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Bevel Edges.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Bevel Edges",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Bevel Edges.webp"
     },
     {
       "matchName": "ADBE Gradient Wipe",
@@ -2183,13 +2165,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Gradient Wipe_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Gradient Wipe_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Gradient Wipe.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Gradient Wipe.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Gradient Wipe",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Gradient Wipe.webp"
     },
     {
       "matchName": "ADBE Simple Choker",
@@ -2207,13 +2189,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Simple Choker_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Simple Choker_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Simple Choker.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Simple Choker.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Simple Choker",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Simple Choker.webp"
     },
     {
       "matchName": "ADBE Blend",
@@ -2231,13 +2213,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Blend_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Blend_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Blend.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Blend.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Blend",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Blend.webp"
     },
     {
       "matchName": "ADBE Median",
@@ -2255,13 +2237,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Median_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Median_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Median.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Median.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Median",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Median.webp"
     },
     {
       "matchName": "ADBE Cineon Converter2",
@@ -2279,13 +2261,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Cineon Converter2_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Cineon Converter2_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Cineon Converter2.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Cineon Converter2.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Cineon Converter2",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE Matte Choker",
@@ -2303,13 +2284,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Matte Choker_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Matte Choker_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Matte Choker.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Matte Choker.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Matte Choker",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "APC CardDanceCam",
@@ -2327,13 +2307,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/APC CardDanceCam_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/APC CardDanceCam_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/APC CardDanceCam.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/APC CardDanceCam.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:APC CardDanceCam",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "APC Caustics",
@@ -2351,13 +2330,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/APC Caustics_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/APC Caustics_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/APC Caustics.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/APC Caustics.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:APC Caustics",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE Channel Blur",
@@ -2375,13 +2353,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Channel Blur_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Channel Blur_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Channel Blur.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Channel Blur.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Channel Blur",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE Color Emboss",
@@ -2399,13 +2376,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Color Emboss_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Color Emboss_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Color Emboss.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Color Emboss.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Color Emboss",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Color Emboss.webp"
     },
     {
       "matchName": "ADBE Difference Matte2",
@@ -2423,13 +2400,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Difference Matte2_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Difference Matte2_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Difference Matte2.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Difference Matte2.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Difference Matte2",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE Emboss",
@@ -2447,13 +2423,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Emboss_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Emboss_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Emboss.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Emboss.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Emboss",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Emboss.webp"
     },
     {
       "matchName": "ADBE OFMotionBlur",
@@ -2471,13 +2447,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE OFMotionBlur_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE OFMotionBlur_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE OFMotionBlur.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE OFMotionBlur.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE OFMotionBlur",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE GROW BOUNDS",
@@ -2495,13 +2470,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE GROW BOUNDS_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE GROW BOUNDS_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE GROW BOUNDS.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE GROW BOUNDS.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE GROW BOUNDS",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE RefineRBMatte",
@@ -2519,13 +2493,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE RefineRBMatte_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE RefineRBMatte_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE RefineRBMatte.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE RefineRBMatte.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE RefineRBMatte",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE Channel Combiner",
@@ -2543,13 +2516,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Channel Combiner_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Channel Combiner_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Channel Combiner.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Channel Combiner.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Channel Combiner",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE Radial Shadow",
@@ -2567,13 +2539,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Radial Shadow_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Radial Shadow_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Radial Shadow.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Radial Shadow.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Radial Shadow",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE ProfileToProfile",
@@ -2591,13 +2562,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE ProfileToProfile_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE ProfileToProfile_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE ProfileToProfile.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE ProfileToProfile.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE ProfileToProfile",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE RefineMatte2",
@@ -2615,13 +2585,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE RefineMatte2_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE RefineMatte2_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE RefineMatte2.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE RefineMatte2.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE RefineMatte2",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE LIQUIFY",
@@ -2639,13 +2608,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE LIQUIFY_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE LIQUIFY_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE LIQUIFY.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE LIQUIFY.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE LIQUIFY",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE Change To Color",
@@ -2663,13 +2631,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Change To Color_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Change To Color_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Change To Color.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Change To Color.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Change To Color",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE ATG Extract",
@@ -2687,13 +2654,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE ATG Extract_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE ATG Extract_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE ATG Extract.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE ATG Extract.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE ATG Extract",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE Time Displacement",
@@ -2711,13 +2677,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Time Displacement_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Time Displacement_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Time Displacement.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Time Displacement.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Time Displacement",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "CC Spotlight",
@@ -2735,13 +2700,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Spotlight_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Spotlight_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Spotlight.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Spotlight.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Spotlight",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "CC Environment",
@@ -2759,13 +2723,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Environment_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Environment_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Environment.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Environment.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Environment",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE KeyCleaner",
@@ -2783,13 +2746,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE KeyCleaner_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE KeyCleaner_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE KeyCleaner.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE KeyCleaner.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE KeyCleaner",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "CC Overbrights",
@@ -2807,13 +2769,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Overbrights_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Overbrights_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Overbrights.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Overbrights.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Overbrights",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "CC Mr. Mercury",
@@ -2831,13 +2792,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Mr. Mercury_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Mr. Mercury_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Mr. Mercury.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Mr. Mercury.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Mr. Mercury",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE MESH WARP",
@@ -2855,13 +2815,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE MESH WARP_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE MESH WARP_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE MESH WARP.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE MESH WARP.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE MESH WARP",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE Grid",
@@ -2879,13 +2838,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Grid_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Grid_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Grid.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Grid.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Grid",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "CC Simple Wire Removal",
@@ -2903,13 +2861,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Simple Wire Removal_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Simple Wire Removal_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Simple Wire Removal.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Simple Wire Removal.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Simple Wire Removal",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE Remove Color Matting",
@@ -2927,13 +2884,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Remove Color Matting_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Remove Color Matting_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Remove Color Matting.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Remove Color Matting.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Remove Color Matting",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE Deflicker",
@@ -2951,13 +2907,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Deflicker_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Deflicker_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Deflicker.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Deflicker.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Deflicker",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE Texturize",
@@ -2975,13 +2930,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Texturize_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Texturize_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Texturize.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Texturize.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Texturize",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE Paint Bucket",
@@ -2999,13 +2953,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Paint Bucket_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Paint Bucket_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Paint Bucket.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Paint Bucket.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Paint Bucket",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE Rolling Shutter",
@@ -3023,13 +2976,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Rolling Shutter_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Rolling Shutter_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Rolling Shutter.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Rolling Shutter.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Rolling Shutter",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE RESHAPE",
@@ -3047,13 +2999,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE RESHAPE_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE RESHAPE_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE RESHAPE.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE RESHAPE.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE RESHAPE",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE Scribble Fill",
@@ -3071,13 +3022,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Scribble Fill_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Scribble Fill_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Scribble Fill.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Scribble Fill.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Scribble Fill",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE Gamma/Pedestal/Gain2",
@@ -3095,13 +3045,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Gamma_Pedestal_Gain2_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Gamma_Pedestal_Gain2_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Gamma_Pedestal_Gain2.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Gamma_Pedestal_Gain2.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Gamma/Pedestal/Gain2",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE Circle",
@@ -3119,13 +3068,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Circle_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Circle_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Circle.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Circle.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Circle",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE Stroke",
@@ -3143,13 +3091,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Stroke_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Stroke_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Stroke.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Stroke.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Stroke",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE PS Arbitrary Map",
@@ -3167,13 +3114,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE PS Arbitrary Map_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE PS Arbitrary Map_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE PS Arbitrary Map.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE PS Arbitrary Map.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE PS Arbitrary Map",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE Broadcast Colors",
@@ -3191,13 +3137,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Broadcast Colors_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Broadcast Colors_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Broadcast Colors.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Broadcast Colors.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Broadcast Colors",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Broadcast Colors.webp"
     },
     {
       "matchName": "APC Foam",
@@ -3215,13 +3161,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/APC Foam_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/APC Foam_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/APC Foam.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/APC Foam.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:APC Foam",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/APC Foam.webp"
     },
     {
       "matchName": "ADBE Linear Wipe",
@@ -3239,13 +3185,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Linear Wipe_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Linear Wipe_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Linear Wipe.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Linear Wipe.webp",
-      "stillFrame": 7,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Linear Wipe",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Linear Wipe.webp"
     },
     {
       "matchName": "ADBE Extract",
@@ -3263,13 +3209,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Extract_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Extract_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Extract.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Extract.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Extract",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Extract.webp"
     },
     {
       "matchName": "APC Shatter",
@@ -3287,13 +3233,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/APC Shatter_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/APC Shatter_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/APC Shatter.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/APC Shatter.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:APC Shatter",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/APC Shatter.webp"
     },
     {
       "matchName": "ADBE Noise Alpha2",
@@ -3311,13 +3257,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Noise Alpha2_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Noise Alpha2_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Noise Alpha2.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Noise Alpha2.webp",
-      "stillFrame": 2,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Noise Alpha2",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Noise Alpha2.webp"
     },
     {
       "matchName": "CC Cylinder",
@@ -3335,13 +3281,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Cylinder_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Cylinder_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Cylinder.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Cylinder.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Cylinder",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Cylinder.webp"
     },
     {
       "matchName": "ADBE Radial Wipe",
@@ -3359,13 +3305,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Radial Wipe_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Radial Wipe_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Radial Wipe.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Radial Wipe.webp",
-      "stillFrame": 7,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Radial Wipe",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Radial Wipe.webp"
     },
     {
       "matchName": "ADBE Noise HLS2",
@@ -3383,13 +3329,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Noise HLS2_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Noise HLS2_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Noise HLS2.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Noise HLS2.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Noise HLS2",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Noise HLS2.webp"
     },
     {
       "matchName": "ADBE HDR ToneMap",
@@ -3407,13 +3353,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE HDR ToneMap_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE HDR ToneMap_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE HDR ToneMap.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE HDR ToneMap.webp",
-      "stillFrame": 9,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE HDR ToneMap",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE HDR ToneMap.webp"
     },
     {
       "matchName": "ADBE Compound Arithmetic",
@@ -3431,13 +3377,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Compound Arithmetic_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Compound Arithmetic_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Compound Arithmetic.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Compound Arithmetic.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Compound Arithmetic",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Compound Arithmetic.webp"
     },
     {
       "matchName": "ADBE ELLIPSE",
@@ -3455,13 +3401,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE ELLIPSE_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE ELLIPSE_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE ELLIPSE.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE ELLIPSE.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE ELLIPSE",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE ELLIPSE.webp"
     },
     {
       "matchName": "ADBE Magnify",
@@ -3479,13 +3425,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Magnify_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Magnify_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Magnify.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Magnify.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Magnify",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Magnify.webp"
     },
     {
       "matchName": "ADBE Venetian Blinds",
@@ -3503,13 +3449,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Venetian Blinds_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Venetian Blinds_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Venetian Blinds.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Venetian Blinds.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Venetian Blinds",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "APC Wave World",
@@ -3527,13 +3472,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/APC Wave World_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/APC Wave World_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/APC Wave World.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/APC Wave World.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:APC Wave World",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/APC Wave World.webp"
     },
     {
       "matchName": "ADBE Invert",
@@ -3551,13 +3496,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Invert_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Invert_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Invert.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Invert.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Invert",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Invert.webp"
     },
     {
       "matchName": "ADBE WRPMESH",
@@ -3575,13 +3520,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE WRPMESH_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE WRPMESH_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE WRPMESH.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE WRPMESH.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE WRPMESH",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE WRPMESH.webp"
     },
     {
       "matchName": "ADBE Displacement Map",
@@ -3599,13 +3544,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Displacement Map_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Displacement Map_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Displacement Map.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Displacement Map.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Displacement Map",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Displacement Map.webp"
     },
     {
       "matchName": "ADBE Polar Coordinates",
@@ -3623,13 +3568,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Polar Coordinates_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Polar Coordinates_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Polar Coordinates.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Polar Coordinates.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Polar Coordinates",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Polar Coordinates.webp"
     },
     {
       "matchName": "ADBE Geometry2",
@@ -3647,13 +3592,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Geometry2_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Geometry2_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Geometry2.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Geometry2.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Geometry2",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Geometry2.webp"
     },
     {
       "matchName": "ADBE Glo2",
@@ -3671,13 +3616,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Glo2_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Glo2_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Glo2.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Glo2.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Glo2",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Glo2.webp"
     },
     {
       "matchName": "ADBE Posterize",
@@ -3695,13 +3640,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Posterize_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Posterize_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Posterize.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Posterize.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Posterize",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Posterize.webp"
     },
     {
       "matchName": "ADBE Bevel Alpha",
@@ -3719,13 +3664,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Bevel Alpha_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Bevel Alpha_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Bevel Alpha.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Bevel Alpha.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Bevel Alpha",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Bevel Alpha.webp"
     },
     {
       "matchName": "ADBE Mosaic",
@@ -3743,13 +3688,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Mosaic_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Mosaic_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Mosaic.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Mosaic.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Mosaic",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Mosaic.webp"
     },
     {
       "matchName": "ADBE Find Edges",
@@ -3767,13 +3712,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Find Edges_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Find Edges_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Find Edges.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Find Edges.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Find Edges",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Find Edges.webp"
     },
     {
       "matchName": "CC Plastic",
@@ -3791,13 +3736,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Plastic_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Plastic_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Plastic.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Plastic.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Plastic",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Plastic.webp"
     },
     {
       "matchName": "CC Kaleida",
@@ -3815,13 +3760,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Kaleida_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Kaleida_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Kaleida.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Kaleida.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Kaleida",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Kaleida.webp"
     },
     {
       "matchName": "CC Burn Film",
@@ -3839,13 +3784,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Burn Film_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Burn Film_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Burn Film.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Burn Film.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Burn Film",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Burn Film.webp"
     },
     {
       "matchName": "CC Glass",
@@ -3863,13 +3808,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Glass_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Glass_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Glass.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Glass.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Glass",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Glass.webp"
     },
     {
       "matchName": "ADBE Fill",
@@ -3887,13 +3832,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Fill_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Fill_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Fill.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Fill.webp",
-      "stillFrame": 8,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Fill",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Fill.webp"
     },
     {
       "matchName": "CC Slant",
@@ -3911,13 +3856,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Slant_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Slant_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Slant.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Slant.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Slant",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Slant.webp"
     },
     {
       "matchName": "ADBE 4ColorGradient",
@@ -3935,13 +3880,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE 4ColorGradient_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE 4ColorGradient_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE 4ColorGradient.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE 4ColorGradient.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE 4ColorGradient",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE 4ColorGradient.webp"
     },
     {
       "matchName": "ADBE Fractal Noise",
@@ -3959,13 +3904,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Fractal Noise_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Fractal Noise_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Fractal Noise.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Fractal Noise.webp",
-      "stillFrame": 10,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Fractal Noise",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Fractal Noise.webp"
     },
     {
       "matchName": "ADBE Color Difference Key",
@@ -3983,13 +3928,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Color Difference Key_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Color Difference Key_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Color Difference Key.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Color Difference Key.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Color Difference Key",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Color Difference Key.webp"
     },
     {
       "matchName": "ADBE Dust & Scratches",
@@ -4007,13 +3952,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Dust & Scratches_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Dust & Scratches_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Dust & Scratches.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Dust & Scratches.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Dust & Scratches",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Dust & Scratches.webp"
     },
     {
       "matchName": "ADBE Compound Blur",
@@ -4031,13 +3976,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Compound Blur_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Compound Blur_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Compound Blur.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Compound Blur.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Compound Blur",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Compound Blur.webp"
     },
     {
       "matchName": "ADBE Mirror",
@@ -4055,13 +4000,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Mirror_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Mirror_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Mirror.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Mirror.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Mirror",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE Corner Pin",
@@ -4079,13 +4023,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Corner Pin_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Corner Pin_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Corner Pin.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Corner Pin.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Corner Pin",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE Linear Color Key2",
@@ -4103,13 +4046,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Linear Color Key2_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Linear Color Key2_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Linear Color Key2.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Linear Color Key2.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Linear Color Key2",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE Drop Shadow",
@@ -4127,13 +4069,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Drop Shadow_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Drop Shadow_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Drop Shadow.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Drop Shadow.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Drop Shadow",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE Offset",
@@ -4151,13 +4092,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Offset_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Offset_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Offset.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Offset.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Offset",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE Ramp",
@@ -4175,13 +4115,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Ramp_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Ramp_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Ramp.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Ramp.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Ramp",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "APC Vegas",
@@ -4199,13 +4138,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/APC Vegas_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/APC Vegas_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/APC Vegas.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/APC Vegas.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:APC Vegas",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE SCHMEAR",
@@ -4223,13 +4161,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE SCHMEAR_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE SCHMEAR_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE SCHMEAR.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE SCHMEAR.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE SCHMEAR",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE Set Matte3",
@@ -4247,13 +4184,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Set Matte3_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Set Matte3_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Set Matte3.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Set Matte3.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Set Matte3",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE SubspaceStabilizer",
@@ -4271,13 +4207,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE SubspaceStabilizer_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE SubspaceStabilizer_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE SubspaceStabilizer.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE SubspaceStabilizer.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE SubspaceStabilizer",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE Write-on",
@@ -4295,13 +4230,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Write-on_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Write-on_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Write-on.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Write-on.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Write-on",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE BEZMESH",
@@ -4319,13 +4253,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE BEZMESH_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE BEZMESH_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE BEZMESH.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE BEZMESH.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE BEZMESH",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE DigitalVideoLimiter",
@@ -4343,13 +4276,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE DigitalVideoLimiter_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE DigitalVideoLimiter_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE DigitalVideoLimiter.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE DigitalVideoLimiter.webp",
-      "stillFrame": 10,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE DigitalVideoLimiter",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE DigitalVideoLimiter.webp"
     },
     {
       "matchName": "ADBE Timewarp",
@@ -4367,13 +4300,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Timewarp_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Timewarp_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Timewarp.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Timewarp.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Timewarp",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "CC Force Motion Blur",
@@ -4391,13 +4323,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Force Motion Blur_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Force Motion Blur_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Force Motion Blur.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Force Motion Blur.webp",
-      "stillFrame": 4,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Force Motion Blur",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Force Motion Blur.webp"
     },
     {
       "matchName": "ADBE Arithmetic",
@@ -4415,13 +4347,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Arithmetic_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Arithmetic_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Arithmetic.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Arithmetic.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Arithmetic",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Arithmetic.webp"
     },
     {
       "matchName": "ADBE Eyedropper Fill",
@@ -4439,13 +4371,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Eyedropper Fill_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Eyedropper Fill_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Eyedropper Fill.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Eyedropper Fill.webp",
-      "stillFrame": 9,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Eyedropper Fill",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Eyedropper Fill.webp"
     },
     {
       "matchName": "ADBE Minimax",
@@ -4463,13 +4395,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Minimax_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Minimax_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Minimax.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Minimax.webp",
-      "stillFrame": 2,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Minimax",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Minimax.webp"
     },
     {
       "matchName": "CC Wide Time",
@@ -4487,13 +4419,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Wide Time_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Wide Time_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Wide Time.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Wide Time.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Wide Time",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Wide Time.webp"
     },
     {
       "matchName": "ADBE Color Link",
@@ -4511,13 +4443,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Color Link_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Color Link_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Color Link.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Color Link.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Color Link",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Color Link.webp"
     },
     {
       "matchName": "CC Ball Action",
@@ -4535,13 +4467,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Ball Action_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Ball Action_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Ball Action.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Ball Action.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Ball Action",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Ball Action.webp"
     },
     {
       "matchName": "ADBE Roughen Edges",
@@ -4559,13 +4491,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Roughen Edges_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Roughen Edges_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Roughen Edges.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Roughen Edges.webp",
-      "stillFrame": 8,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Roughen Edges",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Roughen Edges.webp"
     },
     {
       "matchName": "ADBE AIF Perlin Noise 3D",
@@ -4583,13 +4515,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE AIF Perlin Noise 3D_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE AIF Perlin Noise 3D_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE AIF Perlin Noise 3D.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE AIF Perlin Noise 3D.webp",
-      "stillFrame": 10,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE AIF Perlin Noise 3D",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE AIF Perlin Noise 3D.webp"
     },
     {
       "matchName": "ADBE Color Balance (HLS)",
@@ -4607,13 +4539,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Color Balance (HLS)_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Color Balance (HLS)_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Color Balance (HLS).webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Color Balance (HLS).webp",
-      "stillFrame": 9,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Color Balance (HLS)",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Color Balance (HLS).webp"
     },
     {
       "matchName": "CC Particle Systems II",
@@ -4631,13 +4563,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Particle Systems II_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Particle Systems II_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Particle Systems II.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Particle Systems II.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Particle Systems II",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Particle Systems II.webp"
     },
     {
       "matchName": "CC Pixel Polly",
@@ -4655,13 +4587,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Pixel Polly_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Pixel Polly_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Pixel Polly.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Pixel Polly.webp",
-      "stillFrame": 1,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Pixel Polly",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/CC Pixel Polly.webp"
     },
     {
       "matchName": "ADBE Strobe",
@@ -4679,13 +4611,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Strobe_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Strobe_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Strobe.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Strobe.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Strobe",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Strobe.webp"
     },
     {
       "matchName": "ADBE Solid Composite",
@@ -4703,13 +4635,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Solid Composite_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Solid Composite_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Solid Composite.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Solid Composite.webp",
-      "stillFrame": 5,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Solid Composite",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Solid Composite.webp"
     },
     {
       "matchName": "ADBE ShadowHighlight",
@@ -4727,13 +4659,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE ShadowHighlight_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE ShadowHighlight_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE ShadowHighlight.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE ShadowHighlight.webp",
-      "stillFrame": 2,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE ShadowHighlight",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE ShadowHighlight.webp"
     },
     {
       "matchName": "CC Ripple Pulse",
@@ -4751,13 +4683,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Ripple Pulse_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Ripple Pulse_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Ripple Pulse.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Ripple Pulse.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Ripple Pulse",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "CC Smear",
@@ -4775,13 +4706,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/CC Smear_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/CC Smear_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/CC Smear.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/CC Smear.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:CC Smear",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE Gaussian Blur 2",
@@ -4799,13 +4729,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Gaussian Blur 2_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Gaussian Blur 2_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Gaussian Blur 2.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Gaussian Blur 2.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Gaussian Blur 2",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Gaussian Blur 2.webp"
     },
     {
       "matchName": "ADBE Brightness & Contrast 2",
@@ -4823,13 +4753,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Brightness & Contrast 2_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Brightness & Contrast 2_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Brightness & Contrast 2.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Brightness & Contrast 2.webp",
-      "stillFrame": 9,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Brightness & Contrast 2",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Brightness & Contrast 2.webp"
     },
     {
       "matchName": "ADBE Color Balance 2",
@@ -4847,13 +4777,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Color Balance 2_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Color Balance 2_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Color Balance 2.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Color Balance 2.webp",
-      "stillFrame": 1,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Color Balance 2",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Color Balance 2.webp"
     },
     {
       "matchName": "APC Colorama",
@@ -4871,13 +4801,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/APC Colorama_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/APC Colorama_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/APC Colorama.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/APC Colorama.webp",
-      "stillFrame": 11,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:APC Colorama",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/APC Colorama.webp"
     },
     {
       "matchName": "ADBE PhotoFilterPS",
@@ -4895,13 +4825,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE PhotoFilterPS_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE PhotoFilterPS_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE PhotoFilterPS.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE PhotoFilterPS.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE PhotoFilterPS",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE PhotoFilterPS.webp"
     },
     {
       "matchName": "ADBE CHANNEL MIXER",
@@ -4919,13 +4849,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE CHANNEL MIXER_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE CHANNEL MIXER_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE CHANNEL MIXER.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE CHANNEL MIXER.webp",
-      "stillFrame": 9,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE CHANNEL MIXER",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE CHANNEL MIXER.webp"
     },
     {
       "matchName": "ADBE Leave Color",
@@ -4943,13 +4873,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Leave Color_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Leave Color_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Leave Color.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Leave Color.webp",
-      "stillFrame": 10,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Leave Color",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Leave Color.webp"
     },
     {
       "matchName": "ADBE Laser",
@@ -4967,13 +4897,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Laser_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Laser_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Laser.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Laser.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Laser",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Laser.webp"
     },
     {
       "matchName": "ADBE AutoColor",
@@ -4991,13 +4921,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE AutoColor_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE AutoColor_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE AutoColor.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE AutoColor.webp",
-      "stillFrame": 11,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE AutoColor",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE AutoColor.webp"
     },
     {
       "matchName": "ADBE Bilateral",
@@ -5015,13 +4945,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Bilateral_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Bilateral_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Bilateral.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Bilateral.webp",
-      "stillFrame": 6,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Bilateral",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Bilateral.webp"
     },
     {
       "matchName": "ADBE Cell Pattern",
@@ -5039,13 +4969,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Cell Pattern_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Cell Pattern_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Cell Pattern.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Cell Pattern.webp",
-      "stillFrame": 10,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Cell Pattern",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Cell Pattern.webp"
     },
     {
       "matchName": "ADBE Block Dissolve",
@@ -5063,13 +4993,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Block Dissolve_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Block Dissolve_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Block Dissolve.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Block Dissolve.webp",
-      "stillFrame": 8,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Block Dissolve",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Block Dissolve.webp"
     },
     {
       "matchName": "ADBE AutoContrast",
@@ -5087,13 +5017,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE AutoContrast_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE AutoContrast_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE AutoContrast.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE AutoContrast.webp",
-      "stillFrame": 10,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE AutoContrast",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE AutoContrast.webp"
     },
     {
       "matchName": "ADBE Color Range",
@@ -5111,13 +5041,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Color Range_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Color Range_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Color Range.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Color Range.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Color Range",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Color Range.webp"
     },
     {
       "matchName": "ADBE Checkerboard",
@@ -5135,13 +5065,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Checkerboard_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Checkerboard_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Checkerboard.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Checkerboard.webp",
-      "stillFrame": 6,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Checkerboard",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Checkerboard.webp"
     },
     {
       "matchName": "ADBE AutoLevels",
@@ -5159,13 +5089,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE AutoLevels_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE AutoLevels_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE AutoLevels.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE AutoLevels.webp",
-      "stillFrame": 10,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE AutoLevels",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE AutoLevels.webp"
     },
     {
       "matchName": "ADBE Easy Levels2",
@@ -5183,13 +5113,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Easy Levels2_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Easy Levels2_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Easy Levels2.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Easy Levels2.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Easy Levels2",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE IRIS_WIPE",
@@ -5207,13 +5136,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE IRIS_WIPE_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE IRIS_WIPE_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE IRIS_WIPE.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE IRIS_WIPE.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE IRIS_WIPE",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE IRIS_WIPE.webp"
     },
     {
       "matchName": "ADBE CurvesCustom",
@@ -5231,13 +5160,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE CurvesCustom_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE CurvesCustom_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE CurvesCustom.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE CurvesCustom.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE CurvesCustom",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE Change Color",
@@ -5255,13 +5183,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Change Color_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Change Color_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Change Color.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Change Color.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Change Color",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE Pro Levels2",
@@ -5279,13 +5206,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Pro Levels2_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Pro Levels2_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Pro Levels2.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Pro Levels2.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Pro Levels2",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE HUE SATURATION",
@@ -5303,13 +5229,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE HUE SATURATION_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE HUE SATURATION_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE HUE SATURATION.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE HUE SATURATION.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE HUE SATURATION",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE Lumetri",
@@ -5327,13 +5252,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Lumetri_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Lumetri_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Lumetri.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Lumetri.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Lumetri",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE Difference",
@@ -5351,13 +5275,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Difference_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Difference_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Difference.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Difference.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Difference",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE Threshold2",
@@ -5375,13 +5298,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Threshold2_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Threshold2_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Threshold2.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Threshold2.webp",
-      "stillFrame": 2,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Threshold2",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Threshold2.webp"
     },
     {
       "matchName": "ADBE Exposure2",
@@ -5399,13 +5322,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Exposure2_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Exposure2_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Exposure2.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Exposure2.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Exposure2",
-      "format": "webp-sequence"
+      "format": "webp-still"
     },
     {
       "matchName": "ADBE Playgnd",
@@ -5423,13 +5345,13 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Playgnd_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Playgnd_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Playgnd.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Playgnd.webp",
-      "stillFrame": 12,
+      "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Playgnd",
-      "format": "webp-sequence"
+      "format": "webp-animated",
+      "webpSrc": "previews/effects/webp/builtin/anim/ADBE Playgnd.webp"
     },
     {
       "matchName": "ADBE Posterize Time",
@@ -5447,13 +5369,12 @@
       "sliceWidth": 1440,
       "sliceHeight": 1440,
       "plugin": "内置",
-      "frameSrc": "previews/effects/webp/builtin/frames/ADBE Posterize Time_%04d.webp",
-      "src": "previews/effects/webp/builtin/frames/ADBE Posterize Time_0000.webp",
+      "src": "previews/effects/webp/builtin/stills/ADBE Posterize Time.webp",
       "stillSrc": "previews/effects/webp/builtin/stills/ADBE Posterize Time.webp",
       "stillFrame": 0,
       "renderFrames": 24,
       "key": "l1:ADBE Posterize Time",
-      "format": "webp-sequence"
+      "format": "webp-still"
     }
   ]
 }
