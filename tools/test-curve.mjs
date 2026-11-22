@@ -502,7 +502,7 @@ test("值图只有一组把手，拖拽只改本地曲线、绝不过桥", () =>
   assert.ok(!up.includes("send("), "松手还在写回");
 });
 
-test("应用时才读快照：expect + out/in 覆盖每条属性的每一段", () => {
+test("应用时才读快照：expect + out/in 只覆盖选中的段", () => {
   const code = codeOf(read("cep/com.dreamengine.panel/js/curve.js"));
   const build = code.slice(code.indexOf("function buildText("), code.indexOf("function apply("));
   assert.ok(build.includes('"expect') && build.includes("p.loc") && build.includes("p.sig"), "缺少 expect 行");
@@ -510,6 +510,11 @@ test("应用时才读快照：expect + out/in 覆盖每条属性的每一段", (
   assert.ok(build.includes('["in", p.loc, String(s + 1)'), "缺少 in 侧");
   assert.ok(build.includes("segs++"), "没有累计段数");
   assert.ok(build.includes("keys.length < 2"), "不足两把关键帧的属性没有跳过");
+  // 作用范围必须听 AO 侧带回来的选区：只改选中那几段，不再铺满整条属性
+  assert.ok(build.includes("p.sel"), "没有读快照里的选区");
+  assert.ok(build.includes("var from = 0"), "缺少段起点");
+  assert.ok(build.includes("s < to"), "段循环没按选区收敛");
+  assert.ok(!build.includes("s + 1 < keys.length"), "仍在无差别遍历所有段");
 
   const apply = code.slice(code.indexOf("function apply("), code.indexOf("function send("));
   assert.ok(apply.includes('engine("AEV_Curve.snapshotJson()"'), "apply 没有读快照");
@@ -1461,3 +1466,29 @@ for (const { name, fn } of tests) {
 }
 console.log(`\n${tests.length - failed}/${tests.length} passed`);
 process.exitCode = failed === 0 ? 0 : 1;
+
+test("快照带上每条属性的关键帧选区，供面板限定作用范围", () => {
+  const code = codeOf(read(`${ENGINE}/curvelib.jsx`));
+  assert.ok(code.includes("prop.selectedKeys"), "没有读 AE 的选中键");
+  assert.ok(code.includes('jfield("sel"'), "快照没带 sel 字段");
+  // 选区必须做成 1 基闭区间的最小/最大，面板才能直接换算成段索引
+  assert.ok(code.includes("selRange = [lo, hi]"), "选区没有归一成区间");
+});
+
+test("多点图接受 N 个选中键（N>=2），不再只认正好两个", () => {
+  const code = codeOf(read(`${ENGINE}/curvelib.jsx`));
+  const body = code.slice(code.indexOf("function resolveGraphKeys("), code.indexOf("function selectedPropsRaw("));
+  assert.ok(body.includes("sel.length >= 2"), "仍只认正好两个选中键");
+  assert.ok(body.includes("if (v > hi) hi = v;"), "没有取最大键");
+  // 只有属性本身正好两键时才允许默认首尾
+  assert.ok(body.includes("if (nk === 2)"), "两键兜底被删了");
+});
+
+test("拿不到选区时按整条属性应用，并在状态栏明说", () => {
+  const code = codeOf(read("cep/com.dreamengine.panel/js/curve.js"));
+  const build = code.slice(code.indexOf("function buildText("), code.indexOf("function apply("));
+  assert.ok(build.includes("whole++"), "没有记录「整条属性」的情况");
+  assert.ok(build.includes("return { text: lines.join"), "返回值结构变了");
+  assert.ok(code.includes("pendingWhole"), "没把 whole 带到提示里");
+  assert.ok(code.includes("未选中关键帧"), "状态栏没有说明是整条属性");
+});

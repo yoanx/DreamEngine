@@ -368,6 +368,25 @@ var AEV_Curve = (function () {
             if (depth > 1) groupName = String(prop.propertyGroup(depth - 1).name);
         } catch (e6) {}
 
+        /* 用户在 AE 里选中的关键帧范围（1 基、闭区间）。
+           面板据此只改选中的那几段，与「读取」和多点图模式保持同一语义；
+           拿不到选中态时留 null，由面板决定兜底行为。 */
+        var selRange = null;
+        try {
+            var selKeys = prop.selectedKeys;
+            if (selKeys && typeof selKeys.length === "number" && selKeys.length >= 2) {
+                var lo = 0;
+                var hi = 0;
+                for (var sk = 0; sk < selKeys.length; sk++) {
+                    var kv = Number(selKeys[sk]);
+                    if (!(kv >= 1) || kv > numKeys) continue;
+                    if (!lo || kv < lo) lo = kv;
+                    if (kv > hi) hi = kv;
+                }
+                if (lo && hi && hi > lo) selRange = [lo, hi];
+            }
+        } catch (eSel) {}
+
         return "{" + [
             jfield("i", String(index)),
             jfield("loc", jstr(loc)),
@@ -380,6 +399,7 @@ var AEV_Curve = (function () {
             jfield("sep", jbool(separated)),
             jfield("n", String(numKeys)),
             jfield("sig", jstr(propSignature(prop))),
+            jfield("sel", selRange ? ("[" + selRange[0] + "," + selRange[1] + "]") : "null"),
             jfield("keys", "[" + keys.join(",") + "]")
         ].join(",") + "}";
     }
@@ -1462,6 +1482,15 @@ var AEV_Curve = (function () {
      * 只有属性本身正好两个键才敢默认首尾（否则无从判断用户想改哪段）。
      * 绝不写 selectedKeys。
      */
+    /**
+     * 决定「改哪一段」：优先用 AE 的选中键；拿不到选中态时，
+     * 只有属性本身正好两个键才敢默认首尾（否则无从判断用户想改哪段）。
+     * 绝不写 selectedKeys。
+     *
+     * 选中 N 个键（N>=2）视为「改首尾之间那 N-1 段」——这样面板里
+     * 「模板」和「多点图」两个入口的作用范围完全一致；
+     * 旧实现只认正好两个键，选 3 个及以上会被判成 selection_needs_two。
+     */
     function resolveGraphKeys(prop) {
         var nk = 0;
         try {
@@ -1473,16 +1502,17 @@ var AEV_Curve = (function () {
             sel = prop.selectedKeys;
         } catch (e2) {}
 
-        if (sel && typeof sel.length === "number" && sel.length === 2) {
-            var a = Number(sel[0]);
-            var b = Number(sel[1]);
-            if (a >= 1 && b >= 1 && a <= nk && b <= nk && a !== b) {
-                return {
-                    ok: true,
-                    startKey: a < b ? a : b,
-                    endKey: a < b ? b : a,
-                    reason: ""
-                };
+        if (sel && typeof sel.length === "number" && sel.length >= 2) {
+            var lo = 0;
+            var hi = 0;
+            for (var si = 0; si < sel.length; si++) {
+                var v = Number(sel[si]);
+                if (!(v >= 1) || v > nk) continue;
+                if (!lo || v < lo) lo = v;
+                if (v > hi) hi = v;
+            }
+            if (lo && hi && hi > lo) {
+                return { ok: true, startKey: lo, endKey: hi, reason: "" };
             }
         }
         if (nk === 2) return { ok: true, startKey: 1, endKey: 2, reason: "" };

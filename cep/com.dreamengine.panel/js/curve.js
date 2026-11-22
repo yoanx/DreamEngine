@@ -1237,22 +1237,48 @@ var AEV_CurveUI = (function () {
    * 就没有选区来源。应用时读到什么就作用什么 —— 快照本身已按 AE 选中态
    * 过滤过属性，作用范围就是这些属性的全部区间。
    */
+  /**
+   * 单曲线模板的应用文本。
+   *
+   * 作用范围跟「读取」和多点图模式保持一致：默认只改用户在 AE 里选中的
+   * 那几段（快照里的 sel 是 1 基闭区间）。以前这里无差别遍历所有段，
+   * 选两个关键帧也会把整条属性铺满，与「读取只读选中段」自相矛盾。
+   * 拿不到选区（只选了图层、没选关键帧）时保留老行为铺满整条属性，
+   * 同时把 whole 标记带回去，让状态栏明说这件事。
+   */
   function buildText(props, curve) {
     var e = bezierToEase(curve);
     var lines = [];
     var segs = 0;
+    var whole = 0;
     for (var i = 0; i < props.length; i++) {
       var p = props[i];
       var keys = p.keys || [];
       if (keys.length < 2) continue;
+
+      var from = 0;
+      var to = keys.length - 1;
+      if (p.sel && p.sel.length === 2) {
+        var a = Math.max(0, Number(p.sel[0]) - 1);
+        var b = Math.min(keys.length - 1, Number(p.sel[1]) - 1);
+        if (b > a) {
+          from = a;
+          to = b;
+        } else {
+          whole++;
+        }
+      } else if (keys.length > 2) {
+        whole++;
+      }
+
       lines.push("expect\t" + p.loc + "\t" + p.sig);
-      for (var s = 0; s + 1 < keys.length; s++) {
+      for (var s = from; s < to; s++) {
         lines.push(["out", p.loc, String(s), numText(e.infOut), numText(e.mOut)].join("\t"));
         lines.push(["in", p.loc, String(s + 1), numText(e.infIn), numText(e.mIn)].join("\t"));
         segs++;
       }
     }
-    return { text: lines.join("\n"), segs: segs };
+    return { text: lines.join("\n"), segs: segs, whole: whole };
   }
 
   /**
@@ -1342,6 +1368,7 @@ var AEV_CurveUI = (function () {
       }
 
       st.pendingSegs = built.segs;
+      st.pendingWhole = built.whole || 0;
       send(built.text);
     });
   }
@@ -1388,8 +1415,12 @@ var AEV_CurveUI = (function () {
         return;
       }
 
-      setMessage(t("已应用 " + applied + " 处 · " + describeScope() + note + detail,
+      var wholeNote = st.pendingWhole
+        ? t("（未选中关键帧，已按整条属性应用）", " (no keyframe selection — applied to the whole property)")
+        : "";
+      setMessage(t("已应用 " + applied + " 处 · " + describeScope() + wholeNote + note + detail,
         "Applied " + applied + " · " + describeScope() + note + detail), false);
+      st.pendingWhole = 0;
       setStatus(t("已应用曲线", "Curve applied"));
 
       /* 重读一次：灰色参考要反映 AE 的真实值。
