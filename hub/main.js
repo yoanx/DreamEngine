@@ -21,6 +21,7 @@ const presetSources = require("./core/preset_sources");
 const presetCategories = require("./core/preset_categories");
 const install = require("./core/install");
 const { RenderJob } = require("./core/render");
+const { mergePresetPreviews } = require("./core/preset_anim_merger");
 const { PluginEffectJob } = require("./core/effect_render");
 const { ManualEffectRunner } = require("./core/manual_effect");
 const { EffectDumpJob } = require("./core/effect_dump");
@@ -548,6 +549,15 @@ function registerIpc() {
       return { ...result, selectedCount: selectedPaths.length };
     }
     return result;
+  });
+
+  /* 预设「WebP 动画文件」模式：渲染完成后把帧序列合并成单文件，并改写索引 */
+  ipcMain.handle("presets:mergeAnimation", async () => {
+    try {
+      return await mergePresetPreviews(paths, { quality: 80 });
+    } catch (error) {
+      return { ok: false, merged: 0, skipped: 0, failed: [], reason: String((error && error.message) || error) };
+    }
   });
 
   ipcMain.handle("render:stop", () => {

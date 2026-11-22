@@ -2516,7 +2516,19 @@ function bind() {
     window.hub.onEffectPreviewsBuilt(async (result) => {
       await loadEffects();
       if (result && result.ok) {
-        setStatus(`已生成 ${result.built} 条动画预览`);
+        const failed = Array.isArray(result.failed) ? result.failed : [];
+        if (failed.length) {
+          // 逐条隔离后单条失败不再中断整批：明确报出成功数与被跳过的效果，
+          // 否则用户只看到"已生成 N 条"，不知道还有几条没出来。
+          const names = failed.slice(0, 3).map((f) => f.matchName).join("、");
+          const more = failed.length > 3 ? ` 等 ${failed.length} 条` : "";
+          setStatus(
+            `已生成 ${result.built} 条动画预览，${failed.length} 条跳过（${names}${more}）`,
+            true,
+          );
+        } else {
+          setStatus(`已生成 ${result.built} 条动画预览`);
+        }
       } else if (result) {
         setStatus("动画预览生成失败：" + String(result.reason || "未知原因"), true);
       }

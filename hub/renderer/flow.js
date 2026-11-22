@@ -854,7 +854,8 @@
       const value = Number(presetResolution.value);
       config.presetResolution = [360, 720].includes(value) ? value : 720;
     }
-    if (presetFormat) config.presetFormat = presetFormat.value === "webp" ? "webp" : "png";
+    /* 只有两种：PNG 序列 / WebP 动画文件。动画模式先渲 PNG 帧，渲染完成后再合并成单文件。 */
+    if (presetFormat) config.presetFormat = presetFormat.value === "animated" ? "animated" : "png";
     if (limit) config.limit = Math.max(1, Math.min(64, Number(limit.value) || config.limit || 8));
     if (rounds) config.rounds = Math.max(1, Math.min(200, Number(rounds.value) || config.rounds || 40));
     if (force) config.force = !!force.checked;
@@ -964,8 +965,10 @@
         continue;
       }
       const itemFormat = String(item.format || "png");
-      const formatMatches = presetFormat === "webp"
-        ? (itemFormat === "webp" || itemFormat === "webp-sequence")
+      /* 两种目标形态：PNG 序列，或单文件动画（webp-animated）。
+         旧版「WebP 序列」已废弃，历史数据按动画处理即可，不必重渲。 */
+      const formatMatches = presetFormat === "animated"
+        ? (itemFormat === "webp-animated" || itemFormat === "webp-sequence" || itemFormat === "webp")
         : itemFormat === "png";
       if (status === "rendered" && !force &&
           (flow.kind !== "preset" || (Number(item.fps) === presetFps && (Number(item.cellSize) || 720) === presetResolution && formatMatches))) {
@@ -988,7 +991,9 @@
         background: config.background,
         fps: Math.max(12, Math.min(60, Number(config.presetFps) || 24)),
         cellSize: [360, 720].includes(Number(config.presetResolution)) ? Number(config.presetResolution) : 720,
-        frameFormat: config.presetFormat === "webp" ? "webp" : "png",
+        frameFormat: "png",
+        /* 动画模式的合并放在渲染完成之后，由 finishRun 调主进程处理 */
+        presetFormat: config.presetFormat === "animated" ? "animated" : "png",
         limit: Math.max(1, Math.min(64, Number(config.limit) || 40)),
         rounds: Math.max(1, Math.min(200, Number(config.rounds) || 40)),
         retryFailed: !force,
@@ -1184,6 +1189,25 @@
       go("result", { force: true });
       finishing = false;
       return;
+    }
+    /* 预设选了「WebP 动画文件」：渲染完再把帧序列合并成单文件。
+       合并在主进程做（有 sharp），失败只影响形态、不影响已渲好的帧。 */
+    if (phase === "done" && flow.kind === "preset" &&
+        String(flow.plan.config.presetFormat || "png") === "animated" &&
+        window.hub && typeof window.hub.mergePresetAnimation === "function") {
+      try {
+        const merged = await window.hub.mergePresetAnimation();
+        if (merged && merged.ok) {
+          const extra = merged.failed && merged.failed.length
+            ? "，" + merged.failed.length + " 个失败" : "";
+          setText("flowRunHint", "已合并 " + merged.merged + " 个预设为动画文件" +
+            (merged.skipped ? "，" + merged.skipped + " 个保持原样" : "") + extra);
+        } else {
+          setText("flowRunHint", "动画合并失败：" + String((merged && merged.reason) || "未知原因"));
+        }
+      } catch (error) {
+        setText("flowRunHint", "动画合并异常：" + String((error && error.message) || error));
+      }
     }
     flow.reached.add("result");
     await paintResult();
@@ -2046,7 +2070,7 @@
     });
 
     on("flowPresetFormat", "change", (event) => {
-      flow.plan.config.presetFormat = event.target.value === "webp" ? "webp" : "png";
+      flow.plan.config.presetFormat = event.target.value === "animated" ? "animated" : "png";
       saveConfig();
     });
     on("flowBackground", "change", async (event) => {

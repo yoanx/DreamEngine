@@ -525,15 +525,25 @@ test("预设卡片静态图选内容最多的一帧，不再固定取中间帧",
   assert.match(nodeDriver, /function bestStillFrame/);
   assert.match(nodeDriver, /stillSrc:/);
 });
-test("预设渲染支持 PNG/WebP 帧序列选项，效果预览也使用 WebP 序列", () => {
+test("预设渲染可选 PNG 序列 / WebP 动画文件，效果预览固定单文件动画", () => {
   const html = read("hub/renderer/index.html");
   const flow = read("hub/renderer/flow.js");
   const builder = read("hub/core/effect_preview_builder.js");
+  const merger = read("hub/core/preset_anim_merger.js");
   assert.match(html, /id="flowPresetFormat"/);
+  // 选项只剩两种：PNG 序列 / WebP 动画文件（旧「WebP 序列」已废弃）
+  assert.match(html, /<option value="png"[^>]*>PNG 序列<\/option>/);
+  assert.match(html, /<option value="animated"[^>]*>WebP 动画文件<\/option>/);
+  assert.doesNotMatch(html, /<option value="webp">/);
   assert.match(flow, /presetFormat/);
-  assert.match(flow, /frameFormat/);
-  assert.match(builder, /format = "webp-sequence"/);
-  assert.match(builder, /frameSrc = previewPaths\.logicalValue\("effects", `webp\/\$\{pluginName\}\/frames\//);
+  assert.match(flow, /mergePresetAnimation/);
+  // 效果侧产出单文件动画：有 webpSrc，没有 frameSrc
+  assert.match(builder, /format = "webp-animated"/);
+  assert.match(builder, /item\.webpSrc = previewPaths\.logicalValue\("effects", `webp\/\$\{pluginName\}\/anim\//);
+  assert.doesNotMatch(builder, /format = "webp-sequence"/);
+  // 预设侧的合并器同样产出 webpSrc
+  assert.match(merger, /webpSrc = animLogical/);
+  assert.match(merger, /format = "webp-animated"/);
 });
 
 test("离线预设运行器从 FPS 文件读取帧率并传给 renderJson", () => {

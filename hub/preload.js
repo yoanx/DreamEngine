@@ -19,6 +19,8 @@ contextBridge.exposeInMainWorld("hub", {
   /* 预设库 */
   listPresets: () => ipcRenderer.invoke("presets:list"),
   syncAePresets: (options) => ipcRenderer.invoke("presets:sync", options),
+  /* 预设「WebP 动画文件」模式：渲染完成后把帧序列合并成单文件 */
+  mergePresetAnimation: (options) => ipcRenderer.invoke("presets:mergeAnimation", options),
   pickPresets: () => ipcRenderer.invoke("presets:pick"),
   importPaths: (files) => ipcRenderer.invoke("presets:importPaths", files),
   deletePreset: (target) => ipcRenderer.invoke("presets:delete", target),

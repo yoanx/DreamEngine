@@ -5,6 +5,7 @@ const sharp = require("sharp");
 const { createPluginResolver } = require("./effects");
 const previewPaths = require("./preview_paths");
 const previewNames = require("./preview_names");
+const { mergeWebpBuffers } = require("./webp_anim");
 
 function readJson(file, fallback) {
   try {
@@ -91,12 +92,17 @@ function cleanupIntermediatePngs(paths, builtin, plugin, options = {}) {
   // 已生成 WebP 帧序列的条目可以安全删除原始 PNG 帧。
   for (const doc of [builtin, plugin]) {
     for (const item of (doc && doc.items) || []) {
-      if (!item || !String(item.frameSrc || "").toLowerCase().endsWith(".webp")) continue;
+      if (!item) continue;
+      /* 判据从「frameSrc 是 webp 序列」改为「已有可用的 WebP 产物」：
+         现在动画形态写的是 webpSrc（单文件）+ stillSrc，frameSrc 已被清掉，
+         沿用旧判据会导致中间 PNG 永远删不掉。 */
       const rawTemplate = String(item.rawFrameSrc || "");
       if (!rawTemplate) continue;
+      const outputs = [item.webpSrc, item.stillSrc]
+        .map((rel) => (rel ? previewPaths.resolveFile(paths, rel) : ""))
+        .filter(Boolean);
+      if (!outputs.length || !outputs.every((file) => fs.existsSync(file))) continue;
       const rawPngs = [...rawFilesForItem(paths, { frameSrc: rawTemplate, frames: item.frames })];
-      const webpFrames = [...rawFilesForItem(paths, item)];
-      if (!webpFrames.length || !webpFrames.every((file) => fs.existsSync(file))) continue;
       for (const file of rawPngs) {
         try { fs.unlinkSync(file); } catch { /* 文件被占用时留到下次处理 */ }
       }
@@ -244,15 +250,33 @@ function cropGeometry(item, manifest) {
   };
 }
 
-async function cropFrames(files, geometry) {
+async function cropFrames(files, geometry, label) {
   const output = [];
   for (const file of files) {
-    output.push(
-      await sharp(file)
-        .extract(geometry)
-        .png()
-        .toBuffer(),
-    );
+    const meta = await sharp(file).metadata();
+    const width = Number(meta.width) || 0;
+    const height = Number(meta.height) || 0;
+
+    /* 帧已经是单格图（尺寸正好等于目标格子）时不能再按整网坐标裁。
+       旧索引里 x/y 仍留着拼图时代的偏移（例如 x=720 表示"第二列"），
+       对一张 720x720 的图执行 extract 会直接越界，libvips 报
+       extract_area: bad extract area。 */
+    if (width === geometry.width && height === geometry.height) {
+      output.push(await sharp(file).png().toBuffer());
+      continue;
+    }
+
+    const outOfBounds =
+      geometry.left + geometry.width > width || geometry.top + geometry.height > height;
+    if (outOfBounds) {
+      // 不再抛裸错：带上尺寸与效果名，否则日志里只有一个 VipsError 无从查起
+      throw new Error(
+        `预览裁剪越界：帧 ${width}x${height}，裁剪区 ${geometry.width}x${geometry.height}` +
+        `@(${geometry.left},${geometry.top})，效果 ${label || "(未知)"}`,
+      );
+    }
+
+    output.push(await sharp(file).extract(geometry).png().toBuffer());
   }
   return output;
 }
@@ -267,30 +291,57 @@ async function writePreview(paths, item, manifest, prefix, quality, resolvePlugi
   const inputItem = item.rawFrameSrc ? { ...item, frameSrc: item.rawFrameSrc } : item;
   const files = frameFiles(paths, inputItem);
   if (!files.length) return null;
-  const frames = await cropFrames(files, cropGeometry(item, manifest));
+  const frames = await cropFrames(files, cropGeometry(item, manifest), item.matchName);
   const qualityValue = Math.max(1, Math.min(100, Number(quality) || 80));
   const pluginName = previewPluginName(item, prefix, resolvePlugin);
   const folder = path.join(previewPaths.currentRoot(paths), "effects", "webp", pluginName);
-  const framesFolder = path.join(folder, "frames");
+  const animFolder = path.join(folder, "anim");
   const stillFolder = path.join(folder, "stills");
-  fs.mkdirSync(framesFolder, { recursive: true });
+  fs.mkdirSync(animFolder, { recursive: true });
   fs.mkdirSync(stillFolder, { recursive: true });
   const base = previewBaseName(item, prefix);
   const stillIndex = Math.floor(frames.length / 2);
   const stillFile = path.join(stillFolder, `${base}.webp`);
-  const still = await sharp(frames[stillIndex]).webp({ quality: qualityValue }).toBuffer();
-  for (let index = 0; index < frames.length; index++) {
-    const frameFile = path.join(framesFolder, `${base}_${String(index).padStart(4, "0")}.webp`);
-    fs.writeFileSync(frameFile, await sharp(frames[index]).webp({ quality: qualityValue }).toBuffer());
+  const stillRel = previewPaths.logicalValue("effects", `webp/${pluginName}/stills/${base}.webp`);
+
+  const stillBuffer = await sharp(frames[stillIndex]).webp({ quality: qualityValue }).toBuffer();
+  fs.writeFileSync(stillFile, stillBuffer);
+
+  /* 单帧没有动画可言：只留封面，不生成 anim/ 文件 */
+  if (frames.length <= 1) {
+    item.src = stillRel;
+    item.stillSrc = stillRel;
+    item.stillFrame = 0;
+    item.frames = frames.length;
+    item.format = "webp-still";
+    delete item.webpSrc;
+    delete item.frameSrc;
+    return { pages: frames.length };
   }
-  fs.writeFileSync(stillFile, still);
-  item.src = previewPaths.logicalValue("effects", `webp/${pluginName}/frames/${base}_0000.webp`);
-  item.frameSrc = previewPaths.logicalValue("effects", `webp/${pluginName}/frames/${base}_%04d.webp`);
-  item.stillSrc = previewPaths.logicalValue("effects", `webp/${pluginName}/stills/${base}.webp`);
+
+  /* 逐帧编码成 WebP，再封装成一个动画 WebP（ANMF 复用码流，不二次压缩） */
+  const buffers = [];
+  for (let index = 0; index < frames.length; index++) {
+    buffers.push(await sharp(frames[index]).webp({ quality: qualityValue }).toBuffer());
+  }
+  const firstMeta = await sharp(frames[0]).metadata();
+  const fps = Number(item.fps) || 24;
+  const animFile = path.join(animFolder, `${base}.webp`);
+  fs.writeFileSync(animFile, mergeWebpBuffers(buffers, {
+    width: Number(firstMeta.width) || 720,
+    height: Number(firstMeta.height) || 720,
+    delayMs: 1000 / fps,
+  }));
+
+  item.src = stillRel;
+  item.stillSrc = stillRel;
+  item.webpSrc = previewPaths.logicalValue("effects", `webp/${pluginName}/anim/${base}.webp`);
   item.stillFrame = stillIndex;
   item.frames = frames.length;
-  item.format = "webp-sequence";
-  delete item.webpSrc;
+  item.fps = fps;
+  item.format = "webp-animated";
+  /* 不再产出帧序列，旧字段必须清掉，否则读取方仍按 frameSrc 找文件 */
+  delete item.frameSrc;
   return { pages: frames.length };
 }
 
@@ -300,9 +351,11 @@ async function writePreview(paths, item, manifest, prefix, quality, resolvePlugi
  */
 async function extractExistingWebp(paths, item, manifest, prefix, quality, resolvePlugin) {
   if (!item || !item.webpSrc) return null;
-  if (String(item.frameSrc || "").toLowerCase().endsWith(".webp")) return null;
+  /* 已经在 anim/ 里的动画文件不用再处理（这是本函数产出的最终形态） */
+  if (/[\\/]anim[\\/]/i.test(String(item.webpSrc))) return null;
   const source = dataFile(paths, item.webpSrc);
   if (!source || !fs.existsSync(source)) return null;
+
   const previousCache = sharp.cache();
   sharp.cache({ memory: previousCache.memory.max, files: 0, items: previousCache.items.max });
   let metadata;
@@ -316,9 +369,9 @@ async function extractExistingWebp(paths, item, manifest, prefix, quality, resol
   const qualityValue = Math.max(1, Math.min(100, Number(quality) || 80));
   const pluginName = previewPluginName(item, prefix, resolvePlugin);
   const folder = path.join(previewPaths.currentRoot(paths), "effects", "webp", pluginName);
-  const framesFolder = path.join(folder, "frames");
+  const animFolder = path.join(folder, "anim");
   const stillFolder = path.join(folder, "stills");
-  fs.mkdirSync(framesFolder, { recursive: true });
+  fs.mkdirSync(animFolder, { recursive: true });
   fs.mkdirSync(stillFolder, { recursive: true });
   const base = previewBaseName(item, prefix);
   const stillIndex = Math.min(
@@ -327,12 +380,8 @@ async function extractExistingWebp(paths, item, manifest, prefix, quality, resol
   );
   const oldStill = dataFile(paths, item.stillSrc);
   const stillFile = path.join(stillFolder, `${base}.webp`);
-  for (let index = 0; index < pages; index++) {
-    const frameFile = path.join(framesFolder, `${base}_${String(index).padStart(4, "0")}.webp`);
-    await sharp(source, { page: index, pages: 1 })
-      .webp({ quality: qualityValue, effort: 4 })
-      .toFile(frameFile);
-  }
+  const stillRel = previewPaths.logicalValue("effects", `webp/${pluginName}/stills/${base}.webp`);
+
   if (oldStill && fs.existsSync(oldStill) && path.resolve(oldStill) !== path.resolve(stillFile)) {
     fs.copyFileSync(oldStill, stillFile);
   } else {
@@ -340,15 +389,30 @@ async function extractExistingWebp(paths, item, manifest, prefix, quality, resol
       .webp({ quality: qualityValue, effort: 4 })
       .toFile(stillFile);
   }
-  item.src = previewPaths.logicalValue("effects", `webp/${pluginName}/frames/${base}_0000.webp`);
-  item.frameSrc = previewPaths.logicalValue("effects", `webp/${pluginName}/frames/${base}_%04d.webp`);
-  item.stillSrc = previewPaths.logicalValue("effects", `webp/${pluginName}/stills/${base}.webp`);
+
+  item.src = stillRel;
+  item.stillSrc = stillRel;
   item.stillFrame = stillIndex;
   item.frames = pages;
-  item.format = "webp-sequence";
-  delete item.webpSrc;
+
+  if (pages > 1) {
+    /* 原样复制动画文件：它本来就是最终形态，重编码只会掉画质 */
+    const animFile = path.join(animFolder, `${base}.webp`);
+    if (path.resolve(source) !== path.resolve(animFile)) {
+      fs.copyFileSync(source, animFile);
+    }
+    item.webpSrc = previewPaths.logicalValue("effects", `webp/${pluginName}/anim/${base}.webp`);
+    item.format = "webp-animated";
+  } else {
+    delete item.webpSrc;
+    item.format = "webp-still";
+  }
+  delete item.frameSrc;
+
   for (const file of [source, oldStill]) {
-    if (!file || path.resolve(file) === path.resolve(stillFile)) continue;
+    if (!file) continue;
+    if (path.resolve(file) === path.resolve(stillFile)) continue;
+    if (item.webpSrc && path.resolve(file) === path.resolve(path.join(animFolder, `${base}.webp`))) continue;
     await removeFileWithRetry(file);
   }
   restoreSharpCache(previousCache);
@@ -376,18 +440,29 @@ async function removeFileWithRetry(file) {
 }
 
 async function buildManifest(paths, file, manifest, prefix, quality, resolvePlugin, changed) {
-  if (!manifest || !Array.isArray(manifest.items)) return 0;
+  if (!manifest || !Array.isArray(manifest.items)) return { built: 0, failed: [] };
   let built = 0;
+  const failed = [];
   for (const item of manifest.items) {
-    const preview = await writePreview(paths, item, manifest, prefix, quality, resolvePlugin) ||
-      await extractExistingWebp(paths, item, manifest, prefix, quality, resolvePlugin);
-    if (preview) {
-      built++;
-      changed.set(item.matchName, preview.pages);
+    /* 逐条隔离：单个效果的数据有问题（帧缺失、裁剪越界、图片损坏）时，
+       不能让整批中断。之前一条坏数据会让 UI 只显示一次失败、
+       其余 200 多个效果全都不生成。 */
+    try {
+      const preview = await writePreview(paths, item, manifest, prefix, quality, resolvePlugin) ||
+        await extractExistingWebp(paths, item, manifest, prefix, quality, resolvePlugin);
+      if (preview) {
+        built++;
+        changed.set(item.matchName, preview.pages);
+      }
+    } catch (error) {
+      failed.push({
+        matchName: (item && item.matchName) || "(未知)",
+        reason: String((error && error.message) || error),
+      });
     }
   }
   writeJson(file, manifest);
-  return built;
+  return { built, failed };
 }
 
 async function buildEffectPreviews(paths, options = {}) {
@@ -398,20 +473,25 @@ async function buildEffectPreviews(paths, options = {}) {
   const resolvePlugin = createPluginResolver(paths);
   const changed = new Map();
   let built = 0;
+  const failed = [];
   if (builtin) {
-    built += await buildManifest(
+    const res = await buildManifest(
       paths, builtinFile, builtin, "builtin", options.quality, resolvePlugin, changed,
     );
+    built += res.built;
+    failed.push(...res.failed);
   }
   if (plugin) {
-    built += await buildManifest(
+    const res = await buildManifest(
       paths, pluginFile, plugin, "plugin", options.quality, resolvePlugin, changed,
     );
+    built += res.built;
+    failed.push(...res.failed);
   }
   if (options.cleanupRaw !== false) cleanupIntermediatePngs(paths, builtin, plugin, options);
   cleanupUnreferencedWebp(paths, builtin, plugin);
   if (changed.size) updateAnimationIndex(paths, builtin, plugin, changed);
-  return { ok: true, built };
+  return { ok: true, built, failed };
 }
 
 module.exports = { buildEffectPreviews };

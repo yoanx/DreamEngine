@@ -120,7 +120,8 @@ test("安装器资源包含面板、字体、L1、离线渲染工具和安装脚
   assert.ok(existsSync(resolve(HUB, "renderer/about.js")));
   assert.ok(existsSync(resolve(release, "panel/extension/data/names.json")));
   assert.ok(existsSync(resolve(release, "panel/l1/manifest.json")));
-  assert.ok(existsSync(resolve(release, "panel/previews/effects/webp/builtin/frames")));
+  // 预览已统一为单文件动画：产物目录是 anim/，不再是 frames/
+  assert.ok(existsSync(resolve(release, "panel/previews/effects/webp/builtin/anim")));
   assert.ok(existsSync(resolve(release, "tools/ae_watchdog.ps1")));
   assert.ok(existsSync(resolve(release, "tools/ae_crash_guard.ps1")));
   assert.ok(existsSync(resolve(release, "tools/manual_probe.ps1")));
@@ -159,7 +160,9 @@ test("安装包包含 AE 内置预设 WebP 帧包并部署 bundled 索引", () =
   assert.ok(existsSync(previewRoot));
   const manifest = readJson(manifestPath);
   assert.equal(manifest.items.length, 615);
-  assert.ok(manifest.items.every((item) => item.frameSrc.endsWith("%04d.webp")));
+  // 多帧条目存单文件动画（webpSrc），单帧条目仍保留帧模板（frameSrc）
+  assert.ok(manifest.items.every((item) => (item.webpSrc || item.frameSrc || "").endsWith(".webp")));
+  assert.ok(manifest.items.some((item) => item.webpSrc && item.webpSrc.endsWith(".webp")));
   assert.match(read(resolve(ROOT, "tools/install_dreamengine.ps1")), /bundled_preset_manifest\.json/);
 });
 test("L1 打包根据实际 WebP 页数生成静态预览索引", async () => {
@@ -214,11 +217,18 @@ test("L1 打包根据实际 WebP 页数生成静态预览索引", async () => {
     });
 
     const manifest = readJson(join(out, "manifest.json"));
-    assert.equal(manifest.items[0].format, "webp-sequence");
-    assert.equal(manifest.items[0].frameSrc, "previews/effects/webp/builtin/frames/ADBE Static_%04d.webp");
-    assert.ok(existsSync(join(out, "previews/effects/webp/builtin/frames/ADBE Static_0000.webp")));
+    // 单帧效果：只出封面，不生成动画文件
+    assert.equal(manifest.items[0].format, "webp-still");
+    assert.equal(manifest.items[0].webpSrc, undefined);
+    assert.equal(manifest.items[0].frameSrc, undefined);
+    assert.ok(existsSync(join(out, "previews/effects/webp/builtin/stills/ADBE Static.webp")));
+    // 多帧效果：一个动画文件，页数等于源页数，不再有帧序列目录
+    assert.equal(manifest.items[1].format, "webp-animated");
     assert.equal(manifest.items[1].frames, 2);
-    assert.ok(existsSync(join(out, "previews/effects/webp/builtin/frames/ADBE Animated_0001.webp")));
+    assert.equal(manifest.items[1].frameSrc, undefined);
+    assert.equal(manifest.items[1].webpSrc, "previews/effects/webp/builtin/anim/ADBE Animated.webp");
+    assert.ok(existsSync(join(out, "previews/effects/webp/builtin/anim/ADBE Animated.webp")));
+    assert.equal(existsSync(join(out, "previews/effects/webp/builtin/frames")), false);
     assert.equal(existsSync(join(out, "thumbs")), false);
     const index = readJson(join(out, "animated.json"));
     assert.deepEqual(index.items, [{ matchName: "ADBE Static", animated: false }]);
@@ -231,9 +241,10 @@ test("L1 包内的动态效果保留多帧 WebP 序列并排除静态名单", ()
   const manifest = readJson(resolve(ROOT, "dist/L1/manifest.json"));
   const animated = manifest.items.find((item) => item.matchName === "APC Radio Waves");
   assert.ok(animated);
-  assert.equal(animated.format, "webp-sequence");
+  assert.equal(animated.format, "webp-animated");
   assert.ok(animated.frames > 1);
-  assert.match(animated.frameSrc, /\.webp$/);
+  assert.match(animated.webpSrc, /\.webp$/);
+  assert.equal(animated.frameSrc, undefined);
   const staticNames = new Set(
     readJson(resolve(ROOT, "dist/L1/animated.json")).items.map((item) => item.matchName),
   );
