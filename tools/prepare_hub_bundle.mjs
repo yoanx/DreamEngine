@@ -3,13 +3,14 @@
  * Runtime previews and indexes must never enter the installer.
  */
 
-import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { basename, resolve, sep } from "node:path";
 import assert from "node:assert/strict";
 
 const ROOT = resolve(import.meta.dirname, "..");
 const HUB = resolve(ROOT, "hub");
 const RELEASE = resolve(HUB, "build/release");
+const BUILD_DIR = resolve(HUB, "build");
 const PANEL_SRC = resolve(ROOT, "cep/com.dreamengine.panel");
 const L1_SRC = resolve(ROOT, "dist/L1");
 const PRESET_SRC = resolve(ROOT, "dist/presets");
@@ -29,7 +30,11 @@ function copyRequired(from, to) {
 }
 
 assertInside(HUB, RELEASE);
-rmSync(RELEASE, { recursive: true, force: true });
+/* 不直接 rm -rf 暂存目录：部分环境（本机装了实时扫描/回收站钩子）会拦截
+   大批量删除，构建直接失败。改名让位即可，旧目录留给下次清理。 */
+if (existsSync(RELEASE)) {
+  renameSync(RELEASE, resolve(BUILD_DIR, `release.stale-${Date.now()}`));
+}
 mkdirSync(resolve(RELEASE, "panel/extension/data"), { recursive: true });
 mkdirSync(resolve(RELEASE, "panel/l1"), { recursive: true });
 mkdirSync(resolve(RELEASE, "panel/presets"), { recursive: true });
@@ -128,6 +133,17 @@ const report = {
   generatedAt: new Date().toISOString(),
 };
 writeFileSync(resolve(RELEASE, "build-report.json"), JSON.stringify(report, null, 2) + "\n");
+
+/* 清理历次让位留下的旧暂存目录（含上次构建中断的残留）。删不掉就留下，
+   下次再试——大批量删除被实时扫描/回收站钩子拦截时不能让构建失败。 */
+for (const name of readdirSync(BUILD_DIR)) {
+  if (!name.startsWith("release.stale-")) continue;
+  try {
+    rmSync(resolve(BUILD_DIR, name), { recursive: true, force: true });
+  } catch (err) {
+    console.warn(`  kept stale build dir ${name}: ${err.code || err.message}`);
+  }
+}
 
 console.log(`Hub resources prepared: ${RELEASE}`);
 console.log(`  panel ${report.panelVersion}, hub ${basename(HUB)} ${report.hubVersion}`);
