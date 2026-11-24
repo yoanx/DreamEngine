@@ -445,6 +445,10 @@ var AEV_Recipe = (function () {
         if (cat === "3d channel" || cat === "3d 通道") return "3d-camera";
 
         if (isSapphireTransition(matchName, category)) return "two-layer-input";
+        /* 其它插件转场同理：RG Universe Transitions 这类效果需要前景 + 背景两层，
+           单层合成里直接渲会抛「Error 对象」错误。内置转场的分类是单数
+           Transition，不会命中这里。 */
+        if (cat.indexOf("transitions") >= 0) return "two-layer-input";
 
         // 两层输入要排在别的规则前面：这些效果单层时完全看不出变化
         for (var i = 0; i < TWO_LAYER_PATTERNS.length; i++) {

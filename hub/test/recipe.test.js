@@ -30,6 +30,12 @@ vm.createContext(sandbox);
 vm.runInContext(fs.readFileSync(RECIPE_FILE, "utf8"), sandbox, { filename: RECIPE_FILE });
 const recipe = sandbox.AEV_Recipe;
 
+test("插件转场按两层输入搭场景，内置转场保持单层", () => {
+  assert.equal(recipe.sceneFor("Universe_Transitions_Linear_Wip", "RG Universe Transitions"), "two-layer-input");
+  assert.equal(recipe.sceneFor("S_WipeClouds", "Sapphire Transitions"), "two-layer-input");
+  assert.equal(recipe.sceneFor("ADBE Linear Wipe", "Transition"), "footage-2d");
+});
+
 function makeGroup(props) {
   return {
     numProperties: props.length,

@@ -718,3 +718,55 @@ test("单条数据损坏时只跳过它，其余效果照常生成", async () =>
   assert.match(result.failed[0].reason, /裁剪越界/);
   assert.match(result.failed[0].reason, /ADBE Bad/);
 });
+
+test("已是最终单文件形态的预览会被跳过，不会把 stillSrc 当源帧覆写", async () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "de-effect-webp-final-"));
+  const paths = createPaths({
+    docsDir: path.join(root, "docs"),
+    appData: path.join(root, "appdata"),
+  });
+  const still = path.join(paths.dataDir, "previews", "effects", "webp", "builtin", "stills", "ADBE Final.webp");
+  const anim = path.join(paths.dataDir, "previews", "effects", "webp", "builtin", "anim", "ADBE Final.webp");
+  fs.mkdirSync(path.dirname(still), { recursive: true });
+  fs.mkdirSync(path.dirname(anim), { recursive: true });
+  const frames = [];
+  for (const color of ["#ff0000", "#00ff00"]) {
+    frames.push(await sharp({ create: { width: 10, height: 10, channels: 3, background: color } })
+      .png()
+      .toBuffer());
+  }
+  await sharp(frames[0]).webp({ quality: 80 }).toFile(still);
+  await sharp(frames, { join: { animated: true } }).webp({ quality: 80, delay: [100, 100] }).toFile(anim);
+  const stillBefore = fs.readFileSync(still);
+  const animBefore = fs.readFileSync(anim);
+
+  writeJson(path.join(paths.dataDir, "manifest.json"), {
+    version: 2,
+    cellSize: 10,
+    columns: 1,
+    width: 10,
+    height: 10,
+    sheets: [],
+    items: [{
+      matchName: "ADBE Final",
+      sheet: 0, x: 0, y: 0, width: 10, height: 10,
+      frames: 2, fps: 24,
+      format: "webp-animated",
+      webpSrc: "previews/effects/webp/builtin/anim/ADBE Final.webp",
+      stillSrc: "previews/effects/webp/builtin/stills/ADBE Final.webp",
+      src: "previews/effects/webp/builtin/stills/ADBE Final.webp",
+      stillFrame: 0,
+    }],
+  });
+  writeJson(paths.pluginManifest, { version: 1, items: [], sheets: [] });
+
+  const result = await builder.buildEffectPreviews(paths, { quality: 78 });
+  assert.equal(result.ok, true);
+  assert.equal(result.built, 0);
+  assert.equal(result.failed.length, 0, "最终形态不应被误报成跳过/失败");
+  assert.deepEqual(fs.readFileSync(still), stillBefore, "不应重写 stillSrc");
+  assert.deepEqual(fs.readFileSync(anim), animBefore, "不应重写 anim 文件");
+  const item = JSON.parse(fs.readFileSync(path.join(paths.dataDir, "manifest.json"), "utf8")).items[0];
+  assert.equal(item.webpSrc, "previews/effects/webp/builtin/anim/ADBE Final.webp");
+  assert.equal(item.format, "webp-animated");
+});

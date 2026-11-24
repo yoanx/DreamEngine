@@ -504,6 +504,20 @@ var AEV_PreviewGen = (function () {
             return asset;
         }
 
+        /* addProperty 在部分插件（如 RG Universe 转场）上会返回 Error 对象而不是
+           抛异常；不校验的话，这个 Error 会被当成效果挂进图层，直到渲染时才炸。 */
+        function isEffectObject(value) {
+            if (!value) return false;
+            try { if (value instanceof Error) return false; } catch (eErr) {}
+            try {
+                if (typeof value.matchName !== "string" || !value.matchName) return false;
+                if (typeof value.numProperties !== "number") return false;
+                return true;
+            } catch (eObj) {
+                return false;
+            }
+        }
+
         try {
             if (targetComp) {
                 grid = targetComp;
@@ -594,6 +608,9 @@ var AEV_PreviewGen = (function () {
                                 ? AEV_Recipe.effectNameFor(matchName)
                                 : matchName;
                             effectGroup = layer.property("ADBE Effect Parade").addProperty(effectName);
+                            if (!isEffectObject(effectGroup)) {
+                                throw new Error("addProperty_failed:" + effectName);
+                            }
                         } catch (eAdd) {
                             cellErrors.push(matchName + "|addProperty|" + eAdd);
                             try { cell.remove(); } catch (eRm) {}
@@ -632,6 +649,9 @@ var AEV_PreviewGen = (function () {
                                 try {
                                     effectGroup = layer.property("ADBE Effect Parade")
                                         .addProperty(effectName || matchName);
+                                    if (!isEffectObject(effectGroup)) {
+                                        throw new Error("addProperty_failed:" + (effectName || matchName));
+                                    }
                                     applied = { mode: "default-fallback", writes: 0 };
                                 } catch (eFallbackAdd) {
                                     cellErrors.push(matchName + "|fallback|" + eFallbackAdd);
@@ -744,8 +764,15 @@ var AEV_PreviewGen = (function () {
             return result(status, detail);
         } catch (e) {
             var message = e && e.message ? String(e.message) : String(e);
+            var where = "";
+            try {
+                if (e && (e.line || e.fileName)) {
+                    where = String(e.fileName || "") + ":" + String(e.line || "");
+                }
+            } catch (eWhere) {}
             return result("error", [
                 ["reason", "render_failed:" + message],
+                ["line", where],
                 ["cellErrors", cellErrors.join(" ;; ")]
             ]);
         } finally {

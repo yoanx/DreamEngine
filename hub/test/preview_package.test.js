@@ -165,15 +165,15 @@ test("效果预览包导出后导入另一个库：合并、同名覆盖、不�
   const byBuiltin = new Map(builtin.items.map((item) => [item.matchName, item]));
   assert.equal(byBuiltin.get("ADBE Glo2").frames, 24);
   assert.equal(byBuiltin.get("ADBE Glo2").fps, 24);
-  assert.match(byBuiltin.get("ADBE Glo2").frameSrc, /^previews\/effects\/import_[^/]+\//);
+  assert.equal(byBuiltin.get("ADBE Glo2").frameSrc, "thumbs/source_builtin_%04d.png");
   assert.equal(byBuiltin.get("ADBE Twirl").src, "thumbs/local_sheet.png");
 
   const plugin = JSON.parse(fs.readFileSync(target.paths.pluginManifest, "utf8"));
   assert.equal(plugin.items.length, 1);
   assert.equal(plugin.items[0].matchName, "BCC_GLOW");
   assert.equal(plugin.items[0].frames, 24);
-  assert.match(plugin.items[0].webpSrc, /^previews\/effects\/import_[^/]+\/source_plugin\.webp$/);
-  assert.match(plugin.items[0].stillSrc, /^previews\/effects\/import_[^/]+\/source_plugin_still\.webp$/);
+  assert.equal(plugin.items[0].webpSrc, "thumbs/source_plugin.webp");
+  assert.equal(plugin.items[0].stillSrc, "thumbs/source_plugin_still.webp");
 
   const preset = JSON.parse(fs.readFileSync(target.paths.presetManifest, "utf8"));
   assert.equal(preset.items[0].name, "keep-me");
@@ -185,13 +185,9 @@ test("效果预览包导出后导入另一个库：合并、同名覆盖、不�
   );
   assert.equal(fs.readFileSync(importedFrame, "utf8"), "builtin-0");
 
-  const firstImportFolder = imported.folder;
   const repeated = await previewPackage.importEffectPreviews(target.paths, zipFile);
   assert.equal(repeated.ok, true);
-  assert.deepEqual(
-    fs.readdirSync(previewPaths.resolveFile(target.paths, firstImportFolder), { recursive: true }),
-    [],
-  );
+  assert.equal(fs.readFileSync(path.join(target.paths.dataDir, "thumbs/source_plugin.webp"), "utf8"), "plugin-webp");
   assert.equal(fs.readFileSync(path.join(target.paths.dataDir, "thumbs/preset_keep_0000.png"), "utf8"), "preset");
 });
 
@@ -376,9 +372,9 @@ test("预览包导入导出使用自定义预览根目录", async () => {
   writeJson(target.paths.pluginManifest, { version: 1, items: [], sheets: [] });
   const imported = await previewPackage.importEffectPreviews(target.paths, zipFile);
   assert.equal(imported.ok, true);
-  assert.match(imported.folder, /^previews\/effects\/import_/);
+  assert.equal(imported.folder, "previews/effects/webp/内置");
   const builtin = JSON.parse(fs.readFileSync(path.join(target.paths.dataDir, "manifest.json"), "utf8"));
-  assert.match(builtin.items[0].webpSrc, /^previews\/effects\/import_/);
+  assert.equal(builtin.items[0].webpSrc, "previews/effects/webp/内置/ADBE Glo2.webp");
   const importedWebp = previewPaths.resolveFile(target.paths, builtin.items[0].webpSrc);
   assert.ok(importedWebp.startsWith(path.join(targetRoot, "effects")));
   assert.equal(fs.readFileSync(importedWebp, "utf8"), "webp");

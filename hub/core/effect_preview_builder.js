@@ -288,6 +288,15 @@ async function writePreview(paths, item, manifest, prefix, quality, resolvePlugi
   if (!item.rawFrameSrc && /\.png$/i.test(String(item.frameSrc || item.src || ""))) {
     item.rawFrameSrc = String(item.frameSrc || item.src);
   }
+  /* 已经是最终单文件形态（anim/ 动画或单帧 webp-still）且没有新的原始帧：
+     不能再处理。否则会把 stillSrc 当成源帧、又去覆写同一个文件 —— Windows
+     上 sharp 还持有读句柄时 writeFileSync 直接报 UNKNOWN open，导致整批
+     内置效果被误报成「跳过」。旧单文件（不在 anim/ 下）留给
+     extractExistingWebp 拆帧，不在这里碰。 */
+  if (item && !item.rawFrameSrc &&
+      (item.format === "webp-still" || (item.webpSrc && /\.webp$/i.test(String(item.webpSrc))))) {
+    return null;
+  }
   const inputItem = item.rawFrameSrc ? { ...item, frameSrc: item.rawFrameSrc } : item;
   const files = frameFiles(paths, inputItem);
   if (!files.length) return null;

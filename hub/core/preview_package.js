@@ -306,19 +306,6 @@ function mergeDoc(target, incoming) {
   return { doc: output, incoming: incomingItems.length, replaced };
 }
 
-function uniqueImportName(fileMap, base, used) {
-  const ext = path.extname(base);
-  const stem = path.basename(base, ext);
-  let name = base;
-  let index = 1;
-  while (used.has(name.toLowerCase())) {
-    name = `${stem}_${index}${ext}`;
-    index++;
-  }
-  used.add(name.toLowerCase());
-  return name;
-}
-
 async function importEffectPreviews(paths, zipFile) {
   const temp = fs.mkdtempSync(path.join(os.tmpdir(), "dreamengine-preview-"));
   try {
@@ -329,22 +316,19 @@ async function importEffectPreviews(paths, zipFile) {
       return { ok: false, reason: "invalid_package" };
     }
 
-    const importId =
-      new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14) +
-      "-" +
-      crypto.randomBytes(3).toString("hex");
-    const targetFolder = `previews/effects/import_${importId}`;
     const fileMap = new Map();
-    const usedNames = new Set();
     const copies = [];
     for (const value of Array.isArray(manifest.files) ? manifest.files : []) {
       const sourceRelative = relativePath(value);
       if (!sourceRelative) continue;
       const source = path.join(temp, "files", sourceRelative);
       if (!fs.existsSync(source)) continue;
-      const name = uniqueImportName(fileMap, path.basename(sourceRelative), usedNames);
-      const targetRelative = `${targetFolder}/${name}`;
+      /* 保留包内的逻辑路径（previews/effects/webp/<插件>/anim|stills/…），
+         直接并到已有目录，不再统一塞进 import_<时间戳>/。同一个包重复导入
+         会覆盖同名文件，不会堆出新的孤立目录。 */
+      const targetRelative = sourceRelative;
       const target = dataFile(paths, targetRelative);
+      if (!target) continue;
       copies.push([source, target]);
       fileMap.set(sourceRelative, targetRelative);
     }
@@ -401,7 +385,7 @@ async function importEffectPreviews(paths, zipFile) {
       added: builtinResult.incoming + pluginResult.incoming,
       replaced: builtinResult.replaced + pluginResult.replaced,
       files: fileMap.size,
-      folder: targetFolder,
+      folder: fileMap.size ? path.posix.dirname([...fileMap.values()][0]) : "",
     };
   } finally {
     fs.rmSync(temp, { recursive: true, force: true });
