@@ -114,6 +114,8 @@ function list(paths) {
         : "png",
       offline: hit ? !!hit.plugin : false,
       thumb: stillThumb || (hit && hit.src ? previewPaths.resolveFile(paths, hit.src) : ""),
+      webpSrc: hit && hit.webpSrc ? previewPaths.resolveFile(paths, hit.webpSrc) : "",
+      stillSrc: hit && hit.stillSrc ? previewPaths.resolveFile(paths, hit.stillSrc) : "",
       framePattern: frameSrc ? previewPaths.resolveFile(paths, frameSrc) : "",
       external: false,
       source: "",

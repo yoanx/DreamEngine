@@ -1425,7 +1425,8 @@ main {
   transition: filter 0.12s ease, box-shadow 0.12s ease;
 }
 
-.thumb .preview-webp {
+.thumb .preview-webp,
+.preset-thumb .preview-webp {
   position: absolute;
   top: 0;
   right: 0;
@@ -1440,11 +1441,13 @@ main {
   transition: opacity 120ms ease;
 }
 
-.thumb .preview-webp.still {
+.thumb .preview-webp.still,
+.preset-thumb .preview-webp.still {
   opacity: 1;
 }
 
-.thumb .preview-webp.playing {
+.thumb .preview-webp.playing,
+.preset-thumb .preview-webp.playing {
   opacity: 1;
 }
 

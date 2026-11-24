@@ -405,7 +405,31 @@ function frameUrl(item, index) {
 }
 
 function bindPresetHoverPreview(card, img, item) {
-  if (!item.animated || item.frames <= 1 || !item.framePattern) return;
+  if (!item.animated || item.frames <= 1) return;
+  if (item.webpSrc) {
+    const stillUrl = toFileUrl(item.thumb || item.stillSrc);
+    let webpTimer = null;
+    function stopWebp() {
+      if (webpTimer) {
+        clearTimeout(webpTimer);
+        webpTimer = null;
+      }
+      if (stillUrl) img.src = stillUrl;
+      if (state.presetHoverStop === stopWebp) state.presetHoverStop = null;
+    }
+    card.addEventListener("mouseenter", () => {
+      if (state.presetHoverStop && state.presetHoverStop !== stopWebp) state.presetHoverStop();
+      state.presetHoverStop = stopWebp;
+      if (webpTimer) clearTimeout(webpTimer);
+      webpTimer = setTimeout(() => {
+        webpTimer = null;
+        img.src = toFileUrl(item.webpSrc);
+      }, 220);
+    });
+    card.addEventListener("mouseleave", stopWebp);
+    return;
+  }
+  if (!item.framePattern) return;
   const fps = Math.max(1, Number(item.fps) || 6);
   const delay = Math.max(40, Math.round(1000 / fps));
   const frames = [];
