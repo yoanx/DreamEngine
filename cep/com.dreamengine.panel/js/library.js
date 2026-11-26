@@ -2,8 +2,6 @@ var AEV_Library = (function () {
   var state = {
     lang: "zh",
     query: "",
-    plugin: "内置",
-    showAll: true,
     names: {},
     previews: {},
     previewsByKey: {},
@@ -23,14 +21,14 @@ var AEV_Library = (function () {
     // 插件 L2 预览：被拉黑的效果与已生成数量（独立索引，不进 entries）
     pluginBlacklist: {},
     pluginPreviewCount: 0,
-    // 各来源（内置 / BCC / Sapphire…）已有多少张预览
-    pluginCounts: {},
     // 预设库（M3）：用户自建库里的 .ffx 和 Hub 生成的预览索引
     presets: [],
     presetFolder: "",
     presetQuery: "",
     presetPreviews: {},
     presetCategory: "all",
+    // 用户预设文件夹树的展开状态：path -> true 表示已收起
+    presetFolderCollapsed: {},
     presetFavoritesOnly: false,
     presetOrganizer: { categories: [], assignments: {}, favorites: {} },
     presetEditorMode: "create",
@@ -39,8 +37,6 @@ var AEV_Library = (function () {
     presetHoldTriggeredPath: "",
     deletePresetPath: "",
     deletePresetName: "",
-    // 排序方式：name = 按名称首字母，category = 按 AE 分类
-    sortMode: "name",
     // 左侧栏选中的分类键（空 = 全部）
     category: "",
     effectFavoritesOnly: false,
@@ -206,92 +202,24 @@ var AEV_Library = (function () {
     }
   }
 
+  /* 效果墙只列 AE 当前装着的效果（旧的「全部已安装」开关已去掉） */
   function rebuildItems() {
-    var installed = {};
-    var installedByPreviewKey = {};
     var i;
-    for (i = 0; i < state.catalog.length; i++) {
-      installed[state.catalog[i].matchName] = state.catalog[i];
-      var installedKey = AEV_ViewModel.previewKeyFor(state.catalog[i]);
-      if (installedKey) installedByPreviewKey[installedKey] = state.catalog[i];
-    }
-
     var items = [];
-    if (state.showAll) {
-      for (i = 0; i < state.catalog.length; i++) {
-        if (isActiveEffect(state.catalog[i])) {
-          items.push(
-            AEV_ViewModel.buildItem(
-              state.catalog[i],
-              state.names,
-              state.previews,
-              state.stale,
-              state.previewsByKey
-            )
-          );
-        }
-      }
-    } else {
-      var previewKeys = Object.keys(state.previews);
-      for (i = 0; i < previewKeys.length; i++) {
-        var matchName = previewKeys[i];
-        var effect = installed[matchName];
-        var preview = state.previews[matchName];
-        if (!effect && preview && preview.previewKey) {
-          effect = installedByPreviewKey[preview.previewKey];
-        }
-        if (!effect) {
-          var nameRecord = state.names[matchName] || {};
-          effect = {
-            matchName: matchName,
-            displayName: nameRecord.nameEn || matchName,
-            category: ""
-          };
-        }
-        var item = AEV_ViewModel.buildItem(
-          effect,
-          state.names,
-          state.previews,
-          state.stale,
-          state.previewsByKey
+    for (i = 0; i < state.catalog.length; i++) {
+      if (isActiveEffect(state.catalog[i])) {
+        items.push(
+          AEV_ViewModel.buildItem(
+            state.catalog[i],
+            state.names,
+            state.previews,
+            state.stale,
+            state.previewsByKey
+          )
         );
-        item.installed = !!installed[effect.matchName];
-        items.push(item);
       }
     }
-    var counts = {};
-    for (i = 0; i < items.length; i++) {
-      if (!items[i].hasPreview) continue;
-      counts[items[i].plugin] = (counts[items[i].plugin] || 0) + 1;
-    }
-    state.pluginCounts = counts;
     state.items = items;
-    updatePluginCounts();
-  }
-
-  /**
-   * 来源下拉里标出每个插件包已有多少张预览。
-   * 插件预览是逐条离线渲出来的，用户得一眼看到「哪个包已经有图」，
-   * 否则切到 BCC 只看到一片「待离线生成」还以为功能坏了。
-   */
-  function updatePluginCounts() {
-    var select = byId("pluginFilter");
-    if (!select) return;
-    var options = select.getElementsByTagName("option");
-    for (var i = 0; i < options.length; i++) {
-      var option = options[i];
-      var base = option.getAttribute("data-label");
-      if (!base) {
-        base = option.textContent;
-        option.setAttribute("data-label", base);
-      }
-      if (option.value === "全部") {
-        option.textContent = base;
-        continue;
-      }
-      var n = state.pluginCounts[option.value] || 0;
-      option.textContent = n > 0 ? base + " · " + n : base;
-    }
   }
 
   /**
@@ -679,8 +607,7 @@ var AEV_Library = (function () {
     stopAllPreviewPlayback();
     var visible = AEV_ViewModel.filterItems(state.items, {
       lang: state.lang,
-      query: state.query,
-      plugin: state.plugin
+      query: state.query
     });
     var sidebarItems = visible;
     // 分类与收藏是两个独立条件，可以同时生效。
@@ -700,15 +627,13 @@ var AEV_Library = (function () {
       }
       visible = favoriteItems;
     }
-    // 排序（默认按名称首字母）
-    visible = AEV_ViewModel.sortItems(visible, state.sortMode, state.lang);
+    // 固定按 AE 分类排列（分类顺序来自 catalog）
+    visible = AEV_ViewModel.sortItems(visible, "category", state.lang);
 
     var grid = byId("previewGrid");
     var empty = byId("emptyState");
     renderLazyCards(grid, visible, "effect-slot", createCard);
     empty.hidden = visible.length !== 0;
-    byId("selectionStats").textContent =
-      (state.lang === "zh" ? "显示 " : "Showing ") + visible.length;
     renderSidebar(sidebarItems);
   }
 
@@ -922,13 +847,6 @@ var AEV_Library = (function () {
     if (wrap) wrap.hidden = !visible;
     if (!visible || !state.thumbSizes.hasOwnProperty(view)) return;
     setThumbSize(thumbPreferred[view]);
-  }
-
-  function setSortMode(mode) {
-    state.sortMode = mode;
-    byId("sortName").className = "segment" + (mode === "name" ? " active" : "");
-    byId("sortCategory").className = "segment" + (mode === "category" ? " active" : "");
-    render();
   }
 
   function setStatus(text, isError) {
@@ -1391,6 +1309,27 @@ var AEV_Library = (function () {
     });
   }
 
+  /** 用户预设（Hub 索引里 sourceKind=user）：按文件夹分层展示 */
+  function isUserPreset(item) {
+    return !!(item && item.external && item.sourceKind === "user");
+  }
+
+  function presetFolderPath(item) {
+    return String((item && item.folderPath) || "");
+  }
+
+  /** 任一祖先目录被收起时，这一层就不显示 */
+  function presetFolderHidden(folder) {
+    var parts = String(folder || "").split("/");
+    for (var i = 1; i < parts.length; i++) {
+      if (state.presetFolderCollapsed[parts.slice(0, i).join("/")]) return true;
+    }
+    return false;
+  }
+
+  // 最近一次渲染侧栏用的预设集合：展开/收起时只重绘侧栏，不重建卡片
+  var lastPresetBase = [];
+
   function renderPresetList() {
     stopAllPreviewPlayback();
     var list = byId("presetList");
@@ -1404,6 +1343,7 @@ var AEV_Library = (function () {
       }
       base.push(baseItem);
     }
+    lastPresetBase = base;
     renderPresetSidebar(base);
 
     var visible = [];
@@ -1414,8 +1354,16 @@ var AEV_Library = (function () {
         if (presetItem.external) continue;
         if (categoryId) continue;
       } else if (state.presetCategory.indexOf("ae:") === 0) {
-        if (!presetItem.external ||
-            (presetItem.source || "AE 内置") !== state.presetCategory.substring(3)) {
+        var aeKey = state.presetCategory.substring(3);
+        if (aeKey === "用户预设" || aeKey.indexOf("用户预设:") === 0) {
+          if (!isUserPreset(presetItem)) continue;
+          if (aeKey !== "用户预设") {
+            var wantFolder = aeKey.slice("用户预设:".length);
+            var itemFolder = presetFolderPath(presetItem);
+            if (itemFolder !== wantFolder && itemFolder.indexOf(wantFolder + "/") !== 0) continue;
+          }
+        } else if (!presetItem.external ||
+            (presetItem.source || "AE 内置") !== aeKey) {
           continue;
         }
       } else if (state.presetCategory !== "all") {
@@ -1633,9 +1581,25 @@ var AEV_Library = (function () {
     var uncategorized = 0;
     var counts = {};
     var aeCounts = {};
+    var userTotal = 0;
+    var userLabel = "用户预设";
+    var userFolders = {};
     for (var i = 0; i < items.length; i++) {
       if (isFavorite("presets", items[i].path)) favoriteCount++;
       if (items[i].external) {
+        if (isUserPreset(items[i])) {
+          userTotal++;
+          if (items[i].source) userLabel = items[i].source;
+          var folder = presetFolderPath(items[i]);
+          if (folder) {
+            var parts = folder.split("/");
+            for (var pi = 1; pi <= parts.length; pi++) {
+              var folderKey = parts.slice(0, pi).join("/");
+              userFolders[folderKey] = (userFolders[folderKey] || 0) + 1;
+            }
+          }
+          continue;
+        }
         var source = items[i].source || "AE 内置";
         aeCounts[source] = (aeCounts[source] || 0) + 1;
         continue;
@@ -1671,7 +1635,7 @@ var AEV_Library = (function () {
       if (aeCounts[a] !== aeCounts[b]) return aeCounts[b] - aeCounts[a];
       return a.localeCompare(b, state.lang === "zh" ? "zh-Hans-CN" : "en");
     });
-    if (aeSources.length) {
+    if (aeSources.length || userTotal) {
       var aeTitle = document.createElement("li");
       aeTitle.className = "sidebar-group-title";
       aeTitle.textContent = state.lang === "zh" ? "AE 预设分类" : "AE preset categories";
@@ -1684,7 +1648,81 @@ var AEV_Library = (function () {
           false
         ));
       }
+      if (userTotal) {
+        /* 用户预设按文件夹分层：每级目录一行，计数含子目录；带箭头可收起 */
+        var userRoot = "用户预设";
+        var userRootCollapsed = !!state.presetFolderCollapsed[userRoot];
+        var folderKeys = [];
+        for (var fk in userFolders) {
+          if (userFolders.hasOwnProperty(fk)) folderKeys.push(fk);
+        }
+        folderKeys.sort(function (a, b) {
+          return a.localeCompare(b, state.lang === "zh" ? "zh-Hans-CN" : "en");
+        });
+        list.appendChild(presetFolderRow(
+          "ae:" + userRoot,
+          userLabel,
+          userTotal,
+          0,
+          { path: userRoot, hasChildren: folderKeys.length > 0, collapsed: userRootCollapsed }
+        ));
+        if (!userRootCollapsed) {
+          for (var uf = 0; uf < folderKeys.length; uf++) {
+            var folderName = folderKeys[uf];
+            if (presetFolderHidden(folderName)) continue;
+            var hasChildren = false;
+            for (var uc = 0; uc < folderKeys.length; uc++) {
+              if (folderKeys[uc].indexOf(folderName + "/") === 0) {
+                hasChildren = true;
+                break;
+              }
+            }
+            var nameParts = folderName.split("/");
+            list.appendChild(presetFolderRow(
+              "ae:" + userRoot + ":" + folderName,
+              nameParts[nameParts.length - 1],
+              userFolders[folderName],
+              nameParts.length,
+              { path: folderName, hasChildren: hasChildren, collapsed: !!state.presetFolderCollapsed[folderName] }
+            ));
+          }
+        }
+      }
     }
+  }
+
+  /** 用户预设的文件夹行：带展开/收起箭头，按层级缩进 */
+  function presetFolderRow(id, label, count, depth, folder) {
+    var li = document.createElement("li");
+    var button = document.createElement("button");
+    button.type = "button";
+    button.className = "category-item" + (state.presetCategory === id ? " active" : "");
+    /* 每层只缩进 6px：面板侧栏本来就窄，缩进太大目录名会被截成两三个字 */
+    if (depth) button.style.paddingLeft = 10 + depth * 6 + "px";
+    var main = textSpan("category-main", "");
+    if (folder && folder.hasChildren) {
+      var arrow = textSpan("category-toggle", folder.collapsed ? "▸" : "▾");
+      arrow.setAttribute("role", "button");
+      arrow.setAttribute("aria-label", folder.collapsed ? L("preset.expand") : L("preset.collapse"));
+      arrow.addEventListener("click", function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        state.presetFolderCollapsed[folder.path] = !folder.collapsed;
+        renderPresetSidebar(lastPresetBase);
+      });
+      main.appendChild(arrow);
+    } else if (folder) {
+      main.appendChild(textSpan("category-toggle-spacer", ""));
+    }
+    main.appendChild(textSpan("category-label", label));
+    button.appendChild(main);
+    button.appendChild(textSpan("category-count", String(count)));
+    button.addEventListener("click", function () {
+      state.presetCategory = id;
+      renderPresetList();
+    });
+    li.appendChild(button);
+    return li;
   }
 
   function presetSidebarRow(id, label, count, favoriteRow, category) {
@@ -1915,71 +1953,55 @@ var AEV_Library = (function () {
   }
 
   /**
-   * 搜索框的展开/收起。
-   *
-   * 平时只显示一个小图标（面板可以拖得很窄，常驻的大输入框会把筛选栏
-   * 挤爆）；点一下才展开输入框并聚焦。
+   * 三个内容视图各有一个常驻搜索框：贴在内容区顶部（CSS 里 sticky），
+   * 输入即筛选，各自记各自的关键词，互不影响。
    */
-  function setSearchOpen(open, inputId, fieldId, toggleId) {
-    var field = byId(fieldId);
-    var toggle = byId(toggleId);
-    var input = byId(inputId);
-    if (!field || !toggle || !input) return;
-    field.hidden = !open;
-    toggle.setAttribute("aria-expanded", open ? "true" : "false");
-    if (open) {
-      input.focus();
-      input.select();
+  function bindViewSearch() {
+    function clearOnEscape(event) {
+      if (event.key !== "Escape" && event.keyCode !== 27) return;
+      event.stopPropagation();
+      if (!this.value) return;
+      this.value = "";
+      this.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+
+    var effectInput = byId("effectSearch");
+    if (effectInput) {
+      effectInput.addEventListener("input", function () {
+        state.query = this.value;
+        render();
+      });
+      effectInput.addEventListener("keydown", clearOnEscape);
+    }
+
+    var presetInput = byId("presetSearch");
+    if (presetInput) {
+      presetInput.addEventListener("input", function () {
+        state.presetQuery = this.value;
+        renderPresetList();
+      });
+      presetInput.addEventListener("keydown", clearOnEscape);
+    }
+
+    var materialInput = byId("materialSearch");
+    if (materialInput) {
+      materialInput.addEventListener("input", function () {
+        if (window.AEV_MaterialsUI && window.AEV_MaterialsUI.setQuery) {
+          window.AEV_MaterialsUI.setQuery(this.value);
+        }
+      });
+      materialInput.addEventListener("keydown", clearOnEscape);
     }
   }
 
-  /**
-   * 搜索框的展开/收起交互。
-   *
-   * 收起靠「点击 search-wrap 之外的地方」判定 —— 用 document 上的
-   * mousedown 监听 + contains 判断，比在 wrap 上挂 click 再看
-   * event.target 可靠得多：点图标时 target 是按钮、点输入框时 target
-   * 是 input，两个条件都不满足，收起逻辑永远不触发。
-   *
-   * 图标本身再点一次是「切换」：展开时收起，收起时展开。
-   */
-  function bindSearchToggle(toggleId, inputId, fieldId, wrapId) {
-    var toggle = byId(toggleId);
-    var input = byId(inputId);
-    var field = byId(fieldId);
-    var wrap = byId(wrapId);
-    if (!toggle || !input || !field || !wrap) return;
-
-    var isOpen = function () {
-      return !field.hidden;
-    };
-
-    toggle.addEventListener("click", function () {
-      if (isOpen()) {
-        setSearchOpen(false, inputId, fieldId, toggleId);
-      } else {
-        setSearchOpen(true, inputId, fieldId, toggleId);
-      }
-    });
-
-    input.addEventListener("keydown", function (event) {
-      if (event.key === "Escape" || event.keyCode === 27) {
-        event.stopPropagation();
-        input.value = "";
-        applySearch("");
-        setSearchOpen(false, inputId, fieldId, toggleId);
-        markSearchActive("");
-      }
-    });
-
-    // 点到包装之外就收起。用 mousedown 而不是 click：
-    // 点击时输入框可能已经失焦，且 mousedown 早于 blur，顺序更稳。
-    document.addEventListener("mousedown", function (event) {
-      if (!isOpen()) return;
-      var target = event.target;
-      if (target && wrap.contains && wrap.contains(target)) return;
-      setSearchOpen(false, inputId, fieldId, toggleId);
-    });
+  /** "/" 快捷键：聚焦当前视图的搜索框（曲线页没有搜索，不处理） */
+  function focusViewSearch() {
+    var ids = { effects: "effectSearch", presets: "presetSearch", materials: "materialSearch" };
+    var input = byId(ids[state.view]);
+    if (!input) return false;
+    input.focus();
+    input.select();
+    return true;
   }
 
   /**
@@ -2014,89 +2036,6 @@ var AEV_Library = (function () {
    * 四个视图同级，切换栏固定在面板最上方。用表驱动而不是逐个写 if：
    * 以后再加视图（比如批量导入）只改这两张表。
    */
-  /* ============================================================
-   * 顶栏搜索：同一个输入框服务当前视图
-   *
-   * 效果 / 预设 / 素材三个页面原来各有一套搜索框（预设页还有自己的一套
-   * 展开收起），位置和手感都不一致。现在只留顶栏这一个，按 state.view
-   * 决定关键词送到谁那里。
-   * ============================================================ */
-
-  /* 占位文案跟着视图走；曲线页没有搜索，所以不在表里 */
-  var SEARCH_PLACEHOLDER = {
-    effects: "search.effects",
-    presets: "preset.search",
-    materials: "materials.search"
-  };
-
-  /** 当前视图已经输入的关键词：三个页面各存一份，切回来还在 */
-  function currentSearchValue() {
-    if (state.view === "presets") return state.presetQuery || "";
-    if (state.view === "materials") {
-      return window.AEV_MaterialsUI && window.AEV_MaterialsUI.getQuery
-        ? window.AEV_MaterialsUI.getQuery() : "";
-    }
-    return state.query || "";
-  }
-
-  /** 把关键词送到当前视图对应的筛选入口 */
-  function applySearch(value) {
-    var query = String(value === undefined || value === null ? "" : value);
-    if (state.view === "presets") {
-      state.presetQuery = query;
-      renderPresetList();
-      return;
-    }
-    if (state.view === "materials") {
-      if (window.AEV_MaterialsUI && window.AEV_MaterialsUI.setQuery) {
-        window.AEV_MaterialsUI.setQuery(query);
-      }
-      return;
-    }
-    state.query = query;
-    render();
-  }
-
-  /** 收起状态下也要能看出「有筛选条件」：图标上点一个强调色小点 */
-  function markSearchActive(value) {
-    var toggle = byId("searchToggle");
-    if (!toggle) return;
-    if (value) toggle.classList.add("has-query");
-    else toggle.classList.remove("has-query");
-  }
-
-  /** 切视图 / 切语言时同步：显隐、占位文案、已输入内容、高亮 */
-  function syncSearchBox() {
-    var wrap = byId("searchWrap");
-    var input = byId("searchInput");
-    var toggle = byId("searchToggle");
-    if (!wrap || !input) return;
-
-    var key = SEARCH_PLACEHOLDER[state.view];
-    wrap.hidden = !key;
-    if (!key) return;
-
-    input.setAttribute("data-i18n-ph", key);
-    if (toggle) {
-      toggle.setAttribute("data-i18n-title", key);
-      toggle.setAttribute("data-i18n-aria", key);
-    }
-    if (typeof AEV_t === "function") {
-      var text = AEV_t(key, state.lang);
-      input.setAttribute("placeholder", text);
-      if (toggle) {
-        toggle.setAttribute("title", text);
-        toggle.setAttribute("aria-label", text);
-      }
-    }
-
-    /* 切视图就该换成那个视图自己的关键词：这里不能因为「焦点还在输入框里」
-       就跳过 —— 点页签不会把焦点移走，跳过的话素材页会残留预设的搜索词。 */
-    var value = currentSearchValue();
-    input.value = value;
-    markSearchActive(value);
-  }
-
   var VIEW_TABS = { effects: "tabEffects", presets: "tabPresets", curve: "tabCurve", materials: "tabMaterials" };
   var VIEW_PANELS = { effects: "viewEffects", presets: "viewPresets", curve: "viewCurve", materials: "viewMaterials" };
 
@@ -2115,10 +2054,6 @@ var AEV_Library = (function () {
         tab.setAttribute("aria-selected", key === view ? "true" : "false");
       }
     }
-    // 效果墙专属的工具条在另外两个视图下没有意义（搜索的是效果不是预设/曲线）
-    byId("effectControls").hidden = view !== "effects";
-    // 顶栏搜索服务所有带搜索的视图（效果 / 预设 / 素材），曲线页隐藏。
-    syncSearchBox();
     syncThumbControl(view);
 
     if (view === "effects") {
@@ -2157,25 +2092,10 @@ var AEV_Library = (function () {
     byId("tabPresets").addEventListener("click", function () { setView("presets"); });
     byId("tabCurve").addEventListener("click", function () { setView("curve"); });
     byId("tabMaterials").addEventListener("click", function () { setView("materials"); });
-    byId("sortName").addEventListener("click", function () { setSortMode("name"); });
-    byId("sortCategory").addEventListener("click", function () { setSortMode("category"); });
-    byId("searchInput").addEventListener("input", function () {
-      applySearch(this.value);
-      markSearchActive(this.value);
-    });
+    bindViewSearch();
     window.addEventListener("focus", refreshPresetPreviews);
     document.addEventListener("visibilitychange", function () {
       if (!document.hidden) refreshPresetPreviews();
-    });
-    bindSearchToggle("searchToggle", "searchInput", "searchField", "searchWrap");
-    byId("pluginFilter").addEventListener("change", function () {
-      state.plugin = this.value;
-      render();
-    });
-    byId("showAll").addEventListener("change", function () {
-      state.showAll = this.checked;
-      rebuildItems();
-      render();
     });
     // Esc 关右键菜单与删除确认
     document.addEventListener("keydown", function (event) {
@@ -2184,12 +2104,9 @@ var AEV_Library = (function () {
         closeDeletePreset();
       }
     });
-    // "/" 聚焦效果搜索：键盘用户的快速入口，输入框里不拦截。
+    // "/" 聚焦当前视图的搜索框；输入框里不拦截。
     document.addEventListener("keydown", function (event) {
       if (event.key !== "/" || event.ctrlKey || event.metaKey || event.altKey) return;
-      /* 曲线页没有搜索框，其余三个视图共用顶栏这一个 */
-      var wrap = byId("searchWrap");
-      if (!wrap || wrap.hidden) return;
       var target = event.target;
       var tag = target && target.tagName ? target.tagName.toLowerCase() : "";
       if (
@@ -2200,8 +2117,8 @@ var AEV_Library = (function () {
       ) {
         return;
       }
+      if (!focusViewSearch()) return;
       event.preventDefault();
-      setSearchOpen(true, "searchInput", "searchField", "searchToggle");
     });
     byId("btnPresetCategoryAdd").addEventListener("click", function () {
       openPresetCategoryEditor("create", null);

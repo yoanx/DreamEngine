@@ -192,7 +192,8 @@ html.keyboard-nav [role="button"]:focus {
   flex: 1;
   flex-direction: column;
   gap: 10px;
-  padding: 12px 16px 16px;
+  --view-pad: 16px;
+  padding: 0 var(--view-pad) 16px;
   overflow-y: auto;
 }
 
@@ -633,9 +634,6 @@ html.keyboard-nav [role="button"]:focus {
 }
 
 .top-actions,
-.segmented,
-.controls,
-.toggle,
 .search-field {
   display: flex;
   align-items: center;
@@ -644,30 +642,6 @@ html.keyboard-nav [role="button"]:focus {
 .top-actions {
   flex: none;
   gap: 8px;
-}
-
-.segmented {
-  padding: 2px;
-  border: 1px solid var(--border);
-  border-radius: 7px;
-  background: var(--surface);
-}
-
-.segment {
-  min-width: 42px;
-  height: 24px;
-  padding: 0 8px;
-  border: 0;
-  border-radius: 5px;
-  background: transparent;
-  color: var(--muted);
-  font-size: 11px;
-  cursor: pointer;
-}
-
-.segment.active {
-  background: var(--accent-soft);
-  color: var(--text);
 }
 
 .icon-button {
@@ -683,8 +657,7 @@ html.keyboard-nav [role="button"]:focus {
   cursor: pointer;
 }
 
-.icon-button:hover,
-.segment:hover {
+.icon-button:hover {
   background: rgba(255, 255, 255, 0.05);
   color: var(--text);
 }
@@ -915,62 +888,25 @@ html.keyboard-nav [role="button"]:focus {
   stroke-width: 1.8;
 }
 
-.controls {
+/* 内容区顶部的常驻搜索条：贴在滚动容器顶部，卡片从它下面穿过。
+   margin 抵消容器的左右内边距，让底色铺满整行。 */
+.view-search {
+  position: sticky;
+  top: 0;
+  /* 必须高于素材页吸顶行（12）与卡片悬停层（10），否则会被它们的
+     底色盖住；仍低于关于弹窗（100）。 */
+  z-index: 13;
   flex: none;
   display: flex;
   align-items: center;
-  gap: 10px;
-  height: 34px;
-  padding: 0 16px;
-  border-bottom: 1px solid var(--border);
+  margin: 0 calc(-1 * var(--view-pad, 16px));
+  padding: 12px var(--view-pad, 16px) 10px;
   background: var(--bg);
 }
 
-/* 预设视图下，效果墙专属的筛选工具条没有意义 */
-.controls[hidden] {
-  display: none;
-}
-
-/* 搜索框：宽面板常驻，窄面板收成一个小图标。
-   面板可以拖得很窄，常驻的大搜索框会把顶栏挤爆。 */
-.search-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex: 0 0 auto;
-  min-width: 30px;
-  margin-left: auto;
-}
-
-.search-wrap[hidden] {
-  display: none;
-}
-
-.search-wrap .search-toggle {
-  flex: 0 0 auto;
-  position: relative;
-}
-
-/* 收起状态下也能看出「当前视图有筛选条件」：图标右上角一个小点 */
-.search-toggle.has-query::after {
-  content: "";
-  position: absolute;
-  top: 3px;
-  right: 3px;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--accent);
-}
-
-.search-wrap .search-field {
-  flex: 1 1 auto;
-  min-width: 150px;
-}
-
-.search-field[hidden] {
-  display: none;
+.view-search .search-field {
+  width: 100%;
+  max-width: 420px;
 }
 
 .search-field {
@@ -998,56 +934,6 @@ html.keyboard-nav [role="button"]:focus {
   color: var(--faint);
 }
 
-.search-kbd {
-  flex: none;
-  padding: 1px 5px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  color: var(--faint);
-  font: 9px/1.4 Consolas, "Cascadia Mono", "DreamEngine Sans", monospace;
-}
-
-/* 宽面板：搜索常驻，图标收起；窄面板才退回「点图标展开」 */
-@media (min-width: 720px) {
-  .search-wrap {
-    flex: 0 1 250px;
-  }
-
-  .search-toggle {
-    display: none;
-  }
-
-  .search-field[hidden] {
-    display: flex;
-  }
-}
-
-/* 窄面板：顶栏展开的搜索框改成浮在图标左侧的小浮层。
-   原先它是 flex 项，展开等于在行内增宽 —— 顶栏被撑开，整行内容连带
-   往左移。改成绝对定位后它脱离布局流，面板多窄都不会带动其他元素；
-   宽度用 max-width 夹住，保证左边缘不越出面板。
-   只作用于 .topbar：预设页的 .search-wrap 处在 overflow 容器里，
-   浮层会被裁掉，那边的行为保持不变。 */
-@media (max-width: 719.98px) {
-  .topbar .search-wrap {
-    z-index: 40;
-  }
-
-  .topbar .search-wrap .search-field:not([hidden]) {
-    position: absolute;
-    top: 50%;
-    right: calc(100% + 6px);
-    transform: translateY(-50%);
-    flex: none;
-    width: 220px;
-    min-width: 0;
-    max-width: calc(100vw - 104px);
-    background: var(--surface-2);
-    border-color: var(--border-strong);
-    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.55);
-  }
-}
-
 .search-field input {
   width: 100%;
   min-width: 0;
@@ -1071,16 +957,6 @@ select {
 
 select:hover {
   border-color: var(--border-strong);
-}
-
-.toggle {
-  gap: 6px;
-  color: var(--muted);
-  white-space: nowrap;
-}
-
-.toggle input {
-  accent-color: var(--accent);
 }
 
 /* 工作区：左右各自独立滚动。
@@ -1196,7 +1072,8 @@ body.is-resizing-sidebar * {
   border: 0;
   border-radius: 6px;
   background: transparent;
-  color: var(--muted);
+  /* 比 --muted 亮一档：分类名要能一眼扫到，太暗在窄面板里几乎看不清 */
+  color: #b7bec5;
   font: inherit;
   font-size: 12px;
   text-align: left;
@@ -1219,6 +1096,34 @@ body.is-resizing-sidebar * {
   background: #111a4d;
   color: #fff;
   font-weight: 600;
+}
+
+/* 用户预设的文件夹树：箭头 + 标签靠左，计数仍贴右 */
+.category-main {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.category-main .category-label { min-width: 0; }
+
+.category-toggle {
+  flex: 0 0 auto;
+  width: 12px;
+  color: var(--faint);
+  font-size: 10px;
+  line-height: 1;
+  text-align: center;
+  cursor: pointer;
+}
+
+.category-toggle:hover { color: #fff; }
+
+.category-toggle-spacer {
+  flex: 0 0 auto;
+  width: 12px;
 }
 
 .category-label {
@@ -1319,7 +1224,9 @@ main {
      flex-basis:0 + min-width 让「剩余空间」而不是「内容宽度」决定分配。 */
   flex-basis: 0;
   min-width: 120px;
-  padding: 12px 16px 20px;
+  /* 顶部内边距由 .view-search 自己带，容器从 0 起，搜索条才能贴顶吸附 */
+  --view-pad: 16px;
+  padding: 0 var(--view-pad) 20px;
   overflow-y: auto;
   overscroll-behavior: contain;
 }
@@ -1589,11 +1496,6 @@ main {
   white-space: nowrap;
 }
 
-#selectionStats {
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-}
-
 .statusbar .error {
   color: var(--danger);
 }
@@ -1645,12 +1547,6 @@ main {
   }
 }
 
-@media (max-width: 460px) {
-  #selectionStats {
-    display: none;
-  }
-}
-
 @media (max-width: 360px) {
   .size-slider {
     display: none;
@@ -1679,13 +1575,8 @@ main {
     padding: 0 2px;
   }
 
-  .search-wrap {
-    flex: 0 0 auto;
-  }
-
   .preset-main {
-    padding-right: 10px;
-    padding-left: 10px;
+    --view-pad: 10px;
   }
 
   .preset-grid {
@@ -1695,16 +1586,8 @@ main {
     );
   }
 
-  .controls {
-    flex-wrap: wrap;
-    height: auto;
-    min-height: 34px;
-    padding: 6px 10px;
-  }
-
   main {
-    padding-right: 10px;
-    padding-left: 10px;
+    --view-pad: 10px;
   }
 
   .grid {
@@ -1867,7 +1750,8 @@ main {
   min-height: 0;
   flex: 1;
   flex-direction: column;
-  padding: 16px;
+  --view-pad: 16px;
+  padding: 0 var(--view-pad) 16px;
   overflow-y: auto;
 }
 
@@ -1881,10 +1765,11 @@ main {
    让卡片滚到这行下方才被裁切，中间不留透明缝。 */
 .materials-head {
   position: sticky;
-  top: 0;
+  /* 吸在搜索条下面：搜索条高 52px（12 + 30 + 10），两个都 top:0 会互相压住 */
+  top: 52px;
   /* 必须高于卡片悬停层：.material-card:hover 的 z-index 是 10，
      否则鼠标悬停的卡片会翻到吸顶条上面（实测截图就是这种破功）。
-     同时要低于设置抽屉（21）与关于弹窗（100），取 12。 */
+     同时要低于搜索条（13）与关于弹窗（100），取 12。 */
   z-index: 12;
   display: flex;
   align-items: center;
@@ -1904,6 +1789,8 @@ main {
   z-index: -1;
   background: var(--bg);
 }
+
+/* 素材页的搜索框和其他两个视图一样，独立成一条吸顶搜索条 */
 
 /* 滚动中才出现的「浮起」暗示：一道细亮线 + 12px 渐隐投影。
    两者都由 js/sticky_shadow.js 在 scrollTop > 2 时挂 .is-stuck 触发，
@@ -2358,13 +2245,13 @@ main {
     padding-left: 4px;
   }
   .materials-main {
-    padding: 12px;
+    --view-pad: 12px;
   }
   .preset-sidebar {
     min-width: 112px;
   }
   .preset-main {
-    padding: 12px 10px 12px;
+    --view-pad: 10px;
   }
 }
 
@@ -3201,9 +3088,8 @@ main {
 .no-flex-gap .topbar > * + * { margin-left: 20px; }
 .no-flex-gap .sidebar-heading > * + * { margin-left: 8px; }
 .no-flex-gap .preset-category-menu button > * + * { margin-left: 8px; }
-.no-flex-gap .controls > * + * { margin-left: 10px; }
-.no-flex-gap .search-wrap > * + * { margin-left: 6px; }
 .no-flex-gap .category-item > * + * { margin-left: 8px; }
+.no-flex-gap .category-main > * + * { margin-left: 6px; }
 .no-flex-gap .card-meta > * + * { margin-left: var(--card-text-gap); }
 .no-flex-gap .statusbar > * + * { margin-left: 10px; }
 .no-flex-gap .size-slider > * + * { margin-left: 6px; }
@@ -3233,8 +3119,6 @@ main {
  * 上面 .topbar > * + * 会把 margin-left 一律写成 20px，
  * 但这三个子项原本靠 auto 占位，被覆盖后会贴到左边/挤到中间：
  *   .view-switch    本就有 margin-left:4px，正确值是 20(gap) + 4 = 24px
- *   .search-wrap    靠 margin-left:auto 推到右侧
  *   .material-folder-count  靠 margin-left:auto 贴右侧（「101 项」这类计数） */
 .no-flex-gap .topbar > .view-switch { margin-left: 24px; }
-.no-flex-gap .topbar > .search-wrap { margin-left: auto; }
 .no-flex-gap .material-folder-row > .material-folder-count { margin-left: auto; }

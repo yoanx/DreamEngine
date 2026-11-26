@@ -64,7 +64,6 @@
           <button class="btn" id="btnRenderSelected" disabled title="只渲染已勾选的预设">渲染所选 (0)</button>
           <input class="search" id="search" type="search" placeholder="搜索预设…" spellcheck="false">
           <span class="spacer"></span>
-          <span class="hint" id="presetHint"></span>
           <button class="tool-icon" id="btnRefresh" type="button" title="刷新预设库" aria-label="刷新预设库">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
           </button>
@@ -105,7 +104,6 @@
                   title="只渲染已勾选的效果">渲染所选 (0)</button>
           <input class="search" id="effectSearch" type="search" placeholder="搜索效果…" spellcheck="false">
           <span class="spacer"></span>
-          <span class="hint" id="effectHint"></span>
           <button class="tool-icon" id="btnEffectPreviewImport" type="button"
                   title="导入别人分享的效果预览包；同名效果会被覆盖" aria-label="导入预览包">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
@@ -427,9 +425,6 @@
       </div>
       <div class="kv"><span>AE 预设</span><code id="setPresetSync">—</code></div>
       <div class="kv"><span>效果分类</span><code id="setEffectSync">—</code></div>
-      <p class="footnote">
-        同步只建索引，不复制也不修改 AE 里的文件。在 AE 里新装的预设或插件，同步之后才会出现在库里。
-      </p>
     </div>
 
     <div class="panel">
@@ -441,9 +436,6 @@
           <option value="en">English</option>
         </select>
       </div>
-      <p class="footnote">
-        面板没有自己的设置页，界面语言统一在这里改；保存后重启 AE 面板生效。Hub 自身界面暂只有中文。
-      </p>
     </div>
 
     <div class="panel">
@@ -455,9 +447,6 @@
         <button class="btn ghost" id="btnResetPreviewRoot">恢复默认</button>
         <button class="btn ghost" id="btnOpenPreviewRoot">打开目录</button>
       </div>
-      <p class="footnote">
-        效果预览写入 <code>effects</code>，预设预览写入 <code>presets</code>。切换目录时会自动迁移已生成预览并更新索引。
-      </p>
     </div>
 
     <div class="panel">
@@ -475,16 +464,7 @@
     <div class="panel">
       <div class="panel-title">自动化</div>
       <label class="check"><input type="checkbox" id="setAeGuard"> 自动处理 AE 崩溃修复提示</label>
-      <p class="footnote">
-        After Effects 上次异常退出后，下次启动有概率弹出「崩溃修复选项」对话框，把渲染或取参卡住。
-        打开后，Hub 在调起 AE 期间会启动看守：识别到该对话框就替你按「继续」——
-        不会点其它按钮，也不会改 AE 的首选项或脚本权限。
-      </p>
     </div>
-
-    <p class="footnote">
-      安装与升级由安装包里的 <code>install_dreamengine.ps1</code> 负责：只覆盖程序文件，不动已生成的预览图和预设库。
-    </p>
   </section>
 
 </main>

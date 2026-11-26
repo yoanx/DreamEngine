@@ -1010,6 +1010,41 @@ test("安装脚本：升级不删用户数据，PlayerDebugMode 覆盖所有 CEP
   );
 });
 
+/* ---------- 面板用户预设：按文件夹分层 ---------- */
+
+test("面板用户预设按文件夹分层，可展开/收起", () => {
+  const engine = read("cep/com.dreamengine.panel/engine/presets.jsx");
+  const lib = read("cep/com.dreamengine.panel/js/library.js");
+  const code = codeOf(lib);
+  const css = read("cep/com.dreamengine.panel/css/style.css");
+  const i18n = read("cep/com.dreamengine.panel/js/i18n.js");
+
+  // 索引里带上文件夹路径：新索引直接用 folderPath，旧索引用 relative 反推
+  assert.match(engine, /,"folderPath":' \+ jsonText\(folderPath \|\| ""\)/, "presetJson 没写 folderPath");
+  assert.match(engine, /external\.folderPath !== undefined/, "没有读索引里的 folderPath");
+  assert.match(engine, /relParts\.pop\(\)/, "旧索引没有按 relative 反推目录");
+
+  // 侧栏：用户预设单独成树，行带箭头
+  assert.match(code, /function isUserPreset\(item\)/);
+  assert.match(code, /function presetFolderPath\(item\)/);
+  assert.match(code, /function presetFolderRow\(/);
+  assert.match(code, /function presetFolderHidden\(/);
+  assert.match(code, /state\.presetFolderCollapsed\[folder\.path\] = !folder\.collapsed/);
+  // 展开/收起只重绘侧栏，不重建整墙卡片
+  assert.match(code, /renderPresetSidebar\(lastPresetBase\)/);
+  // 选中的目录按「本身或子目录」过滤
+  assert.match(code, /aeKey\.indexOf\("用户预设:"\) === 0/);
+  assert.match(code, /itemFolder\.indexOf\(wantFolder \+ "\/"\) !== 0/);
+  // 计数含子目录：祖先目录逐级累加
+  assert.match(code, /userFolders\[folderKey\] = \(userFolders\[folderKey\] \|\| 0\) \+ 1/);
+
+  assert.match(css, /\.category-main\s*\{/);
+  assert.match(css, /\.category-toggle\s*\{/);
+  assert.match(css, /\.no-flex-gap \.category-main/);
+  assert.match(i18n, /"preset\.expand"/);
+  assert.match(i18n, /"preset\.collapse"/);
+});
+
 /* ---------- 运行 ---------- */
 
 let failed = 0;

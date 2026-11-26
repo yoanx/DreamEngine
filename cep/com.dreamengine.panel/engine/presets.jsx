@@ -776,12 +776,13 @@ var AEV_Presets = (function () {
         return null;
     }
 
-    function presetJson(filePath, name, category, source, sourceKind, external) {
+    function presetJson(filePath, name, category, source, sourceKind, external, folderPath) {
         return '{"path":' + jsonText(filePath) +
             ',"name":' + jsonText(name) +
             ',"category":' + jsonText(category) +
             ',"source":' + jsonText(source) +
             ',"sourceKind":' + jsonText(sourceKind) +
+            ',"folderPath":' + jsonText(folderPath || "") +
             ',"external":' + (external ? "true" : "false") + "}";
     }
 
@@ -794,7 +795,7 @@ var AEV_Presets = (function () {
         var seen = {};
         var externalCount = 0;
 
-        function add(pathText, name, category, source, sourceKind, external) {
+        function add(pathText, name, category, source, sourceKind, external, folderPath) {
             var key = pathKey(pathText);
             if (!key || seen[key]) return;
             var file = new File(pathText);
@@ -802,7 +803,7 @@ var AEV_Presets = (function () {
             seen[key] = true;
             if (external) externalCount++;
             items.push(presetJson(file.fsName, displayName(name || file.name),
-                category || "", source || "", sourceKind || "library", external));
+                category || "", source || "", sourceKind || "library", external, folderPath || ""));
         }
 
         for (var i = 0; i < found.length; i++) {
@@ -815,8 +816,17 @@ var AEV_Presets = (function () {
             for (var j = 0; j < catalog.items.length; j++) {
                 var external = catalog.items[j];
                 if (!external || !external.path) continue;
+                // 用户预设的文件夹层级：新索引直接给 folderPath，旧索引按 relative 反推
+                var folderPath = "";
+                if (external.folderPath !== undefined && external.folderPath !== null) {
+                    folderPath = String(external.folderPath);
+                } else if (external.relative) {
+                    var relParts = String(external.relative).replace(/\\/g, "/").split("/");
+                    relParts.pop();
+                    folderPath = relParts.join("/");
+                }
                 add(external.path, external.name, external.source || categoryOf(external.path),
-                    external.source || "", external.sourceKind || "install", true);
+                    external.source || "", external.sourceKind || "install", true, folderPath);
             }
         }
 

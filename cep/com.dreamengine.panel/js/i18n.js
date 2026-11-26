@@ -41,14 +41,8 @@ var AEV_I18N = {
 
   /* ---------- 效果墙 ---------- */
   "search.effects": ["搜索效果、分类或 matchName", "Search effects, categories or matchName"],
-  "filter.plugin": ["插件筛选", "Plugin filter"],
-  "filter.all": ["全部来源", "All sources"],
   "filter.builtin": ["内置", "Built-in"],
   "filter.other": ["其它插件", "Other plugins"],
-  "sort.group": ["排序", "Sort"],
-  "sort.name": ["按名称", "By name"],
-  "sort.category": ["按分类", "By category"],
-  "toggle.showAll": ["全部已安装", "Show all installed"],
   "sidebar.title": ["分类", "Categories"],
   "sidebar.resize": ["调整分类栏宽度", "Resize categories"],
   "sidebar.all": ["全部", "All"],
@@ -65,6 +59,8 @@ var AEV_I18N = {
   "preset.saveCategory": ["保存分类", "Save category"],
   "preset.uncategorized": ["未分类", "Uncategorized"],
   "preset.allCategories": ["全部预设", "All presets"],
+  "preset.expand": ["展开", "Expand"],
+  "preset.collapse": ["收起", "Collapse"],
   "preset.moveCategory": ["移动到分类", "Move to category"],
   "preset.removeCategory": ["移出分类", "Remove from category"],
   "preset.renameCategory": ["重命名分类", "Rename category"],

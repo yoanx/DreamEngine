@@ -1134,10 +1134,13 @@ test("面板只标记过期预览，不排队或触发渲染", () => {
 test("面板显示当前 AE 效果清单，并选用最后一个有效预览", () => {
   const html = read("cep/com.dreamengine.panel/index.html");
   const library = read("cep/com.dreamengine.panel/js/library.js");
-  assert.match(html, /id="showAll"[^>]*checked/);
   assert.match(library, /previewVariants/);
   assert.match(library, /choosePreview\(/);
   assert.doesNotMatch(library, /catalogMajor|preview\.aeMajor/);
+  // 顶部筛选/排序工具条已删：固定显示全部已安装效果、按分类排列
+  assert.doesNotMatch(html, /id="showAll"/);
+  assert.doesNotMatch(html, /id="pluginFilter"/);
+  assert.match(library, /sortItems\(visible, "category"/);
 });
 
 test("viewmodel 给过期条目打标记，图仍然照常显示", () => {
@@ -1402,27 +1405,29 @@ test("预设角标在窄卡片里保持单行并省略，不竖排撑高", () =>
   assert.match(badgeBlock[0], /white-space:\s*nowrap/);
 });
 
-test("设置页与曲线预设区使用细滚动条，不露出系统大滚动条", () => {
+test("内容滚动区共用细滚动条，不露出系统大滚动条", () => {
   const css = read("cep/com.dreamengine.panel/css/style.css");
   const scrollbarBlock = css.match(
-    /\.settings-scroll::-webkit-scrollbar,[\s\S]*?\{[^}]*\}/s,
+    /\.curve-presets::-webkit-scrollbar,[\s\S]*?\{[^}]*\}/s,
   );
-  assert.ok(scrollbarBlock, "设置页与曲线预设区没有共用细滚动条规则");
-  assert.match(scrollbarBlock[0], /\.curve-presets::-webkit-scrollbar/);
+  assert.ok(scrollbarBlock, "曲线预设区没有细滚动条规则");
+  assert.match(scrollbarBlock[0], /\.materials-main::-webkit-scrollbar/);
   assert.match(scrollbarBlock[0], /width:\s*[45]px/);
   assert.match(scrollbarBlock[0], /height:\s*[45]px/);
   const trackBlock = css.match(
-    /\.settings-scroll::-webkit-scrollbar-track,[\s\S]*?\{[^}]*\}/s,
+    /\.curve-presets::-webkit-scrollbar-track,[\s\S]*?\{[^}]*\}/s,
   );
   assert.ok(trackBlock, "缺少透明滚动轨道规则");
-  assert.match(trackBlock[0], /\.curve-presets::-webkit-scrollbar-track/);
+  assert.match(trackBlock[0], /\.materials-main::-webkit-scrollbar-track/);
   assert.match(trackBlock[0], /background:\s*transparent/);
   const thumbBlock = css.match(
-    /\.settings-scroll::-webkit-scrollbar-thumb,[\s\S]*?\{[^}]*\}/s,
+    /\.curve-presets::-webkit-scrollbar-thumb,[\s\S]*?\{[^}]*\}/s,
   );
   assert.ok(thumbBlock, "缺少细滚动滑块规则");
-  assert.match(thumbBlock[0], /\.curve-presets::-webkit-scrollbar-thumb/);
+  assert.match(thumbBlock[0], /\.materials-main::-webkit-scrollbar-thumb/);
   assert.match(thumbBlock[0], /border:\s*0/);
+  // 设置抽屉已删，不该再留着它的滚动条选择器
+  assert.doesNotMatch(css, /\.settings-scroll/);
 });
 
 /* ---------- 运行 ---------- */

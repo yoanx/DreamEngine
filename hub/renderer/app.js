@@ -960,18 +960,6 @@ function updatePresetSelectionUI() {
     const box = card.querySelector(".card-select input");
     if (box && box.checked !== selected) box.checked = selected;
   }
-
-  const rendered = state.presets.filter((p) => p.rendered).length;
-  const mine = state.presets.filter((p) => !p.external).length;
-  const external = state.presets.length - mine;
-  const parts = [];
-  if (state.presets.length) {
-    parts.push(`${mine} 个我的预设`);
-    if (external) parts.push(`${external} 个 AE 预设`);
-    parts.push(`已生成 ${rendered} 个预览`);
-  }
-  if (count) parts.push(`已选 ${count} 个`);
-  $("presetHint").textContent = parts.join(" · ");
 }
 
 function selectUnrenderedPresets() {
@@ -1648,7 +1636,6 @@ function setEffectSelected(item, selected) {
   if (selected) state.effectSelection.set(matchName, item);
   else state.effectSelection.delete(matchName);
   updateEffectSelectionUI();
-  paintEffectHint(visibleEffects().length);
   setStatus(
     state.effectSelection.size
       ? `已选择 ${state.effectSelection.size} 个效果`
@@ -1702,7 +1689,6 @@ async function toggleEffectFavorite(item) {
   } else {
     updateEffectFavoriteButtons();
     renderEffectCategories(effectGroups());
-    paintEffectHint(visibleEffects().length);
   }
   setStatus(
     result.favorite
@@ -1723,7 +1709,6 @@ function selectUnrenderedEffects() {
     state.effectSelection.set(String(item.matchName || ""), item);
   }
   updateEffectSelectionUI();
-  paintEffectHint(visibleEffects().length);
   setStatus(`已选择 ${candidates.length} 个待渲染效果`);
 }
 
@@ -1731,7 +1716,6 @@ function clearEffectLibrarySelection() {
   if (!state.effectSelection.size) return;
   state.effectSelection.clear();
   updateEffectSelectionUI();
-  paintEffectHint(visibleEffects().length);
   setStatus("已清空效果选择");
 }
 
@@ -1937,28 +1921,6 @@ function effectCounts() {
   return { total, builtin, plugin, rendered, orphaned, categories };
 }
 
-function paintEffectHint(shown) {
-  const hint = $("effectHint");
-  if (!hint) return;
-  const counts = effectCounts();
-  if (!counts.total) {
-    hint.textContent = "";
-    return;
-  }
-  const parts = [
-    `共 ${counts.total} 个效果`,
-    `内置 ${counts.builtin}`,
-    `插件 ${counts.plugin}`,
-    `已生成预览 ${counts.rendered}`,
-    `${counts.categories} 个分类`,
-  ];
-  if (counts.orphaned) parts.push(`历史预览 ${counts.orphaned}`);
-  if (state.effectSelection.size) parts.push(`已选 ${state.effectSelection.size}`);
-  const filtering = !!state.effectQuery.trim() || state.effectCategory !== "all";
-  if (filtering) parts.push(`当前显示 ${shown} 个`);
-  hint.textContent = parts.join(" · ");
-}
-
 function paintEffectSyncButton() {
   const button = $("btnEffectSyncCategories");
   if (!button) return;
@@ -1988,7 +1950,6 @@ function paintEffectsLibrary() {
 
   $("tabEffectCount").textContent = String(effectCounts().total);
   updateEffectSelectionUI();
-  paintEffectHint(items.length);
   paintEffectSyncButton();
 }
 

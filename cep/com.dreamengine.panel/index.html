@@ -23,47 +23,7 @@
       <button class="view-tab" id="tabCurve" type="button" role="tab" aria-selected="false" data-i18n="tab.curve">曲线</button>
       <button class="view-tab" id="tabMaterials" type="button" role="tab" aria-selected="false" data-i18n="tab.materials">素材</button>
     </nav>
-    <div class="search-wrap" id="searchWrap">
-      <button class="icon-button search-toggle" id="searchToggle" type="button"
-              title="搜索效果或分类" aria-label="搜索效果或分类" aria-expanded="false"
-              data-i18n-title="search.effects" data-i18n-aria="search.effects">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="11" cy="11" r="8"/>
-          <path d="m21 21-4.3-4.3"/>
-        </svg>
-      </button>
-      <label class="search-field" id="searchField" hidden>
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="11" cy="11" r="8"/>
-          <path d="m21 21-4.3-4.3"/>
-        </svg>
-        <input id="searchInput" type="search" placeholder="搜索效果、分类或 matchName" autocomplete="off"
-               data-i18n-ph="search.effects"/>
-        <kbd class="search-kbd">/</kbd>
-      </label>
-    </div>
   </header>
-
-  <section class="controls" id="effectControls">
-    <select id="pluginFilter" aria-label="插件筛选" data-i18n-aria="filter.plugin">
-      <option value="全部" data-i18n="filter.all">全部来源</option>
-      <option value="内置" selected data-i18n="filter.builtin">内置</option>
-      <option value="BCC">BCC</option>
-      <option value="Sapphire">Sapphire</option>
-      <option value="Red Giant">Red Giant</option>
-      <option value="RE:Vision">RE:Vision</option>
-      <option value="Video Copilot">Video Copilot</option>
-      <option value="其它插件" data-i18n="filter.other">其它插件</option>
-    </select>
-    <div class="segmented" role="group" aria-label="排序" data-i18n-aria="sort.group">
-      <button class="segment active" id="sortName" type="button" data-i18n="sort.name">按名称</button>
-      <button class="segment" id="sortCategory" type="button" data-i18n="sort.category">按分类</button>
-    </div>
-    <label class="toggle">
-      <input type="checkbox" id="showAll" checked/>
-      <span data-i18n="toggle.showAll">全部已安装</span>
-    </label>
-  </section>
 
   <div class="workspace" id="viewEffects">
     <aside class="sidebar">
@@ -75,6 +35,16 @@
          aria-label="调整分类栏宽度" data-i18n-aria="sidebar.resize"></div>
 
     <main>
+      <div class="view-search">
+        <label class="search-field">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="m21 21-4.3-4.3"/>
+          </svg>
+          <input id="effectSearch" type="search" placeholder="搜索效果、分类或 matchName"
+                 autocomplete="off" data-i18n-ph="search.effects"/>
+        </label>
+      </div>
       <div class="grid" id="previewGrid"></div>
       <div class="empty-state" id="emptyState" hidden>
         <strong data-i18n="empty.effects">没有匹配的效果</strong>
@@ -112,6 +82,16 @@
          role="separator" aria-orientation="vertical"
          aria-label="调整分类栏宽度" data-i18n-aria="sidebar.resize"></div>
     <div class="preset-main">
+      <div class="view-search">
+        <label class="search-field">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="m21 21-4.3-4.3"/>
+          </svg>
+          <input id="presetSearch" type="search" placeholder="搜索预设"
+                 autocomplete="off" data-i18n-ph="preset.search"/>
+        </label>
+      </div>
       <div class="preset-head">
         <h2 data-i18n="preset.title">预设库</h2>
         <div class="preset-tools">
@@ -329,6 +309,16 @@
       <ul class="category-list" id="materialCategories"></ul>
     </aside>
     <main class="materials-main">
+      <div class="view-search">
+        <label class="search-field">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="m21 21-4.3-4.3"/>
+          </svg>
+          <input id="materialSearch" type="search" placeholder="搜索素材"
+                 autocomplete="off" data-i18n-ph="materials.search"/>
+        </label>
+      </div>
       <div class="materials-head">
         <nav class="material-breadcrumb" id="materialBreadcrumb" aria-label="素材库"
              data-i18n-aria="materials.aria"></nav>
@@ -366,7 +356,6 @@
       <input id="thumbSize" type="range" min="48" max="360" step="2" value="132"/>
       <output id="thumbSizeValue">132</output>
     </span>
-    <span id="selectionStats"></span>
   </footer>
 
   <div class="about-mask" id="aboutDialog" hidden>
