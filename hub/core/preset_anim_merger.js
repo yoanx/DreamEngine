@@ -70,6 +70,9 @@ async function mergePresetPreviews(paths, options = {}) {
   let skipped = 0;
   const limit = Number(options.limit) || 0;
   const failed = [];
+  /* 原帧先记账、最后统一删：索引必须先写好，否则合并期间任何读取方
+     （Hub 卡片、面板）都会读到「索引仍指向即将被删的帧」。 */
+  const pendingDeletes = [];
 
   for (const item of data.items) {
     if (!item || !item.matchName && !item.name) continue;
@@ -135,14 +138,11 @@ async function mergePresetPreviews(paths, options = {}) {
       item.animated = true;
       delete item.frameSrc;
 
-      /* 合并成功后再删帧文件：中途失败还能回退到序列形态 */
+      /* 合并成功后再删帧文件：中途失败还能回退到序列形态。
+         Windows 上逐个 unlink 极慢（Defender 实时扫描，实测 239ms/个），
+         rename 只要 9ms，所以先记账，索引写完后统一删/挪。 */
       if (!options.dryRun) {
-        /* Windows 上逐个 unlink 极慢（Defender 实时扫描，实测 239ms/个），
-           rename 只要 9ms，所以先挪进回收目录，由调用方最后一次性删。 */
-        for (const file of files) {
-          if (options.trashDir) await moveToTrash(file, options.trashDir);
-          else await removeWithRetry(file);
-        }
+        for (const file of files) pendingDeletes.push(file);
       }
       merged++;
     } catch (error) {
@@ -152,6 +152,10 @@ async function mergePresetPreviews(paths, options = {}) {
 
   if (!options.dryRun && merged > 0) {
     fs.writeFileSync(manifestFile, JSON.stringify(data, null, 1), "utf8");
+    for (const file of pendingDeletes) {
+      if (options.trashDir) await moveToTrash(file, options.trashDir);
+      else await removeWithRetry(file);
+    }
   }
   return { ok: true, merged, skipped, failed };
 }

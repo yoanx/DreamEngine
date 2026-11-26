@@ -537,6 +537,8 @@ test("预设渲染可选 PNG 序列 / WebP 动画文件，效果预览固定单�
   assert.doesNotMatch(html, /<option value="webp">/);
   assert.match(flow, /presetFormat/);
   assert.match(flow, /mergePresetAnimation/);
+  // 合并会改写索引并删掉原帧，合并后必须重新加载预设库，否则卡片指向已删帧、显示空白
+  assert.match(flow, /合并会把索引里的 src 改写[\s\S]{0,200}loadPresets\(/);
   // 效果侧产出单文件动画：有 webpSrc，没有 frameSrc
   assert.match(builder, /format = "webp-animated"/);
   assert.match(builder, /item\.webpSrc = previewPaths\.logicalValue\("effects", `webp\/\$\{pluginName\}\/anim\//);

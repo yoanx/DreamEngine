@@ -1208,6 +1208,13 @@
       } catch (error) {
         setText("flowRunHint", "动画合并异常：" + String((error && error.message) || error));
       }
+      /* 合并会把索引里的 src 改写成 webpSrc/stillSrc，并删掉原帧文件。
+         这里必须重新加载预设库，否则卡片仍指着已删除的帧，显示为空白。 */
+      try {
+        if (typeof loadPresets === "function") await loadPresets();
+      } catch (_error) {
+        /* 忽略 */
+      }
     }
     flow.reached.add("result");
     await paintResult();
