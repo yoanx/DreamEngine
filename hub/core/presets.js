@@ -155,6 +155,10 @@ function list(paths) {
         external: true,
         source: item.source || "",
         sourceKind: item.sourceKind || "install",
+        /* 旧版 preset_catalog.json 没有 folderPath，用 relative 反推 */
+        folderPath: item.folderPath !== undefined
+          ? String(item.folderPath || "")
+          : String(item.relative || "").replace(/\\/g, "/").split("/").slice(0, -1).join("/"),
       });
     }
   }

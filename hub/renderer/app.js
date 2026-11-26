@@ -54,6 +54,8 @@ const state = {
   presetSourceFilter: "all",
   presetSyncing: false,
   presetCategory: "all",
+  /* 用户预设文件夹树的展开状态：path -> true 表示已收起 */
+  presetFolderCollapsed: {},
   presetFavoritesOnly: false,
   categoryEditorMode: "create",
   categoryEditingId: "",
@@ -280,14 +282,63 @@ function isPresetFavorite(target) {
   return !!(state.presetOrganizer.favorites || {})[pathKey(target)];
 }
 
+/** AE 用户预设：catalog 里 sourceKind=user，source 统一是「用户预设」 */
+function isUserPreset(item) {
+  return !!item && !!item.external &&
+    (item.sourceKind === "user" || String(item.source || "") === "用户预设");
+}
+
+/** 用户预设相对 User Presets 根目录的文件夹路径（正斜杠，无首尾斜杠） */
+function presetFolderPath(item) {
+  return String((item && item.folderPath) || "")
+    .replace(/\\/g, "/")
+    .replace(/^\/+|\/+$/g, "");
+}
+
+/** 任一祖先文件夹收起时，该文件夹行不显示 */
+function presetFolderHidden(folder) {
+  const parts = String(folder || "").split("/").filter(Boolean);
+  for (let i = 1; i < parts.length; i++) {
+    const ancestor = parts.slice(0, i).join("/");
+    if (state.presetFolderCollapsed[ancestor]) return true;
+  }
+  return false;
+}
+
+/** 卡片上的来源标签：用户预设显示末级文件夹，悬停显示完整层级 */
+function presetSourceLabel(item, full) {
+  if (isUserPreset(item)) {
+    const folder = presetFolderPath(item);
+    if (!folder) return "用户预设";
+    if (full) return "用户预设 / " + folder;
+    const parts = folder.split("/").filter(Boolean);
+    return "用户预设 · " + parts[parts.length - 1];
+  }
+  return item.source || "外部预设";
+}
+
 function renderCategories() {
   const list = $("categoryList");
   if (!list) return;
   const counts = { favorite: 0, all: state.presets.length, uncategorized: 0 };
   const aeCounts = {};
+  const userFolders = new Map();
+  let userTotal = 0;
   for (const item of state.presets) {
     if (isPresetFavorite(item.path)) counts.favorite++;
     if (item.external) {
+      if (isUserPreset(item)) {
+        userTotal++;
+        const folder = presetFolderPath(item);
+        if (folder) {
+          const parts = folder.split("/").filter(Boolean);
+          for (let i = 1; i <= parts.length; i++) {
+            const key = parts.slice(0, i).join("/");
+            userFolders.set(key, (userFolders.get(key) || 0) + 1);
+          }
+        }
+        continue;
+      }
       const source = item.source || "AE 内置";
       aeCounts[source] = (aeCounts[source] || 0) + 1;
       continue;
@@ -314,10 +365,37 @@ function renderCategories() {
   const aeSources = Object.keys(aeCounts).sort(
     (a, b) => aeCounts[b] - aeCounts[a] || a.localeCompare(b, "zh"),
   );
-  if (aeSources.length) {
+  if (aeSources.length || userTotal) {
     list.appendChild(sidebarGroupTitle("AE 预设分类"));
     for (const source of aeSources) {
       list.appendChild(categoryRow("ae:" + source, source, aeCounts[source]));
+    }
+    if (userTotal) {
+      const rootKey = "用户预设";
+      const rootCollapsed = !!state.presetFolderCollapsed[rootKey];
+      list.appendChild(
+        categoryRow("ae:用户预设", "用户预设", userTotal, 0, {
+          path: rootKey,
+          hasChildren: userFolders.size > 0,
+          collapsed: rootCollapsed,
+        }),
+      );
+      if (!rootCollapsed) {
+        /* 用户预设按文件夹分层：每级目录一行，计数含子目录；带箭头可收起 */
+        const folders = [...userFolders.keys()].sort((a, b) => a.localeCompare(b, "zh"));
+        for (const folder of folders) {
+          if (presetFolderHidden(folder)) continue;
+          const parts = folder.split("/").filter(Boolean);
+          const hasChildren = folders.some((key) => key.indexOf(folder + "/") === 0);
+          list.appendChild(
+            categoryRow("ae:用户预设:" + folder, parts[parts.length - 1], userFolders.get(folder), parts.length, {
+              path: folder,
+              hasChildren,
+              collapsed: !!state.presetFolderCollapsed[folder],
+            }),
+          );
+        }
+      }
     }
   }
 }
@@ -341,20 +419,44 @@ function syncPresetFavoritesOnlyButton() {
   button.setAttribute("aria-pressed", state.presetFavoritesOnly ? "true" : "false");
 }
 
-function categoryRow(id, label, count) {
+function categoryRow(id, label, count, depth, folder) {
   const li = document.createElement("li");
   const button = document.createElement("button");
   button.type = "button";
+  if (depth) button.style.paddingLeft = 10 + depth * 14 + "px";
   const active = state.presetCategory === id;
   button.className =
     "category-item" + (id === "__favorites__" ? " favorite-category" : "") + (active ? " active" : "");
+  const main = document.createElement("span");
+  main.className = "category-main";
+  if (folder) {
+    if (folder.hasChildren) {
+      const arrow = document.createElement("span");
+      arrow.className = "category-toggle";
+      arrow.setAttribute("role", "button");
+      arrow.setAttribute("aria-label", folder.collapsed ? "展开" : "收起");
+      arrow.textContent = folder.collapsed ? "▸" : "▾";
+      arrow.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        state.presetFolderCollapsed[folder.path] = !folder.collapsed;
+        renderCategories();
+      });
+      main.appendChild(arrow);
+    } else {
+      const spacer = document.createElement("span");
+      spacer.className = "category-toggle-spacer";
+      main.appendChild(spacer);
+    }
+  }
   const text = document.createElement("span");
   text.className = "category-label";
   text.textContent = label;
+  main.appendChild(text);
   const badge = document.createElement("span");
   badge.className = "category-count";
   badge.textContent = String(count);
-  button.appendChild(text);
+  button.appendChild(main);
   button.appendChild(badge);
   button.addEventListener("click", () => {
     state.presetCategory = id;
@@ -708,7 +810,18 @@ function visiblePresets() {
       return !item.external && !cat;
     }
     if (state.presetCategory.startsWith("ae:")) {
-      return item.external && (item.source || "AE 内置") === state.presetCategory.slice(3);
+      if (!item.external) return false;
+      const key = state.presetCategory.slice(3);
+      if (isUserPreset(item)) {
+        if (key === "用户预设") return true;
+        if (key.indexOf("用户预设:") === 0) {
+          const folder = key.slice("用户预设:".length);
+          const itemFolder = presetFolderPath(item);
+          return itemFolder === folder || itemFolder.indexOf(folder + "/") === 0;
+        }
+        return false;
+      }
+      return (item.source || "AE 内置") === key;
     }
     if (state.presetCategory !== "all") {
       return !item.external && cat === state.presetCategory;
@@ -782,8 +895,9 @@ function renderPresets() {
     const category = document.createElement("div");
     category.className = "card-category";
     category.textContent = item.external
-      ? `AE ${state.presetCatalog && state.presetCatalog.aeMajor ? state.presetCatalog.aeMajor : ""} · ${item.source || "外部预设"}`
+      ? `AE ${state.presetCatalog && state.presetCatalog.aeMajor ? state.presetCatalog.aeMajor : ""} · ${presetSourceLabel(item)}`
       : categoryLabel(item.path) || "未分类";
+    if (item.external) category.title = presetSourceLabel(item, true);
 
     titleRow.appendChild(name);
     titleRow.appendChild(size);

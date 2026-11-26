@@ -105,6 +105,8 @@ function scanRoot(rootPath, kind, items, seen) {
       name: path.basename(full).replace(/\.ffx$/i, ""),
       fileName: path.basename(full),
       relative,
+      /* 相对扫描根的文件夹路径（不含文件名）：用户预设靠它分层展示 */
+      folderPath: parts.slice(0, -1).join("/"),
       source,
       sourceKind: kind,
       size: fileStat.size,

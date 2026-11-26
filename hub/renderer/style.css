@@ -590,6 +590,25 @@ body.sidebar-resizing {
 .category-item.favorite-category { margin-bottom: 4px; }
 .category-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .category-count { flex: 0 0 auto; color: var(--faint); font-size: 10px; }
+.category-main {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.category-main .category-label { min-width: 0; }
+.category-toggle {
+  flex: 0 0 auto;
+  width: 12px;
+  text-align: center;
+  color: var(--faint);
+  font-size: 10px;
+  line-height: 1;
+  cursor: pointer;
+}
+.category-toggle:hover { color: #fff; }
+.category-toggle-spacer { flex: 0 0 auto; width: 12px; }
 
 .category-item:hover .category-count,
 .category-item.active .category-count {
