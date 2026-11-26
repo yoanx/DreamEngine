@@ -710,11 +710,6 @@ body.sidebar-resizing {
   list-style: none;
 }
 
-.preset-source {
-  width: 132px;
-  flex: 0 0 auto;
-}
-
 .card-badge {
   display: inline-flex;
   align-items: center;
@@ -752,12 +747,34 @@ body.sidebar-resizing {
 .btn.danger { border-color: var(--danger); color: var(--danger); }
 .btn.ghost { background: transparent; }
 
-/* 可切换按钮（如「仅显示已收藏」）：只影响显式带 aria-pressed 的 .btn，不碰卡片/分类 */
-.btn[aria-pressed="true"] {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-  color: #d8ecee;
+/* 工具条右侧的纯图标按钮：与 .btn 同高，省掉文字宽度 */
+.tool-icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 7px;
+  background: var(--surface-2);
+  color: var(--text);
+  cursor: pointer;
 }
+
+.tool-icon svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.tool-icon:hover:not(:disabled) { border-color: var(--accent); }
+.tool-icon:disabled { opacity: 0.45; cursor: default; }
 
 .search {
   height: 30px;

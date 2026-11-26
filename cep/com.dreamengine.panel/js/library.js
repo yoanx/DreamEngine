@@ -787,15 +787,6 @@ var AEV_Library = (function () {
     return li;
   }
 
-  function updateHeader() {
-    var previewCount = Object.keys(state.previews).length;
-    byId("libraryStats").textContent =
-      (state.lang === "zh" ? "内置预览 " : "Previews ") +
-      previewCount +
-      (state.lang === "zh" ? " · 本机效果 " : " · Installed ") +
-      state.catalog.length;
-  }
-
   /** 取当前语言的文案。args 可选，替换 {0} {1}…；字典在 js/i18n.js */
   function L(key, args) {
     if (typeof AEV_t === "function") return AEV_t(key, state.lang, args);
@@ -804,14 +795,11 @@ var AEV_Library = (function () {
 
   function setLanguage(lang) {
     state.lang = lang;
-    byId("langZh").className = "segment" + (lang === "zh" ? " active" : "");
-    byId("langEn").className = "segment" + (lang === "en" ? " active" : "");
-    /* 静态文案：HTML 上标了 data-i18n 的全部换掉（设置页、队列、按钮 title…） */
+    /* 静态文案：HTML 上标了 data-i18n 的全部换掉（按钮 title、占位符…） */
     if (typeof AEV_applyI18n === "function") AEV_applyI18n(lang);
     /* 底栏那条是上一次操作留下的、用旧语言拼出来的字符串，
        语言一换它就不再匹配 —— 直接回到「就绪」 */
     setStatus(L("status.ready"), false);
-    updateHeader();
     render();
     // 曲线视图的标签（预设下拉、提示语）跟着语言走
     if (window.AEV_CurveUI && typeof AEV_CurveUI.relang === "function") {
@@ -1035,7 +1023,6 @@ var AEV_Library = (function () {
                 state.categoryOrder = AEV_ViewModel.categoryOrder(state.catalog);
                 checkStale(function () {
                   rebuildItems();
-                  updateHeader();
                   render();
                   var staleCount = Object.keys(state.stale).length;
                   var ready = state.lang === "zh" ? "效果库已就绪" : "Library ready";
@@ -1996,16 +1983,29 @@ var AEV_Library = (function () {
   }
 
   /**
-   * 设置页开关。
-   *
-   * 齿轮按钮是「切换」语义；Esc 与点抽屉外都能收起。
+   * 界面语言由 Hub 的设置页统一管理：读 <文档>/DreamEngine/ui_prefs.json。
+   * 面板自己没有设置页，也没有本地语言开关。
    */
-  function setSettingsOpen(open) {
-    var drawer = byId("settingsDrawer");
-    var trigger = byId("btnSettings");
-    if (!drawer || !trigger) return;
-    drawer.hidden = !open;
-    trigger.setAttribute("aria-expanded", open ? "true" : "false");
+  function loadPanelLanguage() {
+    if (!window.Bridge || typeof Bridge.readTextFile !== "function") return;
+    Bridge.getDocsPath(function (docs) {
+      if (!docs) return;
+      Bridge.readTextFile(docs + "/DreamEngine/ui_prefs.json", function (res) {
+        if (!res || res.indexOf("OK:") !== 0) return;
+        var text = res.slice(3);
+        if (text.charCodeAt(0) === 65279) text = text.substring(1);
+        var doc = null;
+        try {
+          doc = JSON.parse(text);
+        } catch (e) {
+          return;
+        }
+        var lang = doc && String(doc.panelLang || "");
+        if (lang !== "zh" && lang !== "en") return;
+        if (lang === state.lang) return;
+        setLanguage(lang);
+      });
+    });
   }
 
   /**
@@ -2150,9 +2150,9 @@ var AEV_Library = (function () {
     if (window.AEV_Prefs) state.effectBackground = AEV_Prefs.effectBackground();
     // 首屏：把 data-i18n 的静态文案对齐到当前语言（默认中文，等价于无操作）
     if (typeof AEV_applyI18n === "function") AEV_applyI18n(state.lang);
+    // 语言在 Hub 设置页里改，面板启动时读一次共享配置
+    loadPanelLanguage();
 
-    byId("langZh").addEventListener("click", function () { setLanguage("zh"); });
-    byId("langEn").addEventListener("click", function () { setLanguage("en"); });
     byId("tabEffects").addEventListener("click", function () { setView("effects"); });
     byId("tabPresets").addEventListener("click", function () { setView("presets"); });
     byId("tabCurve").addEventListener("click", function () { setView("curve"); });
@@ -2177,16 +2177,9 @@ var AEV_Library = (function () {
       rebuildItems();
       render();
     });
-    byId("btnSettings").addEventListener("click", function () {
-      setSettingsOpen(byId("settingsDrawer").hidden);
-    });
-    byId("btnSettingsClose").addEventListener("click", function () {
-      setSettingsOpen(false);
-    });
-    // Esc 关设置页；点在抽屉与齿轮之外也关。
+    // Esc 关右键菜单与删除确认
     document.addEventListener("keydown", function (event) {
       if (event.key === "Escape" || event.keyCode === 27) {
-        if (!byId("settingsDrawer").hidden) setSettingsOpen(false);
         hidePresetCategoryMenu();
         closeDeletePreset();
       }
@@ -2209,15 +2202,6 @@ var AEV_Library = (function () {
       }
       event.preventDefault();
       setSearchOpen(true, "searchInput", "searchField", "searchToggle");
-    });
-    document.addEventListener("mousedown", function (event) {
-      var drawer = byId("settingsDrawer");
-      if (drawer.hidden) return;
-      var target = event.target;
-      var trigger = byId("btnSettings");
-      if (trigger && trigger.contains && trigger.contains(target)) return;
-      if (drawer.contains && drawer.contains(target)) return;
-      setSettingsOpen(false);
     });
     byId("btnPresetCategoryAdd").addEventListener("click", function () {
       openPresetCategoryEditor("create", null);

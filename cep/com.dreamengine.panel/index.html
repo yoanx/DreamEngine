@@ -42,15 +42,6 @@
         <kbd class="search-kbd">/</kbd>
       </label>
     </div>
-    <!-- 语言 / 生成 / 刷新 / 重试都收进「设置」页 -->
-      <button class="icon-button" id="btnSettings" type="button"
-              title="设置" aria-label="设置" aria-expanded="false" aria-controls="settingsDrawer"
-              data-i18n-title="settings.title" data-i18n-aria="settings.title">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="12" cy="12" r="3"/>
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-        </svg>
-    </button>
   </header>
 
   <section class="controls" id="effectControls">
@@ -377,52 +368,6 @@
     </span>
     <span id="selectionStats"></span>
   </footer>
-
-  <aside class="settings-drawer" id="settingsDrawer" hidden aria-label="设置" data-i18n-aria="settings.title">
-    <div class="drawer-head">
-      <h3 data-i18n="settings.title">设置</h3>
-      <button class="icon-button" id="btnSettingsClose" type="button" aria-label="关闭设置" data-i18n-aria="settings.close">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M6 6l12 12M18 6L6 18"/>
-        </svg>
-      </button>
-    </div>
-
-    <div class="settings-scroll">
-      <section class="settings-group">
-        <h4 data-i18n="settings.library">库</h4>
-        <div class="settings-row">
-          <span class="settings-label" data-i18n="settings.entries">条目</span>
-          <span class="settings-value" id="libraryStats">正在读取效果库</span>
-        </div>
-      </section>
-
-      <section class="settings-group">
-        <h4 data-i18n="settings.appearance">外观</h4>
-        <div class="settings-row">
-          <span class="settings-label" data-i18n="settings.language">界面语言</span>
-          <div class="segmented" role="group" aria-label="语言" data-i18n-aria="settings.langGroup">
-            <button class="segment active" id="langZh" type="button"
-                    data-i18n-title="lang.zhTitle">ZH</button>
-            <button class="segment" id="langEn" type="button"
-                    data-i18n-title="lang.enTitle">EN</button>
-          </div>
-        </div>
-      </section>
-
-      <section class="settings-group">
-        <h4 data-i18n="settings.notes">使用说明</h4>
-        <p class="settings-note" data-i18n="settings.note1">
-          在 AE 里选中图层后，<b>双击</b>效果卡片即可把该效果加到选中层。
-          单击不会改动工程。悬停预览可播放动态效果，静止效果不播放。
-        </p>
-        <p class="settings-note" data-i18n="settings.note2">
-          第三方插件的预览不能靠面板按钮实时生成（会让 AE 崩溃），
-          需关闭 AE 后用离线脚本逐条渲染；插件参数一律保持默认。
-        </p>
-      </section>
-    </div>
-  </aside>
 
   <div class="about-mask" id="aboutDialog" hidden>
     <section class="about-card" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">

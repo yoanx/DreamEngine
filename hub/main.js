@@ -19,6 +19,7 @@ const { findAfterFX, bestAfterFX, isAERunning } = require("./core/ae");
 const presets = require("./core/presets");
 const presetSources = require("./core/preset_sources");
 const presetCategories = require("./core/preset_categories");
+const uiPrefs = require("./core/ui_prefs");
 const install = require("./core/install");
 const { RenderJob } = require("./core/render");
 const { mergePresetPreviews } = require("./core/preset_anim_merger");
@@ -476,6 +477,10 @@ function registerIpc() {
     shell.openPath(paths.effectParamsRoot);
     return true;
   });
+
+  /* 面板界面偏好（语言）：面板没有设置页，统一在这里改 */
+  ipcMain.handle("ui-prefs:read", () => uiPrefs.read(paths));
+  ipcMain.handle("ui-prefs:setPanelLang", (_event, lang) => uiPrefs.setPanelLang(paths, lang));
 
   ipcMain.handle("render:start", (_event, options) => {
     if (!job) return { ok: false, reason: "no_job" };

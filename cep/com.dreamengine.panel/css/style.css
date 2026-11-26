@@ -947,12 +947,6 @@ html.keyboard-nav [role="button"]:focus {
   display: none;
 }
 
-/* 搜索只服务效果墙；切到预设/曲线时它被 hidden，
-   齿轮要接住 margin-left:auto 继续贴在右侧。 */
-.search-wrap[hidden] + #btnSettings {
-  margin-left: auto;
-}
-
 .search-wrap .search-toggle {
   flex: 0 0 auto;
   position: relative;
@@ -1252,7 +1246,6 @@ main::-webkit-scrollbar,
 .preset-view::-webkit-scrollbar,
 .preset-sidebar::-webkit-scrollbar,
 .preset-main::-webkit-scrollbar,
-.settings-scroll::-webkit-scrollbar,
 .curve-presets::-webkit-scrollbar,
 .materials-sidebar::-webkit-scrollbar,
 .materials-main::-webkit-scrollbar {
@@ -1265,7 +1258,6 @@ main::-webkit-scrollbar-track,
 .preset-view::-webkit-scrollbar-track,
 .preset-sidebar::-webkit-scrollbar-track,
 .preset-main::-webkit-scrollbar-track,
-.settings-scroll::-webkit-scrollbar-track,
 .curve-presets::-webkit-scrollbar-track,
 .materials-sidebar::-webkit-scrollbar-track,
 .materials-main::-webkit-scrollbar-track {
@@ -1277,7 +1269,6 @@ main::-webkit-scrollbar-thumb,
 .preset-view::-webkit-scrollbar-thumb,
 .preset-sidebar::-webkit-scrollbar-thumb,
 .preset-main::-webkit-scrollbar-thumb,
-.settings-scroll::-webkit-scrollbar-thumb,
 .curve-presets::-webkit-scrollbar-thumb,
 .materials-sidebar::-webkit-scrollbar-thumb,
 .materials-main::-webkit-scrollbar-thumb {
@@ -1292,7 +1283,6 @@ main::-webkit-scrollbar-thumb:hover,
 .preset-view::-webkit-scrollbar-thumb:hover,
 .preset-sidebar::-webkit-scrollbar-thumb:hover,
 .preset-main::-webkit-scrollbar-thumb:hover,
-.settings-scroll::-webkit-scrollbar-thumb:hover,
 .curve-presets::-webkit-scrollbar-thumb:hover,
 .materials-sidebar::-webkit-scrollbar-thumb:hover,
 .materials-main::-webkit-scrollbar-thumb:hover {
@@ -1304,7 +1294,6 @@ main::-webkit-scrollbar-button,
 .preset-view::-webkit-scrollbar-button,
 .preset-sidebar::-webkit-scrollbar-button,
 .preset-main::-webkit-scrollbar-button,
-.settings-scroll::-webkit-scrollbar-button,
 .curve-presets::-webkit-scrollbar-button,
 .materials-sidebar::-webkit-scrollbar-button,
 .materials-main::-webkit-scrollbar-button {
@@ -1318,7 +1307,6 @@ main::-webkit-scrollbar-corner,
 .preset-view::-webkit-scrollbar-corner,
 .preset-sidebar::-webkit-scrollbar-corner,
 .preset-main::-webkit-scrollbar-corner,
-.settings-scroll::-webkit-scrollbar-corner,
 .curve-presets::-webkit-scrollbar-corner,
 .materials-sidebar::-webkit-scrollbar-corner,
 .materials-main::-webkit-scrollbar-corner {
@@ -1638,108 +1626,6 @@ main {
   color: var(--text);
   font-variant-numeric: tabular-nums;
   text-align: right;
-}
-
-.drawer-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.drawer-head h3 {
-  margin: 0;
-  font-size: 12px;
-  font-weight: 650;
-}
-
-/* 设置页：顶栏只留一个齿轮入口，语言等低频设置收进这里。
-   做成右侧整页抽屉而不是第三个顶部 tab —— 设置是随时调一下就走的，
-   不该把效果墙切掉，也不该跟「效果预览 / 预设预览」这两个内容视图同级。 */
-.settings-drawer {
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 21;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  width: 340px;
-  /* min() 旧内核不支持（整条丢弃），上面这行负责兜底 */
-  width: min(340px, 88vw);
-  max-width: 88vw;
-  padding: 12px 14px;
-  border-left: 1px solid var(--border);
-  background: var(--surface);
-  box-shadow: -12px 0 24px rgba(0, 0, 0, 0.35);
-}
-
-/* 带 display:flex 的容器必须显式写 [hidden]，否则类选择器会盖掉
-   浏览器默认的 display:none —— 上一轮预设视图就栽在这里。 */
-.settings-drawer[hidden] {
-  display: none;
-}
-
-#btnSettings[aria-expanded="true"] {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.settings-scroll {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-}
-
-.settings-group {
-  margin: 0 0 16px;
-  padding: 0 0 14px;
-  border-bottom: 1px solid var(--border);
-}
-
-.settings-group:last-child {
-  border-bottom: none;
-}
-
-.settings-group h4 {
-  margin: 0 0 10px;
-  color: var(--muted);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-}
-
-.settings-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.settings-label {
-  font-size: 12px;
-}
-
-/* 右侧的值（顶栏去掉副标题后，条目统计挪到了这里） */
-.settings-value {
-  min-width: 0;
-  color: var(--muted);
-  font-size: 12px;
-  text-align: right;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.settings-note {
-  margin: 0 0 8px;
-  color: var(--muted);
-  font-size: 10px;
-  line-height: 1.55;
-}
-
-.settings-note b {
-  color: var(--text);
 }
 
 /* 面板拖到很窄时，底栏按顺序舍弃次要信息（而不是把它们压成竖排）。
@@ -3321,7 +3207,6 @@ main {
 .no-flex-gap .card-meta > * + * { margin-left: var(--card-text-gap); }
 .no-flex-gap .statusbar > * + * { margin-left: 10px; }
 .no-flex-gap .size-slider > * + * { margin-left: 6px; }
-.no-flex-gap .settings-row > * + * { margin-left: 10px; }
 .no-flex-gap .materials-head > * + * { margin-left: 12px; }
 .no-flex-gap .materials-head-actions > * + * { margin-left: 2px; }
 .no-flex-gap .material-breadcrumb > * + * { margin-left: 4px; }
@@ -3338,7 +3223,6 @@ main {
 /* ---- 列方向：补 margin-top ---- */
 .no-flex-gap .preset-main > * + * { margin-top: 10px; }
 .no-flex-gap .preset-card > * + * { margin-top: var(--card-text-gap); }
-.no-flex-gap .settings-drawer > * + * { margin-top: 10px; }
 .no-flex-gap .materials-sidebar .category-list > * + * { margin-top: 3px; }
 .no-flex-gap .curve-view > * + * { margin-top: 6px; }
 .no-flex-gap .curve-editor-pane > * + * { margin-top: 6px; }
@@ -3350,8 +3234,7 @@ main {
  * 但这三个子项原本靠 auto 占位，被覆盖后会贴到左边/挤到中间：
  *   .view-switch    本就有 margin-left:4px，正确值是 20(gap) + 4 = 24px
  *   .search-wrap    靠 margin-left:auto 推到右侧
- *   .material-folder-count  靠 margin-left:auto 贴右侧（「101 项」这类计数）
- * #btnSettings 那条不用处理：它是 ID 选择器，优先级高于上面的类规则。 */
+ *   .material-folder-count  靠 margin-left:auto 贴右侧（「101 项」这类计数） */
 .no-flex-gap .topbar > .view-switch { margin-left: 24px; }
 .no-flex-gap .topbar > .search-wrap { margin-left: auto; }
 .no-flex-gap .material-folder-row > .material-folder-count { margin-left: auto; }

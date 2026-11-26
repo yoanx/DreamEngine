@@ -59,21 +59,15 @@
         <div class="toolbar">
           <button class="btn ghost" id="btnExpandSidebar" type="button" title="展开分类栏" hidden>分类 »</button>
           <button class="btn primary" id="btnImport" title="选择一个或多个 .ffx 预设">添加预设</button>
-          <button class="btn" id="btnRefresh">刷新</button>
-          <button class="btn" id="btnSyncAePresets" title="扫描当前 AE 的安装 Presets 与 User Presets（只建索引，不复制文件）">同步 AE 预设</button>
-          <button class="btn" id="btnPresetFavoritesOnly" type="button"
-                  aria-pressed="false" title="只看已收藏的预设">仅显示已收藏预设</button>
-          <select class="input preset-source" id="presetSourceFilter" aria-label="预设来源">
-            <option value="all">全部来源</option>
-            <option value="mine">我的预设</option>
-            <option value="external">AE 预设</option>
-          </select>
           <button class="btn" id="btnSelectUnrendered" title="选择当前筛选下所有未生成预览的预设">选择未渲染</button>
           <button class="btn ghost" id="btnClearSelection" disabled>清空选择</button>
           <button class="btn" id="btnRenderSelected" disabled title="只渲染已勾选的预设">渲染所选 (0)</button>
           <input class="search" id="search" type="search" placeholder="搜索预设…" spellcheck="false">
           <span class="spacer"></span>
           <span class="hint" id="presetHint"></span>
+          <button class="tool-icon" id="btnRefresh" type="button" title="刷新预设库" aria-label="刷新预设库">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+          </button>
         </div>
         <div class="grid" id="grid"></div>
         <div class="empty" id="emptyPresets" hidden>
@@ -104,26 +98,25 @@
       <div class="preset-main">
         <div class="toolbar">
           <button class="btn ghost" id="btnEffectExpandSidebar" type="button" title="展开分类栏" hidden>分类 »</button>
-          <button class="btn" id="btnEffectRefresh" type="button">刷新</button>
-          <button class="btn" id="btnEffectSyncCategories" type="button"
-                  title="扫描当前 AE 的插件效果分类（只建索引，不渲染）">同步 AE 分类</button>
-          <button class="btn" id="btnEffectPreviewImport" type="button"
-                  title="导入别人分享的效果预览包；同名效果会被覆盖">导入预览包</button>
-          <button class="btn" id="btnEffectPreviewExport" type="button"
-                  title="把当前全部效果预览导出为 zip">导出预览包</button>
           <button class="btn" id="btnEffectSelectUnrendered" type="button"
                   title="选择当前筛选下所有待渲染的效果">选择未渲染</button>
           <button class="btn ghost" id="btnEffectClearSelection" type="button" disabled>清空选择</button>
           <button class="btn" id="btnEffectRenderSelected" type="button" disabled
                   title="只渲染已勾选的效果">渲染所选 (0)</button>
-          <button class="btn" id="btnEffectFavoritesOnly" type="button"
-                  aria-pressed="false" title="只看已收藏的效果">仅显示已收藏效果</button>
-          <select class="input preset-source" id="effectPluginFilter" aria-label="效果来源">
-            <option value="all">全部来源</option>
-          </select>
           <input class="search" id="effectSearch" type="search" placeholder="搜索效果…" spellcheck="false">
           <span class="spacer"></span>
           <span class="hint" id="effectHint"></span>
+          <button class="tool-icon" id="btnEffectPreviewImport" type="button"
+                  title="导入别人分享的效果预览包；同名效果会被覆盖" aria-label="导入预览包">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+          </button>
+          <button class="tool-icon" id="btnEffectPreviewExport" type="button"
+                  title="把当前全部效果预览导出为 zip" aria-label="导出预览包">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
+          </button>
+          <button class="tool-icon" id="btnEffectRefresh" type="button" title="刷新效果库" aria-label="刷新效果库">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+          </button>
         </div>
         <div class="grid" id="effectGrid"></div>
         <div class="empty" id="emptyEffects" hidden></div>
@@ -426,31 +419,31 @@
   <!-- ========== 设置 ========== -->
   <section class="view" id="viewSettings" hidden>
     <div class="panel">
-      <div class="panel-title">面板安装状态</div>
-      <div class="kv"><span>扩展目录</span><code id="setExtDir">—</code></div>
-      <div class="kv"><span>版本</span><code id="setExtVersion">—</code></div>
-      <div class="kv"><span>预览图</span><code id="setThumbs">—</code></div>
-      <div class="kv"><span>索引</span><code id="setIndexes">—</code></div>
+      <div class="panel-title">同步与索引</div>
       <div class="panel-row actions">
-        <button class="btn ghost" id="btnOpenExt">打开扩展目录</button>
+        <button class="btn" id="btnSyncAePresets" title="扫描当前 AE 的安装 Presets 与 User Presets（只建索引，不复制文件）">同步 AE 预设</button>
+        <button class="btn" id="btnEffectSyncCategories" type="button"
+                title="扫描当前 AE 的插件效果分类（只建索引，不渲染）">同步 AE 分类</button>
       </div>
+      <div class="kv"><span>AE 预设</span><code id="setPresetSync">—</code></div>
+      <div class="kv"><span>效果分类</span><code id="setEffectSync">—</code></div>
+      <p class="footnote">
+        同步只建索引，不复制也不修改 AE 里的文件。在 AE 里新装的预设或插件，同步之后才会出现在库里。
+      </p>
     </div>
 
     <div class="panel">
-      <div class="panel-title">After Effects</div>
-      <div class="kv"><span>运行状态</span><code id="setAeRun">—</code></div>
-      <div class="kv"><span>已安装版本</span><code id="setAeList">—</code></div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-title">目录</div>
-      <div class="kv"><span>预设库</span><code id="setPresets">—</code></div>
-      <div class="kv"><span>背景图</span><code id="setBg">—</code></div>
-      <div class="kv"><span>日志目录</span><code id="setProbe">—</code></div>
-      <div class="panel-row actions">
-        <button class="btn ghost" id="btnOpenPresets">打开预设库</button>
-        <button class="btn ghost" id="btnOpenProbe">打开日志目录</button>
+      <div class="panel-title">外观</div>
+      <div class="kv">
+        <span>AE 面板语言</span>
+        <select class="input" id="setPanelLang" aria-label="AE 面板语言">
+          <option value="zh">中文</option>
+          <option value="en">English</option>
+        </select>
       </div>
+      <p class="footnote">
+        面板没有自己的设置页，界面语言统一在这里改；保存后重启 AE 面板生效。Hub 自身界面暂只有中文。
+      </p>
     </div>
 
     <div class="panel">
@@ -466,16 +459,17 @@
         效果预览写入 <code>effects</code>，预设预览写入 <code>presets</code>。切换目录时会自动迁移已生成预览并更新索引。
       </p>
     </div>
+
     <div class="panel">
-      <div class="panel-title">人工调参</div>
-      <div class="kv"><span>属性缓存</span><code id="setParamsCache">—</code></div>
+      <div class="panel-title">目录</div>
+      <div class="kv"><span>预设库</span><code id="setPresets">—</code></div>
+      <div class="kv"><span>面板扩展</span><code id="setExtVersion">—</code></div>
       <div class="panel-row actions">
-        <button class="btn ghost" id="btnOpenParamsCache">打开属性缓存目录</button>
+        <button class="btn ghost" id="btnOpenPresets">打开预设库</button>
+        <button class="btn ghost" id="btnOpenBg">打开背景图</button>
+        <button class="btn ghost" id="btnOpenProbe">打开日志目录</button>
+        <button class="btn ghost" id="btnOpenExt">打开扩展目录</button>
       </div>
-      <p class="footnote">
-        属性缓存是启动 After Effects 读取插件参数树后的结果（只读记录，不含你写入的覆盖值）。
-        删掉某个文件后，下次做人工调参时该效果会被重新读取。
-      </p>
     </div>
 
     <div class="panel">
@@ -489,8 +483,7 @@
     </div>
 
     <p class="footnote">
-      安装与升级由安装包里的 <code>install_dreamengine.ps1</code> 负责：它只覆盖程序文件，
-      不会动你已经生成的预览图和预设库。
+      安装与升级由安装包里的 <code>install_dreamengine.ps1</code> 负责：只覆盖程序文件，不动已生成的预览图和预设库。
     </p>
   </section>
 

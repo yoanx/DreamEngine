@@ -36,6 +36,8 @@ function createPaths(opts = {}) {
     presets: path.join(userRoot, "presets"),
     backgrounds: path.join(userRoot, "backgrounds"),
     presetCategories: path.join(userRoot, "preset_categories.json"),
+    /* 面板界面语言等 UI 偏好：Hub 设置页写，AE 面板启动时读 */
+    uiPrefs: path.join(userRoot, "ui_prefs.json"),
     /* 效果库收藏：按 matchName 持久化，升级安装同样不能清空 */
     effectFavorites: path.join(userRoot, "effect_favorites.json"),
 

@@ -37,6 +37,9 @@ contextBridge.exposeInMainWorld("hub", {
   choosePreviewRoot: () => ipcRenderer.invoke("preview-root:choose"),
   resetPreviewRoot: () => ipcRenderer.invoke("preview-root:reset"),
   openEffectParamsDir: () => ipcRenderer.invoke("settings:openEffectParams"),
+  /* 面板界面偏好：面板没有设置页，语言在这里统一改 */
+  readUiPrefs: () => ipcRenderer.invoke("ui-prefs:read"),
+  setPanelLanguage: (lang) => ipcRenderer.invoke("ui-prefs:setPanelLang", lang),
   listBackgrounds: () => ipcRenderer.invoke("backgrounds:list"),
   addBackground: () => ipcRenderer.invoke("backgrounds:add"),
 

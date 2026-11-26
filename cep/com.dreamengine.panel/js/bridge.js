@@ -48,6 +48,23 @@ var Bridge = (function () {
     evalAE(jsx, cb);
   }
 
+  /** 读一个文本文件（面板侧没有 fs，交给 AE）。
+   *  成功返回 'OK:' + 内容；不存在返回 'MISSING'。 */
+  function readTextFile(absPath, cb) {
+    var jsx =
+      "(function(){" +
+      "  try{" +
+      "    var f = new File(" + JSON.stringify(absPath) + ");" +
+      "    if(!f.exists) return 'MISSING';" +
+      "    if(!f.open('r')) return 'OPEN_FAIL';" +
+      "    var text = f.read();" +
+      "    f.close();" +
+      "    return 'OK:' + text;" +
+      "  }catch(e){return 'ERR:'+e.toString();}" +
+      "})()";
+    evalAE(jsx, cb);
+  }
+
   /** 让 AE 列目录下的文件名（面板没有本地目录读取能力） */
   function listFiles(dirPath, pattern, cb) {
     var jsx =
@@ -270,6 +287,7 @@ var Bridge = (function () {
     evalAE: evalAE,
     evalAERaw: evalAERaw,
     writeFile: writeFile,
+    readTextFile: readTextFile,
     listFiles: listFiles,
     getDocsPath: getDocsPath,
     getExtensionPath: getExtensionPath,
